@@ -35,8 +35,10 @@ class TestAPIContractsAndSafety(unittest.TestCase):
         self.assertIn('data_provenance: str = "EMPIRICAL DATASET"', self.main_py_code)
 
     def test_simulator_telemetry_isolation(self):
-        """TC-API-003: Simulator telemetry writes to sim_telemetry_events with provenance SIMULATED."""
-        self.assertIn('table_target": "sim_telemetry_events"', self.main_py_code)
+        """TC-API-003: Demo injection is not confused with persistent API ingestion."""
+        self.assertIn('storage_status": "DEMO_ONLY_NOT_PERSISTED"', self.main_py_code)
+        self.assertIn('@app.post("/api/v1/telemetry"', self.main_py_code)
+        self.assertIn("sensor_value: float | str | None", self.main_py_code)
         self.assertIn('"data_provenance": "SIMULATED"', self.main_py_code)
         self.assertIn('require_roles(["Supervisor", "Maintenance"])', self.main_py_code)
 

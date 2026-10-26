@@ -42,6 +42,25 @@ const STORAGE_KEYS = {
   SIM_EVENTS: 'ziro_sim_telemetry_events',
 };
 
+export interface PersistedSimulatorReading {
+  reading_id: string;
+  machine_id: string;
+  machine_code: string;
+  display_name: string;
+  timestamp: string;
+  sensor_name: string;
+  sensor_unit: string;
+  sensor_value: number | string | null;
+  expected_min: number;
+  expected_max: number;
+  machine_status: 'NORMAL' | 'WARNING' | 'CRITICAL' | 'MAINTENANCE' | 'STOPPED';
+  data_quality: 'GOOD' | 'NOISY';
+  fault_mode?: string | null;
+  data_provenance: 'SIMULATED';
+}
+
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8001').replace(/\/$/, '');
+
 // Resilient in-memory fallback store when localStorage is restricted in iframes / tests
 const memoryStore: Record<string, string> = {
   [STORAGE_KEYS.USERS]: JSON.stringify(SEED_USERS),
@@ -166,6 +185,26 @@ if (typeof window !== 'undefined') {
 }
 
 export const apiClient = {
+  async getPersistedSimulatorTelemetry(
+    machineId: string,
+    workId: string,
+    limit = 100,
+  ): Promise<PersistedSimulatorReading[]> {
+    const query = new URLSearchParams({ limit: String(limit), data_source: 'AI_SIMULATOR' });
+    const response = await fetch(`${API_BASE_URL}/api/v1/telemetry/latest/${encodeURIComponent(machineId)}?${query}`, {
+      headers: { Authorization: `Bearer ${workId}` },
+    });
+    if (!response.ok) {
+      let detail = `Telemetry API returned ${response.status}`;
+      try {
+        const body = await response.json();
+        if (typeof body.detail === 'string') detail = body.detail;
+      } catch { /* keep status-based message */ }
+      throw new Error(detail);
+    }
+    return response.json() as Promise<PersistedSimulatorReading[]>;
+  },
+
   // -------------------------------------------------------------
   // Authentication & Session
   // -------------------------------------------------------------
@@ -277,7 +316,7 @@ export const apiClient = {
   },
 
   // -------------------------------------------------------------
-  // Telemetry Generation & Injection (Writing strictly to sim_telemetry_events)
+  // Local demo telemetry generation; this client-side action is not a backend database write.
   // -------------------------------------------------------------
   getLiveTelemetrySnapshot(machineCode: string, anomalyType?: string): TelemetryReading {
     const now = new Date().toISOString();
@@ -394,7 +433,7 @@ export const apiClient = {
 
     const reading = this.getLiveTelemetrySnapshot(machineCode, anomalyType);
 
-    // Save to sim_telemetry_events in store
+    // Keep demo events in browser storage only; persistent ingestion uses the FastAPI route.
     const existing = JSON.parse(safeGetItem(STORAGE_KEYS.SIM_EVENTS) || '[]');
     existing.unshift({
       machineCode,

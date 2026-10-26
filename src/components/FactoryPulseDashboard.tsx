@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { apiClient } from '../services/apiClient';
 import { SimpleBarChart } from './SimpleBarChart';
+import { PersistedTelemetrySummary } from './PersistedTelemetrySummary';
 import { Incident, Machine, MaintenanceWorkOrder, TelemetryReading, UserProfile, UserRole } from '../types';
 
 type Screen = 'dashboard' | 'machines' | 'incidents' | 'analytics' | 'users';
@@ -332,6 +333,8 @@ export const FactoryPulseDashboard: React.FC<FactoryPulseDashboardProps> = ({ cu
           {onRefreshData && !isOperator && <button onClick={onRefreshData} title="Refresh dashboard data" aria-label="Refresh dashboard data" className="rounded-lg border border-slate-800/80 bg-[#0c1424] p-2 text-slate-400 hover:bg-slate-900/70"><Activity className="h-4 w-4"/></button>}
         </div>
       </header>
+
+      <PersistedTelemetrySummary machine={selectedMachine} user={currentUser} />
 
       {isOperator ? (
         <>

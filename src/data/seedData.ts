@@ -21,7 +21,7 @@ export const SEED_USERS: UserProfile[] = [
     workId: 'OP-101',
     fullName: 'Marcus Vance',
     role: 'Operator',
-    assignedMachine: 'CNC-MILL-01',
+    assignedMachine: 'CNC-5AX-001',
     email: 'marcus.vance@ziromfg.internal',
     shift: 'Shift A',
     department: 'Milling & Machining Cell 1',

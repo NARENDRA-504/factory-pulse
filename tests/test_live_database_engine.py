@@ -49,6 +49,8 @@ def convert_mysql_ddl_to_sqlite(mysql_ddl: str) -> str:
     sql = re.sub(r'\bENUM\([^)]+\)', 'TEXT', sql, flags=re.IGNORECASE)
     sql = re.sub(r'\bDECIMAL\(\d+,\s*\d+\)', 'REAL', sql, flags=re.IGNORECASE)
     sql = re.sub(r'\bDOUBLE\b', 'REAL', sql, flags=re.IGNORECASE)
+    sql = re.sub(r'\bTIMESTAMP\s*\(\s*\d+\s*\)', 'TIMESTAMP', sql, flags=re.IGNORECASE)
+    sql = re.sub(r'CURRENT_TIMESTAMP\s*\(\s*\d+\s*\)', 'CURRENT_TIMESTAMP', sql, flags=re.IGNORECASE)
     sql = re.sub(r'\bFLOAT\b', 'REAL', sql, flags=re.IGNORECASE)
     sql = re.sub(r'\bDATETIME\b', 'TEXT', sql, flags=re.IGNORECASE)
     sql = re.sub(r'\bBIGINT\b', 'INTEGER', sql, flags=re.IGNORECASE)

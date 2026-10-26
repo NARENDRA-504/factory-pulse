@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Machine, TelemetryReading, UserProfile, UserRole } from '../types';
-import { apiClient } from '../services/apiClient';
+import { apiClient, PersistedSimulatorReading } from '../services/apiClient';
 import { SEED_MACHINES } from '../data/seedData';
 import { ProvenanceBadge } from '../components/ProvenanceBadge';
 import { MeterCard } from '../components/FactoryPulseDashboard';
@@ -39,11 +39,22 @@ export const MachineConditionView: React.FC<MachineConditionViewProps> = ({
   onSelectMachine,
   onCreateIncidentFromSnapshot,
 }) => {
+  const operatorAssignedMachine = currentUser.role === 'Operator'
+    ? machines.find((m) => m.machineCode === currentUser.assignedMachine || m.code === currentUser.assignedMachine)
+      || machines.find((m) => m.assignedOperator === currentUser.fullName)
+    : undefined;
+  const roleMachines = currentUser.role === 'Operator'
+    ? (operatorAssignedMachine ? [operatorAssignedMachine] : [])
+    : machines;
   const currentMachine =
-    (machines && machines.length > 0
-      ? machines.find((m) => m.code === selectedMachineCode) || machines[0]
-      : null) || SEED_MACHINES[0];
+    (roleMachines.length > 0
+      ? roleMachines.find((m) => m.code === selectedMachineCode || m.machineCode === selectedMachineCode) || roleMachines[0]
+      : machines.find((m) => m.code === selectedMachineCode) || machines[0]) || SEED_MACHINES[0];
   const [telemetryHistory, setTelemetryHistory] = useState<TelemetryReading[]>([]);
+  const [persistedReadings, setPersistedReadings] = useState<PersistedSimulatorReading[]>([]);
+  const [persistedLoading, setPersistedLoading] = useState(true);
+  const [persistedError, setPersistedError] = useState<string | null>(null);
+  const [selectedSensor, setSelectedSensor] = useState('');
   const [isPlaying, setIsPlaying] = useState(true);
   const [activeAnomaly, setActiveAnomaly] = useState<string | null>(null);
   const [injectionSuccessMessage, setInjectionSuccessMessage] = useState<string | null>(null);
@@ -55,18 +66,18 @@ export const MachineConditionView: React.FC<MachineConditionViewProps> = ({
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [searchFilter, setSearchFilter] = useState<string>('');
 
-  const uniquePlants = Array.from(new Set(machines.map((m) => m.plant).filter(Boolean))) as string[];
+  const uniquePlants = Array.from(new Set(roleMachines.map((m) => m.plant).filter(Boolean))) as string[];
   const uniqueFloors = Array.from(
     new Set(
-      machines
+      roleMachines
         .filter((m) => plantFilter === 'ALL' || m.plant === plantFilter)
         .map((m) => m.shopFloor)
         .filter(Boolean)
     )
   ) as string[];
-  const uniqueTypes = Array.from(new Set(machines.map((m) => m.machineType).filter(Boolean))) as string[];
+  const uniqueTypes = Array.from(new Set(roleMachines.map((m) => m.machineType).filter(Boolean))) as string[];
 
-  const filteredMachines = machines.filter((m) => {
+  const filteredMachines = roleMachines.filter((m) => {
     if (plantFilter !== 'ALL' && m.plant !== plantFilter) return false;
     if (shopFloorFilter !== 'ALL' && m.shopFloor !== shopFloorFilter) return false;
     if (machineTypeFilter !== 'ALL' && m.machineType !== machineTypeFilter) return false;
@@ -85,6 +96,51 @@ export const MachineConditionView: React.FC<MachineConditionViewProps> = ({
     }
     return true;
   });
+
+  useEffect(() => {
+    let cancelled = false;
+    setPersistedReadings([]);
+    setPersistedError(null);
+    const loadPersistedReadings = async () => {
+      if (!currentMachine.machineId) {
+        setPersistedReadings([]);
+        setPersistedLoading(false);
+        return;
+      }
+      try {
+        const readings = await apiClient.getPersistedSimulatorTelemetry(currentMachine.machineId, currentUser.workId, 100);
+        if (!cancelled) {
+          setPersistedReadings(readings);
+          setPersistedError(null);
+          setSelectedSensor((sensor) => readings.some((r) => r.sensor_name === sensor) ? sensor : readings[0]?.sensor_name || '');
+        }
+      } catch (error) {
+        if (!cancelled) setPersistedError(error instanceof Error ? error.message : 'Could not load persisted simulator readings');
+      } finally {
+        if (!cancelled) setPersistedLoading(false);
+      }
+    };
+    setPersistedLoading(true);
+    loadPersistedReadings();
+    const timer = window.setInterval(loadPersistedReadings, 10000);
+    return () => { cancelled = true; window.clearInterval(timer); };
+  }, [currentMachine.machineId, currentUser.workId]);
+
+  const availableSensors = Array.from(new Set(persistedReadings.map((reading) => reading.sensor_name)));
+  const selectedSensorReadings = persistedReadings
+    .filter((reading) => reading.sensor_name === selectedSensor && typeof reading.sensor_value === 'number')
+    .slice().reverse();
+  const numericValues = selectedSensorReadings.map((reading) => reading.sensor_value as number);
+  const selectedSensorLatest = persistedReadings.find((reading) => reading.sensor_name === selectedSensor);
+  const chartMin = numericValues.length ? Math.min(...numericValues) : 0;
+  const chartMax = numericValues.length ? Math.max(...numericValues) : 1;
+  const chartRange = chartMax - chartMin || 1;
+  const chartPoints = numericValues.map((value, index) => {
+    const x = numericValues.length <= 1 ? 50 : (index / (numericValues.length - 1)) * 100;
+    const y = 90 - ((value - chartMin) / chartRange) * 80;
+    return `${x},${y}`;
+  }).join(' ');
+  const latestBySensor = availableSensors.map((sensor) => persistedReadings.find((reading) => reading.sensor_name === sensor)!).filter(Boolean);
 
   // Initialize and run sliding telemetry stream
   useEffect(() => {
@@ -121,7 +177,7 @@ export const MachineConditionView: React.FC<MachineConditionViewProps> = ({
       setActiveAnomaly(type);
       const injectedReading = await apiClient.injectSimulatorTelemetry(currentMachine.code, type, currentUser.role);
       setTelemetryHistory((prev) => [...prev.slice(-24), injectedReading]);
-      setInjectionSuccessMessage(`Simulated anomaly "${label}" successfully injected into sim_telemetry_events table.`);
+      setInjectionSuccessMessage(`Demo anomaly "${label}" generated locally. This action did not write to the telemetry API.`);
       setTimeout(() => setInjectionSuccessMessage(null), 5000);
     } catch (err: any) {
       setActionErrorMessage(err.message);
@@ -152,7 +208,7 @@ export const MachineConditionView: React.FC<MachineConditionViewProps> = ({
     : '—';
 
   return (
-    <div className="space-y-5">
+      <div className="space-y-5">
       {/* 1. Top Machine Selector, Filters & Status Strip */}
       <div className="bg-[#0c1424] border border-slate-800/80 rounded-xl p-4 sm:p-5 shadow-sm space-y-4">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -191,7 +247,7 @@ export const MachineConditionView: React.FC<MachineConditionViewProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
-            {/* Live Streaming Toggle */}
+            {/* Local demo preview controls; persisted simulator records are shown below. */}
             <button
               onClick={() => setIsPlaying(!isPlaying)}
               className={`px-3 py-1.5 rounded-lg text-xs font-mono flex items-center gap-1.5 transition-colors border ${
@@ -199,10 +255,10 @@ export const MachineConditionView: React.FC<MachineConditionViewProps> = ({
                   ? 'bg-teal-950/50 border-teal-700/80 text-teal-300'
                   : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
               }`}
-              title={isPlaying ? 'Pause Sensor Stream' : 'Resume Sensor Stream'}
+              title={isPlaying ? 'Pause local demo preview' : 'Resume local demo preview'}
             >
               {isPlaying ? <Pause className="w-3.5 h-3.5 text-teal-400" /> : <Play className="w-3.5 h-3.5 text-slate-400" />}
-              <span>{isPlaying ? 'Live Streaming' : 'Paused'}</span>
+              <span>{isPlaying ? 'Demo Preview' : 'Preview Paused'}</span>
             </button>
 
             <ProvenanceBadge provenance={latest.dataProvenance} />
@@ -298,7 +354,7 @@ export const MachineConditionView: React.FC<MachineConditionViewProps> = ({
               Select CNC Unit:
             </span>
             <select
-              value={selectedMachineCode}
+              value={filteredMachines.some((m) => m.code === selectedMachineCode || m.machineCode === selectedMachineCode) ? selectedMachineCode : currentMachine.code}
               onChange={(e) => onSelectMachine(e.target.value)}
               className="bg-slate-900 border border-teal-700/70 text-xs font-mono text-teal-300 rounded-lg px-3 py-1.5 focus:outline-hidden focus:border-teal-400 max-w-xs sm:max-w-md truncate"
             >
@@ -309,13 +365,63 @@ export const MachineConditionView: React.FC<MachineConditionViewProps> = ({
               ))}
             </select>
             <span className="text-[10px] font-mono text-slate-500">
-              ({filteredMachines.length}/{machines.length})
+              ({filteredMachines.length}/{roleMachines.length})
             </span>
           </div>
         </div>
       </div>
 
+      <section className="rounded-xl border border-cyan-900/70 bg-[#0c1424] p-4 sm:p-5 shadow-sm" aria-live="polite">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <Radio className="h-4 w-4 text-cyan-400" />
+              <h2 className="font-display text-base font-bold text-white">Persisted AI Simulator readings</h2>
+              <span className="rounded border border-cyan-800 bg-cyan-950/60 px-2 py-0.5 text-[10px] font-mono text-cyan-300">SIMULATED · DATABASE</span>
+            </div>
+            <p className="mt-1 text-xs text-slate-400">Saved readings for {currentMachine.machineId} · {currentMachine.displayName || currentMachine.name}. Refreshes every 10 seconds.</p>
+          </div>
+          {availableSensors.length > 0 && <label className="flex items-center gap-2 text-xs text-slate-400">
+            Trend sensor
+            <select value={selectedSensor} onChange={(event) => setSelectedSensor(event.target.value)} className="rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-slate-100">
+              {availableSensors.map((sensor) => <option key={sensor} value={sensor}>{sensor}</option>)}
+            </select>
+          </label>}
+        </div>
+
+        {persistedLoading && persistedReadings.length === 0 ? <p className="mt-4 rounded-lg bg-slate-900/70 p-4 text-sm text-slate-300">Connecting to the FactoryPulse telemetry API…</p>
+          : persistedError ? <div className="mt-4 rounded-lg border border-amber-800/70 bg-amber-950/30 p-4 text-sm text-amber-200">Persisted telemetry is unavailable: {persistedError}. Configure the API, database, migration, and user access to load saved readings.</div>
+            : persistedReadings.length === 0 ? <div className="mt-4 rounded-lg border border-dashed border-slate-700 bg-slate-900/50 p-5 text-center">
+              <p className="text-sm font-semibold text-slate-200">No saved simulator readings for this machine yet</p>
+              <p className="mt-1 text-xs text-slate-400">When the separate simulator sends readings and the receiver stores them, they’ll appear here and remain available after refresh.</p>
+            </div> : <div className="mt-4 grid gap-4 xl:grid-cols-[1.3fr_1fr]">
+              <div className="rounded-lg border border-slate-800 bg-slate-950/60 p-3">
+                <div className="mb-2 flex items-center justify-between text-xs">
+                  <span className="font-semibold text-slate-200">{selectedSensor} trend</span>
+                  <span className="font-mono text-cyan-300">{selectedSensorLatest?.sensor_value ?? '—'} {selectedSensorLatest?.sensor_unit || ''}</span>
+                </div>
+                {numericValues.length > 1 && chartMax > chartMin ? <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="h-36 w-full" role="img" aria-label={`${selectedSensor} readings over time`}>
+                  {[20, 50, 80].map((y) => <line key={y} x1="0" x2="100" y1={y} y2={y} stroke="#334155" strokeDasharray="1 2" />)}
+                  <polyline points={chartPoints} fill="none" stroke="#22d3ee" strokeWidth="1.7" vectorEffect="non-scaling-stroke" />
+                </svg> : <div className="flex h-36 items-center justify-center text-center text-xs text-slate-400">{numericValues.length > 1 ? 'Saved numeric readings have not changed in this period; the current value is shown above.' : numericValues.length === 1 ? 'One numeric reading is saved; more readings are needed to show a trend.' : 'No numeric history for this sensor.'}</div>}
+                <div className="mt-1 flex justify-between gap-2 text-[10px] text-slate-500"><span>{selectedSensorReadings[0] ? new Date(selectedSensorReadings[0].timestamp).toLocaleTimeString() : '—'}</span><span>Saved history · oldest to newest</span><span>{selectedSensorReadings.at(-1) ? new Date(selectedSensorReadings.at(-1)!.timestamp).toLocaleTimeString() : '—'}</span></div>
+                <p className="mt-1 text-[10px] text-slate-500">Values with text or null are retained in the latest readings list.</p>
+              </div>
+              <div className="overflow-hidden rounded-lg border border-slate-800">
+                <div className="border-b border-slate-800 px-3 py-2 text-xs font-semibold text-slate-200">Latest sensor readings</div>
+                <div className="max-h-52 overflow-auto">
+                  {latestBySensor.map((reading) => <div key={reading.reading_id} className="grid grid-cols-[1fr_auto] gap-2 border-b border-slate-800/70 px-3 py-2 last:border-0">
+                    <div className="min-w-0"><div className="truncate text-xs text-slate-200">{reading.sensor_name}</div><div className="mt-0.5 text-[10px] text-slate-500">{new Date(reading.timestamp).toLocaleString()} · {reading.machine_status} · {reading.data_quality}</div></div>
+                    <div className="text-right"><div className="font-mono text-sm font-semibold text-cyan-300">{reading.sensor_value ?? '—'} <span className="text-[10px] font-normal text-slate-400">{reading.sensor_unit}</span></div><div className="text-[10px] text-slate-500">{reading.fault_mode || 'No fault mode'}</div></div>
+                  </div>)}
+                </div>
+              </div>
+            </div>}
+        {persistedError && persistedReadings.length > 0 && <p className="mt-2 text-[11px] text-amber-300">Refresh warning: {persistedError}</p>}
+      </section>
+
       {/* 2. Primary Telemetry Gauges (Strict unit separation: motor_power_kw in kW, motor_load_pct in %) */}
+      <p className="-mb-3 text-[11px] text-slate-500">The meters and chart below are a local demo preview. Use the persisted readings panel above for data received from the separate AI Simulator.</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-3.5">
         {/* Gauge 1: Spindle Speed */}
         <div className="p-3.5 bg-[#0c1424] border border-slate-800/80 rounded-xl flex flex-col justify-between shadow-xs">
@@ -366,7 +472,7 @@ export const MachineConditionView: React.FC<MachineConditionViewProps> = ({
           <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${conditionState === 'Critical' ? 'bg-rose-950 text-rose-300' : conditionState === 'Needs a check' ? 'bg-amber-950 text-amber-300' : 'bg-teal-950 text-teal-300'}`}><Activity className="h-4 w-4"/></span>
           <div><p className="text-xs font-semibold text-slate-100">Live condition · {conditionState}</p><p className="mt-0.5 text-xs leading-relaxed text-slate-400">{conditionCopy}</p></div>
         </div>
-        <span className="shrink-0 text-[10px] font-mono text-slate-500">SIMULATOR READINGS · {telemetryHistory.length} samples collected</span>
+        <span className="shrink-0 text-[10px] font-mono text-slate-500">DEMO PREVIEW · {telemetryHistory.length} generated samples</span>
       </section>
 
       {/* 3. Live Time-Series Chart with Provisional Statistical Baseline */}
@@ -376,11 +482,11 @@ export const MachineConditionView: React.FC<MachineConditionViewProps> = ({
             <div className="flex items-center gap-2">
               <Activity className="w-4 h-4 text-teal-400" />
               <h2 className="font-display font-bold text-base text-white">
-                Sliding Time-Series Vibration RMS &amp; Motor Power Stream
+                Local Demo Preview · Vibration &amp; Motor Power
               </h2>
             </div>
             <p className="text-xs text-slate-400 mt-0.5">
-              Live simulator samples at 1.5-second intervals. Vibration and power are drawn on their own scales.
+              Generated in this browser for layout preview only; it is not stored or received from the separate AI Simulator. Persisted readings are shown above.
             </p>
           </div>
 
@@ -480,13 +586,13 @@ export const MachineConditionView: React.FC<MachineConditionViewProps> = ({
               </h2>
             </div>
             <p className="text-xs text-slate-400 mt-0.5">
-              Simulate machine anomalies to demonstrate live threshold alerting and incident reporting workflows.
+              Generate local demo anomalies to preview threshold alerts and incident reporting. This control does not write to the telemetry API.
             </p>
           </div>
 
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-mono text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-800 uppercase">
-              Target: sim_telemetry_events Table
+              Local demo · not persisted
             </span>
           </div>
         </div>

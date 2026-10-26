@@ -6,12 +6,19 @@ Architecture: Google AI Studio Frontend -> Python FastAPI Backend -> MySQL Datab
 
 from fastapi import FastAPI, HTTPException, Depends, Header, status, Query
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
-from typing import List, Optional, Dict, Any
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from typing import List, Optional, Dict, Any, Literal
 import datetime
+import math
 import os
 import urllib.request
 import json
+import secrets
+from functools import lru_cache
+from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 app = FastAPI(
     title="ZIRO Manufacturing Incident & Maintenance Response Platform API",
@@ -27,6 +34,62 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+MAX_TELEMETRY_REQUEST_BYTES = 16 * 1024
+
+class _TelemetryRequestTooLarge(Exception):
+    pass
+
+class TelemetryRequestSizeLimitMiddleware:
+    """Bound the body accepted by the single-reading ingestion route."""
+    def __init__(self, application):
+        self.application = application
+
+    async def __call__(self, scope, receive, send):
+        if not (
+            scope.get("type") == "http"
+            and scope.get("method") == "POST"
+            and scope.get("path") == "/api/v1/telemetry"
+        ):
+            await self.application(scope, receive, send)
+            return
+
+        headers = dict(scope.get("headers", []))
+        content_length = headers.get(b"content-length")
+        if content_length:
+            try:
+                if int(content_length) > MAX_TELEMETRY_REQUEST_BYTES:
+                    await self._too_large(send)
+                    return
+            except ValueError:
+                await self._too_large(send, status_code=400, detail="Invalid Content-Length")
+                return
+
+        bytes_received = 0
+
+        async def bounded_receive():
+            nonlocal bytes_received
+            message = await receive()
+            if message.get("type") == "http.request":
+                bytes_received += len(message.get("body", b""))
+                if bytes_received > MAX_TELEMETRY_REQUEST_BYTES:
+                    raise _TelemetryRequestTooLarge()
+            return message
+
+        try:
+            await self.application(scope, bounded_receive, send)
+        except _TelemetryRequestTooLarge:
+            await self._too_large(send)
+
+    @staticmethod
+    async def _too_large(send, status_code=413, detail="Telemetry request exceeds 16 KiB"):
+        body = json.dumps({"detail": detail}).encode("utf-8")
+        await send({"type": "http.response.start", "status": status_code,
+                    "headers": [(b"content-type", b"application/json"),
+                                (b"content-length", str(len(body)).encode("ascii"))]})
+        await send({"type": "http.response.body", "body": body})
+
+app.add_middleware(TelemetryRequestSizeLimitMiddleware)
 
 # ------------------------------------------------------------------------------
 # Pydantic Schemas with Strict Field Separation & Provenance Tagging
@@ -63,6 +126,63 @@ class TelemetryReadingSchema(BaseModel):
     data_provenance: str = Field(..., description="EMPIRICAL DATASET, SIMULATED, or DEMO")
     injected_anomaly_type: Optional[str] = None
 
+class SimulatorTelemetryIngest(BaseModel):
+    """The simulator's existing one-row-per-sensor TelemetryRecord contract."""
+    model_config = ConfigDict(extra="forbid")
+
+    reading_id: str = Field(..., min_length=1, max_length=128)
+    machine_id: str = Field(..., pattern=r"^MCH-[0-9]{3}$")
+    timestamp: datetime.datetime
+    machine_type: str = Field(..., min_length=1, max_length=128)
+    department: str = Field(..., min_length=1, max_length=128)
+    production_line: str = Field(..., min_length=1, max_length=128)
+    sensor_name: str = Field(..., min_length=1, max_length=128)
+    sensor_unit: str = Field(..., min_length=1, max_length=32)
+    sensor_value: float | str | None
+    expected_min: float = Field(..., allow_inf_nan=False)
+    expected_max: float = Field(..., allow_inf_nan=False)
+    machine_status: Literal["NORMAL", "WARNING", "CRITICAL", "MAINTENANCE", "STOPPED"]
+    data_quality: Literal["GOOD", "NOISY"]
+    fault_mode: Optional[str] = Field(None, max_length=128)
+
+    @field_validator("timestamp")
+    @classmethod
+    def timestamp_must_include_timezone(cls, value: datetime.datetime) -> datetime.datetime:
+        if value.tzinfo is None or value.utcoffset() is None:
+            raise ValueError("timestamp must include a timezone, preferably UTC (Z)")
+        return value.astimezone(datetime.timezone.utc)
+
+    @field_validator("sensor_value", mode="before")
+    @classmethod
+    def sensor_value_must_be_safe_json_scalar(cls, value: Any) -> Any:
+        if isinstance(value, bool):
+            raise ValueError("sensor_value cannot be a boolean")
+        if isinstance(value, float) and not math.isfinite(value):
+            raise ValueError("numeric sensor_value must be finite")
+        if isinstance(value, str) and len(value) > 256:
+            raise ValueError("string sensor_value must not exceed 256 characters")
+        return value
+
+    @model_validator(mode="after")
+    def validate_expected_range(self):
+        if self.expected_min > self.expected_max:
+            raise ValueError("expected_min must not exceed expected_max")
+        return self
+
+class TelemetryIngestResponse(BaseModel):
+    stored: int = 1
+    duplicate: bool = False
+    reading_id: str
+    machine_id: str
+    machine_code: str
+    machine_name: str
+    data_provenance: Literal["SIMULATED"] = "SIMULATED"
+
+class TelemetryReadingRecord(SimulatorTelemetryIngest):
+    machine_code: str
+    display_name: str
+    data_provenance: Literal["SIMULATED"] = "SIMULATED"
+
 class CreateIncidentRequest(BaseModel):
     machine_code: str
     severity: str
@@ -90,7 +210,7 @@ class CloseIncidentRequest(BaseModel):
 # ------------------------------------------------------------------------------
 
 DEMO_USERS: Dict[str, Dict[str, Any]] = {
-    "OP-101": {"id": 1, "work_id": "OP-101", "full_name": "Marcus Vance", "role": "Operator", "assigned_machine": "CNC-MILL-01", "email": "marcus.vance@ziromfg.internal", "password": "pass123"},
+    "OP-101": {"id": 1, "work_id": "OP-101", "full_name": "Marcus Vance", "role": "Operator", "assigned_machine": "CNC-5AX-001", "email": "marcus.vance@ziromfg.internal", "password": "pass123"},
     "SUP-201": {"id": 2, "work_id": "SUP-201", "full_name": "Elena Rostova", "role": "Supervisor", "assigned_machine": None, "email": "elena.rostova@ziromfg.internal", "password": "pass123"},
     "MGR-301": {"id": 3, "work_id": "MGR-301", "full_name": "David Sterling", "role": "Manager", "assigned_machine": None, "email": "david.sterling@ziromfg.internal", "password": "pass123"},
     "MNT-401": {"id": 4, "work_id": "MNT-401", "full_name": "Frank Kowalski", "role": "Maintenance", "assigned_machine": None, "email": "frank.kowalski@ziromfg.internal", "password": "pass123"},
@@ -258,6 +378,297 @@ def get_machine_telemetry(code: str):
         data_provenance="EMPIRICAL DATASET"
     )
 
+# ------------------------------------------------------------------------------
+# External simulator telemetry ingestion and retrieval
+# ------------------------------------------------------------------------------
+
+@lru_cache(maxsize=1)
+def load_canonical_machine_master() -> Dict[str, Dict[str, str]]:
+    """Load the checked-in 400-machine master without creating or modifying machines."""
+    master_path = Path(__file__).resolve().parents[1] / "public" / "machine-name.json"
+    try:
+        with master_path.open("r", encoding="utf-8") as master_file:
+            records = json.load(master_file)
+        by_id = {record["machineId"]: record for record in records}
+        if len(records) != 400 or len(by_id) != len(records):
+            raise ValueError("canonical machine master must contain 400 unique machine IDs")
+        return by_id
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        raise RuntimeError("FactoryPulse canonical machine master is unavailable or invalid") from exc
+
+def resolve_canonical_machine(machine_id: str) -> Dict[str, str]:
+    try:
+        machine = load_canonical_machine_master().get(machine_id)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail="Canonical machine master is unavailable") from exc
+    if machine is None:
+        raise HTTPException(status_code=422, detail=f"Unknown canonical machine_id: {machine_id}")
+    return machine
+
+SIMULATOR_SENSOR_UNITS = {
+    "Motor Temperature": "°C",
+    "Temperature": "°C",
+    "Vibration": "mm/s",
+    "RPM": "RPM",
+    "Torque": "Nm",
+    "Current": "A",
+}
+
+def validate_simulator_sensor_unit(payload: SimulatorTelemetryIngest) -> None:
+    expected_unit = SIMULATOR_SENSOR_UNITS.get(payload.sensor_name)
+    if expected_unit is None or payload.sensor_unit != expected_unit:
+        raise HTTPException(status_code=422, detail="sensor_name and sensor_unit are not in the simulator's canonical sensor profile")
+
+def require_simulator_api_key(x_api_key: Optional[str] = Header(None, alias="X-Simulator-API-Key")) -> None:
+    expected_key = os.environ.get("SIMULATOR_API_KEY", "")
+    if not expected_key:
+        raise HTTPException(status_code=503, detail="Simulator ingestion is not configured")
+    if not x_api_key or not secrets.compare_digest(x_api_key, expected_key):
+        raise HTTPException(status_code=401, detail="Invalid simulator API key")
+
+@lru_cache(maxsize=4)
+def _create_telemetry_engine(database_url: str):
+    from sqlalchemy import create_engine, event
+    engine = create_engine(database_url, pool_pre_ping=True)
+    if database_url.startswith("mysql"):
+        @event.listens_for(engine, "connect")
+        def set_mysql_connection_utc(dbapi_connection, _connection_record):
+            cursor = dbapi_connection.cursor()
+            try:
+                cursor.execute("SET time_zone = '+00:00'")
+            finally:
+                cursor.close()
+    return engine
+
+def get_telemetry_engine():
+    database_url = os.environ.get("DATABASE_URL", "").strip()
+    if not database_url:
+        raise HTTPException(status_code=503, detail="Telemetry database is not configured")
+    try:
+        return _create_telemetry_engine(database_url)
+    except Exception as exc:
+        print(f"[Telemetry API] Database engine setup failed: {type(exc).__name__}")
+        raise HTTPException(status_code=503, detail="Telemetry database is unavailable") from exc
+
+def _sql_text(query: str):
+    from sqlalchemy import text
+    return text(query)
+
+def _iso_utc(value: Any) -> str:
+    if isinstance(value, str):
+        parsed = datetime.datetime.fromisoformat(value.replace("Z", "+00:00"))
+    else:
+        parsed = value
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=datetime.timezone.utc)
+    return parsed.astimezone(datetime.timezone.utc).isoformat().replace("+00:00", "Z")
+
+def _decode_sensor_value(value: Any) -> Any:
+    if isinstance(value, (int, float, type(None))):
+        return value
+    try:
+        return json.loads(value)
+    except (TypeError, json.JSONDecodeError):
+        return value
+
+def _reading_values_match(row: Any, payload: SimulatorTelemetryIngest, machine: Dict[str, str]) -> bool:
+    expected_timestamp = payload.timestamp.replace(tzinfo=None)
+    row_timestamp = row["reading_timestamp"]
+    if isinstance(row_timestamp, str):
+        row_timestamp = datetime.datetime.fromisoformat(row_timestamp.replace("Z", "+00:00"))
+    if row_timestamp.tzinfo is not None:
+        row_timestamp = row_timestamp.astimezone(datetime.timezone.utc).replace(tzinfo=None)
+    sensor_value = _decode_sensor_value(row["sensor_value_json"])
+    return (
+        row["machine_id"] == payload.machine_id
+        and row_timestamp == expected_timestamp
+        and row["machine_code"] == machine["machineCode"]
+        and row["machine_type"] == machine["machineType"]
+        and row["department"] == machine["shopFloor"]
+        and row["production_line"] == machine["productionLine"]
+        and row["sensor_name"] == payload.sensor_name
+        and row["sensor_unit"] == payload.sensor_unit
+        and sensor_value == payload.sensor_value
+        and math.isclose(float(row["expected_min"]), payload.expected_min, rel_tol=1e-6, abs_tol=1e-6)
+        and math.isclose(float(row["expected_max"]), payload.expected_max, rel_tol=1e-6, abs_tol=1e-6)
+        and row["machine_status"] == payload.machine_status
+        and row["data_quality"] == payload.data_quality
+        and row["fault_mode"] == payload.fault_mode
+    )
+
+def persist_simulator_reading(payload: SimulatorTelemetryIngest, machine: Dict[str, str], engine=None) -> bool:
+    """Persist one reading and return True when an identical reading was already stored."""
+    db_engine = engine or get_telemetry_engine()
+    from sqlalchemy.exc import IntegrityError
+    parameters = {
+        "reading_id": payload.reading_id,
+        "machine_id": payload.machine_id,
+        "machine_code": machine["machineCode"],
+        "reading_timestamp": payload.timestamp.replace(tzinfo=None),
+        "machine_type": machine["machineType"],
+        "department": machine["shopFloor"],
+        "production_line": machine["productionLine"],
+        "sensor_name": payload.sensor_name,
+        "sensor_unit": payload.sensor_unit,
+        "sensor_value_json": json.dumps(payload.sensor_value, ensure_ascii=False, allow_nan=False),
+        "expected_min": payload.expected_min,
+        "expected_max": payload.expected_max,
+        "machine_status": payload.machine_status,
+        "data_quality": payload.data_quality,
+        "fault_mode": payload.fault_mode,
+        "data_provenance": "SIMULATED",
+        "data_source": "AI_SIMULATOR",
+    }
+    select_sql = _sql_text("""
+        SELECT reading_id, machine_id, machine_code, reading_timestamp, machine_type, department,
+               production_line, sensor_name, sensor_unit, sensor_value_json, expected_min,
+               expected_max, machine_status, data_quality, fault_mode
+        FROM simulator_sensor_readings WHERE reading_id = :reading_id
+    """)
+    try:
+        with db_engine.begin() as connection:
+            existing = connection.execute(select_sql, {"reading_id": payload.reading_id}).mappings().first()
+            if existing:
+                if _reading_values_match(existing, payload, machine):
+                    return True
+                raise HTTPException(status_code=409, detail="reading_id already exists with different telemetry")
+            connection.execute(_sql_text("""
+                INSERT INTO simulator_sensor_readings (
+                    reading_id, machine_id, machine_code, reading_timestamp, machine_type, department,
+                    production_line, sensor_name, sensor_unit, sensor_value_json, expected_min,
+                    expected_max, machine_status, data_quality, fault_mode, data_provenance,
+                    data_source
+                ) VALUES (
+                    :reading_id, :machine_id, :machine_code, :reading_timestamp, :machine_type, :department,
+                    :production_line, :sensor_name, :sensor_unit, :sensor_value_json, :expected_min,
+                    :expected_max, :machine_status, :data_quality, :fault_mode, :data_provenance,
+                    :data_source
+                )
+            """), parameters)
+        return False
+    except HTTPException:
+        raise
+    except IntegrityError as exc:
+        # A concurrent retry can race the initial lookup. Re-read after rollback.
+        try:
+            with db_engine.connect() as connection:
+                existing = connection.execute(select_sql, {"reading_id": payload.reading_id}).mappings().first()
+        except Exception as read_exc:
+            print(f"[Telemetry API] Duplicate reconciliation failed: {type(read_exc).__name__}")
+            raise HTTPException(status_code=503, detail="Telemetry database is unavailable") from read_exc
+        if existing and _reading_values_match(existing, payload, machine):
+            return True
+        if existing:
+            raise HTTPException(status_code=409, detail="reading_id already exists with different telemetry") from exc
+        print("[Telemetry API] Database rejected telemetry insert (integrity constraint)")
+        raise HTTPException(status_code=503, detail="Telemetry could not be stored") from exc
+    except Exception as exc:
+        print(f"[Telemetry API] Database write failed: {type(exc).__name__}")
+        raise HTTPException(status_code=503, detail="Telemetry database is unavailable") from exc
+
+def _telemetry_response(payload: SimulatorTelemetryIngest, machine: Dict[str, str], duplicate: bool) -> TelemetryIngestResponse:
+    return TelemetryIngestResponse(
+        stored=0 if duplicate else 1,
+        duplicate=duplicate,
+        reading_id=payload.reading_id,
+        machine_id=payload.machine_id,
+        machine_code=machine["machineCode"],
+        machine_name=machine["displayName"],
+    )
+
+@app.post("/api/v1/telemetry", response_model=TelemetryIngestResponse, status_code=201)
+def ingest_simulator_telemetry(
+    payload: SimulatorTelemetryIngest,
+    _authorized: None = Depends(require_simulator_api_key),
+):
+    """Accept the simulator's raw per-sensor TelemetryRecord without reshaping it."""
+    machine = resolve_canonical_machine(payload.machine_id)
+    validate_simulator_sensor_unit(payload)
+    duplicate = persist_simulator_reading(payload, machine)
+    response = _telemetry_response(payload, machine, duplicate)
+    # Idempotent retries are successful but are not new creations.
+    if duplicate:
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=200, content=response.model_dump())
+    return response
+
+@app.get("/api/v1/telemetry/latest/{machine_id}", response_model=List[TelemetryReadingRecord])
+def get_simulator_telemetry_readings(
+    machine_id: str,
+    limit: int = 100,
+    since: Optional[datetime.datetime] = None,
+    until: Optional[datetime.datetime] = None,
+    sensor_name: Optional[str] = None,
+    data_source: Optional[str] = None,
+    user: Dict[str, Any] = Depends(get_current_user),
+):
+    """Return persisted simulator readings for a canonical machine, newest first."""
+    machine = resolve_canonical_machine(machine_id)
+    if limit < 1 or limit > 1000:
+        raise HTTPException(status_code=422, detail="limit must be between 1 and 1000")
+    if sensor_name is not None and (not sensor_name.strip() or len(sensor_name) > 128):
+        raise HTTPException(status_code=422, detail="sensor_name must contain 1 to 128 characters")
+    if data_source is not None and (not data_source.strip() or len(data_source) > 64):
+        raise HTTPException(status_code=422, detail="data_source must contain 1 to 64 characters")
+    if user.get("role") == "Operator" and machine["machineCode"] != user.get("assigned_machine"):
+        raise HTTPException(status_code=403, detail="Operators may only view telemetry for their assigned machine")
+    for label, value in (("since", since), ("until", until)):
+        if value is not None and (value.tzinfo is None or value.utcoffset() is None):
+            raise HTTPException(status_code=422, detail=f"{label} must include a timezone")
+    if since and until and since > until:
+        raise HTTPException(status_code=422, detail="since must be earlier than or equal to until")
+    engine = get_telemetry_engine()
+    try:
+        filters = ["machine_id = :machine_id"]
+        parameters: Dict[str, Any] = {"machine_id": machine_id, "limit": limit}
+        if since:
+            filters.append("reading_timestamp >= :since")
+            parameters["since"] = since.astimezone(datetime.timezone.utc).replace(tzinfo=None)
+        if until:
+            filters.append("reading_timestamp <= :until")
+            parameters["until"] = until.astimezone(datetime.timezone.utc).replace(tzinfo=None)
+        if sensor_name:
+            filters.append("sensor_name = :sensor_name")
+            parameters["sensor_name"] = sensor_name
+        if data_source:
+            filters.append("data_source = :data_source")
+            parameters["data_source"] = data_source.upper()
+        query = f"""
+            SELECT reading_id, machine_id, machine_code, reading_timestamp, machine_type, department,
+                   production_line, sensor_name, sensor_unit, sensor_value_json, expected_min,
+                   expected_max, machine_status, data_quality, fault_mode, data_provenance
+            FROM simulator_sensor_readings
+            WHERE {' AND '.join(filters)}
+            ORDER BY reading_timestamp DESC, id DESC
+            LIMIT :limit
+        """
+        with engine.connect() as connection:
+            rows = connection.execute(_sql_text(query), parameters).mappings().all()
+        return [TelemetryReadingRecord(
+            reading_id=row["reading_id"],
+            machine_id=machine_id,
+            timestamp=_iso_utc(row["reading_timestamp"]),
+            machine_type=row["machine_type"],
+            department=row["department"],
+            production_line=row["production_line"],
+            sensor_name=row["sensor_name"],
+            sensor_unit=row["sensor_unit"],
+            sensor_value=_decode_sensor_value(row["sensor_value_json"]),
+            expected_min=row["expected_min"],
+            expected_max=row["expected_max"],
+            machine_status=row["machine_status"],
+            data_quality=row["data_quality"],
+            fault_mode=row["fault_mode"],
+            machine_code=machine["machineCode"],
+            display_name=machine["displayName"],
+            data_provenance="SIMULATED",
+        ) for row in rows]
+    except HTTPException:
+        raise
+    except Exception as exc:
+        print(f"[Telemetry API] Database read failed: {type(exc).__name__}")
+        raise HTTPException(status_code=503, detail="Telemetry database is unavailable") from exc
+
 def publish_supabase_realtime_event(channel_topic: str, event_name: str, payload: Dict[str, Any]) -> bool:
     """
     Publishes small notification event via Supabase Realtime HTTP Broadcast API.
@@ -310,9 +721,9 @@ def inject_telemetry(
     user: Dict[str, Any] = Depends(require_roles(["Supervisor", "Maintenance"]))
 ):
     """
-    Supervisor / Maintenance only (Admin forbidden per approved role matrix):
-    Writes strictly to sim_telemetry_events table with provenance SIMULATED.
-    Publishes minimal notification event to Supabase Realtime channel.
+    Supervisor / Maintenance demo generator (Admin forbidden per approved role matrix).
+    Returns a simulated sample and may publish a notification; it does not persist it.
+    External simulator persistence uses POST /api/v1/telemetry.
     """
     now = datetime.datetime.utcnow().isoformat()
     sim_record = {
@@ -326,7 +737,7 @@ def inject_telemetry(
         "data_provenance": "SIMULATED",
         "injected_anomaly_type": anomaly_type,
         "injected_by": user["full_name"],
-        "table_target": "sim_telemetry_events"
+        "storage_status": "DEMO_ONLY_NOT_PERSISTED"
     }
 
     # Broadcast to active Supervisor & Maintenance channels via Supabase Realtime
