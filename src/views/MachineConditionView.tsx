@@ -3,6 +3,7 @@ import { Machine, TelemetryReading, UserProfile, UserRole } from '../types';
 import { apiClient } from '../services/apiClient';
 import { SEED_MACHINES } from '../data/seedData';
 import { ProvenanceBadge } from '../components/ProvenanceBadge';
+import { MeterCard } from '../components/FactoryPulseDashboard';
 import {
   Activity,
   AlertTriangle,
@@ -87,14 +88,10 @@ export const MachineConditionView: React.FC<MachineConditionViewProps> = ({
 
   // Initialize and run sliding telemetry stream
   useEffect(() => {
-    // Initial batch
-    const initial: TelemetryReading[] = [];
-    for (let i = 15; i >= 0; i--) {
-      const snap = apiClient.getLiveTelemetrySnapshot(currentMachine.code);
-      initial.push(snap);
-    }
-    setTelemetryHistory(initial);
-  }, [currentMachine.code]);
+    // Start with one current snapshot. Earlier samples are collected at the real
+    // stream interval below, so the chart never fabricates a history on load.
+    setTelemetryHistory([apiClient.getLiveTelemetrySnapshot(currentMachine.code, activeAnomaly || undefined)]);
+  }, [currentMachine.code, activeAnomaly]);
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -140,6 +137,19 @@ export const MachineConditionView: React.FC<MachineConditionViewProps> = ({
 
   // Provisional Statistical Baseline threshold (Dataset 3 nominal 95th percentile baseline)
   const PROVISIONAL_VIB_BASELINE = 4.2; // m/s²
+  const conditionState = latest.vibRms > PROVISIONAL_VIB_BASELINE || latest.motorLoadPct > 90 || latest.coolantTempC > 45
+    ? 'Critical'
+    : latest.vibRms > 3.2 || latest.motorLoadPct > 80 || latest.coolantTempC > 35
+      ? 'Needs a check'
+      : 'Nominal';
+  const conditionCopy = conditionState === 'Critical'
+    ? 'A reading is above its high alert threshold. Review the meters and follow your site response procedure.'
+    : conditionState === 'Needs a check'
+      ? 'At least one reading is near or above its watch level. Keep an eye on the live trend.'
+      : 'Vibration, coolant temperature, and motor load are within their displayed watch levels.';
+  const formatReadingTime = (timestamp?: string) => timestamp
+    ? new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    : '—';
 
   return (
     <div className="space-y-5">
@@ -306,7 +316,7 @@ export const MachineConditionView: React.FC<MachineConditionViewProps> = ({
       </div>
 
       {/* 2. Primary Telemetry Gauges (Strict unit separation: motor_power_kw in kW, motor_load_pct in %) */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-3.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-3.5">
         {/* Gauge 1: Spindle Speed */}
         <div className="p-3.5 bg-[#0c1424] border border-slate-800/80 rounded-xl flex flex-col justify-between shadow-xs">
           <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 uppercase">
@@ -316,7 +326,7 @@ export const MachineConditionView: React.FC<MachineConditionViewProps> = ({
           <div className="mt-1.5 text-xl font-bold font-mono text-slate-100 font-mono-numbers">
             {latest.spindleRpm.toLocaleString()}
           </div>
-          <div className="mt-1 text-[10px] text-slate-500 font-mono">Nominal 4,500 RPM</div>
+          <div className="mt-1 text-[10px] text-slate-500 font-mono">Live spindle reading</div>
         </div>
 
         {/* Gauge 2: Feed Rate */}
@@ -331,21 +341,8 @@ export const MachineConditionView: React.FC<MachineConditionViewProps> = ({
           <div className="mt-1 text-[10px] text-slate-500 font-mono">Continuous feed axis</div>
         </div>
 
-        {/* Gauge 3: Vibration RMS */}
-        <div className={`p-3.5 bg-[#0c1424] border rounded-xl flex flex-col justify-between shadow-xs ${
-          latest.vibRms > PROVISIONAL_VIB_BASELINE ? 'border-amber-600/80 bg-amber-950/20' : 'border-slate-800/80'
-        }`}>
-          <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 uppercase">
-            <span>Vibration RMS</span>
-            <span className="text-[10px] text-slate-500">m/s²</span>
-          </div>
-          <div className={`mt-1.5 text-xl font-bold font-mono font-mono-numbers ${
-            latest.vibRms > PROVISIONAL_VIB_BASELINE ? 'text-amber-400' : 'text-teal-300'
-          }`}>
-            {latest.vibRms.toFixed(2)}
-          </div>
-          <div className="mt-1 text-[10px] text-slate-400 font-mono">Baseline &lt; {PROVISIONAL_VIB_BASELINE} m/s²</div>
-        </div>
+        {/* Shared instrument meter also used on the Operator dashboard */}
+        <MeterCard label="Vibration RMS" value={latest.vibRms} unit="m/s²" warningAt={3.2} limit={PROVISIONAL_VIB_BASELINE} limitLabel="95th pct. baseline" scaleMax={6.3} digits={2} icon={<Activity className="h-4 w-4"/>}/>
 
         {/* Gauge 4: Motor Power in kW (SEPARATED) */}
         <div className="p-3.5 bg-[#0c1424] border border-slate-800/80 rounded-xl flex flex-col justify-between shadow-xs">
@@ -359,34 +356,18 @@ export const MachineConditionView: React.FC<MachineConditionViewProps> = ({
           <div className="mt-1 text-[10px] text-slate-500 font-mono">VFD active power draw</div>
         </div>
 
-        {/* Gauge 5: Motor Load Percentage (SEPARATED) */}
-        <div className={`p-3.5 bg-[#0c1424] border rounded-xl flex flex-col justify-between shadow-xs ${
-          latest.motorLoadPct > 90 ? 'border-rose-600/80 bg-rose-950/20' : 'border-slate-800/80'
-        }`}>
-          <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 uppercase">
-            <span>Motor Load</span>
-            <span className="text-[10px] text-amber-400 font-bold">%</span>
-          </div>
-          <div className={`mt-1.5 text-xl font-bold font-mono font-mono-numbers ${
-            latest.motorLoadPct > 90 ? 'text-rose-400' : 'text-amber-400'
-          }`}>
-            {latest.motorLoadPct.toFixed(1)} <span className="text-xs text-slate-400 font-normal">%</span>
-          </div>
-          <div className="mt-1 text-[10px] text-slate-500 font-mono">Limit &lt; 85% capacity</div>
-        </div>
+        <MeterCard label="Motor Load" value={latest.motorLoadPct} unit="%" warningAt={80} limit={85} limitLabel="Load limit" scaleMax={100} icon={<Zap className="h-4 w-4"/>}/>
 
-        {/* Gauge 6: Coolant Temperature */}
-        <div className="p-3.5 bg-[#0c1424] border border-slate-800/80 rounded-xl flex flex-col justify-between shadow-xs">
-          <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 uppercase">
-            <span>Coolant Temp</span>
-            <span className="text-[10px] text-slate-500">°C</span>
-          </div>
-          <div className="mt-1.5 text-xl font-bold font-mono text-slate-100 font-mono-numbers">
-            {latest.coolantTempC.toFixed(1)}°C
-          </div>
-          <div className="mt-1 text-[10px] text-slate-500 font-mono">Nominal &lt; 30°C</div>
-        </div>
+        <MeterCard label="Coolant Temp" value={latest.coolantTempC} unit="°C" warningAt={30} limit={35} limitLabel="Safe limit" scaleMax={52.5} icon={<Flame className="h-4 w-4"/>}/>
       </div>
+
+      <section className={`flex flex-col gap-2 rounded-xl border px-4 py-3 sm:flex-row sm:items-center sm:justify-between ${conditionState === 'Critical' ? 'border-rose-800/70 bg-rose-950/25' : conditionState === 'Needs a check' ? 'border-amber-800/70 bg-amber-950/20' : 'border-teal-900/70 bg-teal-950/20'}`} aria-live="polite">
+        <div className="flex items-start gap-3">
+          <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${conditionState === 'Critical' ? 'bg-rose-950 text-rose-300' : conditionState === 'Needs a check' ? 'bg-amber-950 text-amber-300' : 'bg-teal-950 text-teal-300'}`}><Activity className="h-4 w-4"/></span>
+          <div><p className="text-xs font-semibold text-slate-100">Live condition · {conditionState}</p><p className="mt-0.5 text-xs leading-relaxed text-slate-400">{conditionCopy}</p></div>
+        </div>
+        <span className="shrink-0 text-[10px] font-mono text-slate-500">SIMULATOR READINGS · {telemetryHistory.length} samples collected</span>
+      </section>
 
       {/* 3. Live Time-Series Chart with Provisional Statistical Baseline */}
       <div className="bg-[#0c1424] border border-slate-800/80 rounded-xl p-4 sm:p-5 shadow-sm">
@@ -399,7 +380,7 @@ export const MachineConditionView: React.FC<MachineConditionViewProps> = ({
               </h2>
             </div>
             <p className="text-xs text-slate-400 mt-0.5">
-              30-second window comparing live spindle telemetry against the documented Dataset 3 baseline
+              Live simulator samples at 1.5-second intervals. Vibration and power are drawn on their own scales.
             </p>
           </div>
 
@@ -421,6 +402,7 @@ export const MachineConditionView: React.FC<MachineConditionViewProps> = ({
 
         {/* Visual Line / Bar Graph Representation */}
         <div className="h-56 bg-slate-950/70 border border-slate-800/80 rounded-lg p-4 relative flex flex-col justify-between overflow-hidden">
+          {telemetryHistory.length > 1 ? <>
           {/* Baseline Guideline Overlay */}
           <div
             className="absolute left-0 right-0 border-t-2 border-dashed border-amber-500/70 z-10 pointer-events-none"
@@ -464,19 +446,24 @@ export const MachineConditionView: React.FC<MachineConditionViewProps> = ({
             </svg>
           </div>
 
-          {/* Time scale footer */}
+          {/* Time scale footer uses the actual oldest and latest sample times. */}
           <div className="flex justify-between text-[10px] font-mono text-slate-500 pt-2 border-t border-slate-850">
-            <span>T-30s</span>
-            <span>T-20s</span>
-            <span>T-10s</span>
-            <span className="text-teal-300 font-semibold">T-0s (Current)</span>
+            <span>{formatReadingTime(telemetryHistory[0]?.timestamp)}</span>
+            <span>Vibration scale: 0–8 m/s²</span>
+            <span>Power scale: 0–25 kW</span>
+            <span className="text-teal-300 font-semibold">Now · {formatReadingTime(latest.timestamp)}</span>
           </div>
+          </> : <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
+            <Activity className="h-6 w-6 text-teal-400"/>
+            <p className="text-sm font-semibold text-slate-200">Collecting live samples</p>
+            <p className="max-w-md text-xs leading-relaxed text-slate-400">The trend will appear after the next simulator sample. Current readings are shown in the meters above.</p>
+          </div>}
         </div>
 
         <div className="mt-3 flex items-center justify-between text-[11px] text-slate-400 font-mono">
           <div className="flex items-center gap-1.5">
             <Info className="w-3.5 h-3.5 text-slate-500" />
-            <span>Note: Statistical baseline represents empirical 95th percentile, not a universal mechanical destruction limit.</span>
+            <span>Note: The 4.2 m/s² line is the dataset’s nominal 95th-percentile baseline, not a universal failure limit.</span>
           </div>
           <span className="text-slate-500">Dataset 3 Baseline Reference</span>
         </div>

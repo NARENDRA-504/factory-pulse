@@ -3,6 +3,7 @@ import { Incident, UserProfile, TelemetryReading, AIDiagnosisResult } from '../t
 import { apiClient } from '../services/apiClient';
 import { SEED_MACHINES } from '../data/seedData';
 import { ProvenanceBadge } from '../components/ProvenanceBadge';
+import { SimpleBarChart } from '../components/SimpleBarChart';
 import {
   AlertCircle,
   AlertTriangle,
@@ -249,6 +250,28 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
           </div>
         </div>
       </div>
+
+      <section className="grid grid-cols-1 gap-3 lg:grid-cols-2" aria-label="Incident charts">
+        <div className="rounded-xl border border-slate-800/80 bg-[#0c1424] p-4 shadow-sm">
+          <h2 className="text-sm font-semibold text-slate-100">Tickets by workflow status</h2>
+          <p className="mb-3 mt-1 text-xs text-slate-400">Counts from the incident records currently in this app.</p>
+          <SimpleBarChart data={[
+            { label: 'Open', value: openCount, color: '#f59e0b' },
+            { label: 'In investigation', value: inInvestCount, color: '#2dd4bf' },
+            { label: 'Action required', value: actionReqCount, color: '#fb7185' },
+            { label: 'Closed', value: closedCount, color: '#34d399' },
+          ]} />
+        </div>
+        <div className="rounded-xl border border-slate-800/80 bg-[#0c1424] p-4 shadow-sm">
+          <h2 className="text-sm font-semibold text-slate-100">Severity breakdown</h2>
+          <p className="mb-3 mt-1 text-xs text-slate-400">Current ticket counts by reported severity.</p>
+          <SimpleBarChart data={(['Critical', 'High', 'Medium', 'Low'] as const).map((severity) => ({
+            label: severity,
+            value: incidents.filter((incident) => incident.severity === severity).length,
+            color: severity === 'Critical' || severity === 'High' ? '#fb7185' : severity === 'Medium' ? '#fbbf24' : '#38bdf8',
+          }))} />
+        </div>
+      </section>
 
       {/* 2. Search & Controls Bar */}
       <div className="bg-[#0c1424] border border-slate-800/80 rounded-xl p-4 shadow-sm">

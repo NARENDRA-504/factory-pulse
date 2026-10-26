@@ -3,6 +3,7 @@ import { UserProfile, UserRole, Machine, Incident } from '../types';
 import { SEED_USERS, SEED_MACHINES } from '../data/seedData';
 import { apiClient } from '../services/apiClient';
 import { UserProfileModal } from '../components/UserProfileModal';
+import { SimpleBarChart } from '../components/SimpleBarChart';
 import {
   Users,
   UserPlus,
@@ -328,6 +329,25 @@ export const UsersView: React.FC<UsersViewProps> = ({
           </span>
         </div>
       </div>
+
+      <section className="grid grid-cols-1 gap-3 lg:grid-cols-2" aria-label="Personnel charts">
+        <div className="rounded-xl border border-slate-800/80 bg-[#0c1424] p-4 shadow-sm">
+          <h2 className="text-sm font-semibold text-slate-100">Team by role</h2>
+          <p className="mb-3 mt-1 text-xs text-slate-400">Current personnel directory counts.</p>
+          <SimpleBarChart data={(['Operator', 'Supervisor', 'Manager', 'Maintenance', 'Admin'] as UserRole[]).map((role) => ({
+            label: role, value: usersList.filter((user) => user.role === role).length,
+            color: role === 'Operator' ? '#34d399' : role === 'Supervisor' ? '#2dd4bf' : role === 'Manager' ? '#a78bfa' : role === 'Maintenance' ? '#fbbf24' : '#fb7185',
+          }))} />
+        </div>
+        <div className="rounded-xl border border-slate-800/80 bg-[#0c1424] p-4 shadow-sm">
+          <h2 className="text-sm font-semibold text-slate-100">Shift coverage</h2>
+          <p className="mb-3 mt-1 text-xs text-slate-400">Personnel records grouped by assigned shift.</p>
+          <SimpleBarChart data={(['Shift A', 'Shift B', 'Night Shift'] as const).map((shift, index) => ({
+            label: shift, value: usersList.filter((user) => (user.shift || 'Shift A') === shift).length,
+            color: ['#2dd4bf', '#38bdf8', '#a78bfa'][index],
+          }))} />
+        </div>
+      </section>
 
       {/* ------------------------------------------------------------- */}
       {/* 3. COLLAPSIBLE RBAC PERMISSIONS REFERENCE MATRIX              */}
