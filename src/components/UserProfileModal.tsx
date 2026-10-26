@@ -4,13 +4,10 @@ import {
   X,
   ShieldCheck,
   User,
-  KeyRound,
   Mail,
   Cpu,
   Clock,
   CheckCircle2,
-  XCircle,
-  Briefcase,
   LogOut,
   ArrowRightLeft,
 } from 'lucide-react';
@@ -93,6 +90,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
       allowed: ['Admin'].includes(user.role),
     },
   ];
+  const grantedPermissions = permissionsList.filter((permission) => permission.allowed);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs animate-fadeIn">
@@ -187,29 +185,23 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             <div className="flex items-center justify-between">
               <span className="text-xs font-mono uppercase tracking-wider text-slate-400 font-semibold flex items-center gap-1.5">
                 <ShieldCheck className="w-3.5 h-3.5 text-teal-400" />
-                Authorized Permissions ({user.role})
+                Allowed Permissions ({user.role})
               </span>
               <span className="text-[11px] font-mono text-slate-400">
-                Tier {user.role === 'Admin' ? '5' : user.role === 'Supervisor' ? '4' : '3'} Access
+                {grantedPermissions.length} available
               </span>
             </div>
 
             <div className="rounded-xl border border-slate-800 overflow-hidden divide-y divide-slate-800/60 bg-slate-900/30 text-xs">
-              {permissionsList.map((perm, idx) => (
+              {grantedPermissions.map((perm) => (
                 <div
-                  key={idx}
-                  className={`p-2.5 flex items-center justify-between transition-colors ${
-                    perm.allowed ? 'bg-slate-900/20' : 'bg-slate-950/30 opacity-60'
-                  }`}
+                  key={perm.name}
+                  className="p-2.5 flex items-center justify-between bg-slate-900/20 transition-colors"
                 >
                   <div className="flex items-center gap-2">
-                    {perm.allowed ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                    ) : (
-                      <XCircle className="w-4 h-4 text-slate-600 shrink-0" />
-                    )}
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                     <div>
-                      <span className={`font-medium ${perm.allowed ? 'text-white' : 'text-slate-400'}`}>
+                      <span className="font-medium text-white">
                         {perm.name}
                       </span>
                       <span className="block text-[11px] text-slate-400 font-mono">
@@ -219,13 +211,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                   </div>
 
                   <span
-                    className={`text-[10px] font-mono font-semibold px-2 py-0.5 rounded ${
-                      perm.allowed
-                        ? 'text-teal-300 bg-teal-950/60 border border-teal-800/60'
-                        : 'text-slate-400 bg-slate-800/40'
-                    }`}
+                    className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded text-teal-300 bg-teal-950/60 border border-teal-800/60"
                   >
-                    {perm.allowed ? 'GRANTED' : 'DENIED'}
+                    ALLOWED
                   </span>
                 </div>
               ))}
