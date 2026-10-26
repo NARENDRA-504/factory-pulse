@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { UserProfile, UserRole } from '../types';
-import { SEED_USERS } from '../data/seedData';
 import {
   Activity,
   AlertTriangle,
@@ -9,14 +8,12 @@ import {
   LogOut,
   ShieldCheck,
   User,
-  ChevronDown,
 } from 'lucide-react';
 
 interface NavbarProps {
   currentUser: UserProfile;
   currentScreen: 'dashboard' | 'machines' | 'incidents' | 'analytics';
   onNavigate: (screen: 'dashboard' | 'machines' | 'incidents' | 'analytics') => void;
-  onSwitchUser: (user: UserProfile) => void;
   onLogout: () => void;
 }
 
@@ -24,10 +21,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   currentUser,
   currentScreen,
   onNavigate,
-  onSwitchUser,
   onLogout,
 }) => {
-  const [roleMenuOpen, setRoleMenuOpen] = useState(false);
 
   const getRoleBadgeColor = (role: UserRole) => {
     switch (role) {
@@ -108,14 +103,9 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
         </nav>
 
-        {/* Zone 3: Active Profile & Fast Role Selector for Review */}
+        {/* Zone 3: Authenticated Profile */}
         <div className="flex items-center gap-3 shrink-0">
-          <div className="relative">
-            <button
-              onClick={() => setRoleMenuOpen(!roleMenuOpen)}
-              className="flex items-center gap-2 px-2.5 py-1.5 rounded bg-slate-900/80 border border-slate-700 hover:border-slate-600 transition-colors text-left"
-              title="Click to switch test user for role demonstration"
-            >
+          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded bg-slate-900/80 border border-slate-700 text-left">
               <div className="flex flex-col">
                 <span className="text-xs font-semibold text-slate-200 leading-tight">
                   {currentUser.fullName}
@@ -131,45 +121,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               >
                 {currentUser.role}
               </span>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-            </button>
-
-            {roleMenuOpen && (
-              <div className="absolute right-0 mt-2 w-64 bg-slate-900 border border-slate-700 rounded-lg shadow-2xl py-1 z-50">
-                <div className="px-3 py-1.5 border-b border-slate-800">
-                  <span className="text-[10px] font-mono uppercase text-slate-400 tracking-wider">
-                    Fast Demo Role Switcher
-                  </span>
-                  <p className="text-[11px] text-slate-500">
-                    Switch user to verify backend-enforced permissions
-                  </p>
-                </div>
-                {SEED_USERS.map((user) => (
-                  <button
-                    key={user.id}
-                    onClick={() => {
-                      onSwitchUser(user);
-                      setRoleMenuOpen(false);
-                    }}
-                    className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-slate-800/80 transition-colors ${
-                      user.id === currentUser.id ? 'bg-slate-800/50 text-cyan-400' : 'text-slate-300'
-                    }`}
-                  >
-                    <div>
-                      <div className="font-medium">{user.fullName}</div>
-                      <div className="text-[10px] font-mono text-slate-500">{user.workId}</div>
-                    </div>
-                    <span
-                      className={`text-[10px] font-mono px-1.5 py-0.5 rounded border ${getRoleBadgeColor(
-                        user.role
-                      )}`}
-                    >
-                      {user.role}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
 
           <button

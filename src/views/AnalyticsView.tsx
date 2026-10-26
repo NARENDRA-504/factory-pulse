@@ -57,7 +57,7 @@ export const AnalyticsView: React.FC = () => {
   if (loading) {
     return (
       <div className="p-12 text-center text-xs font-mono text-slate-400">
-        Loading empirical dataset analytics and database pipeline audits...
+        Loading project reference summaries...
       </div>
     );
   }
@@ -81,8 +81,8 @@ export const AnalyticsView: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs font-mono text-slate-400">Data Foundation:</span>
-            <ProvenanceBadge provenance="EMPIRICAL DATASET" />
+            <span className="text-xs font-mono text-slate-400">Source:</span>
+            <span className="rounded border border-amber-800 bg-amber-950/40 px-2 py-1 text-[10px] font-mono text-amber-200">Embedded project summaries · not live database results</span>
           </div>
         </div>
 
@@ -487,7 +487,7 @@ export const AnalyticsView: React.FC = () => {
               7-Stage End-to-End Manufacturing Data Pipeline
             </h2>
             <p className="text-xs text-slate-400 mb-5">
-              Approved data architecture strictly isolating raw data, simulator events, Python EDA, and Power BI reporting
+              The project describes this target architecture; the connections shown here are not an end-to-end status check.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-7 gap-2 text-center text-xs font-mono">
@@ -498,28 +498,28 @@ export const AnalyticsView: React.FC = () => {
               </div>
               <div className="p-3 bg-slate-900 border border-slate-800 rounded-lg">
                 <div className="text-[10px] text-teal-400 font-bold uppercase">2. MySQL Raw</div>
-                <div className="text-slate-200 mt-1 font-semibold">Immutable Tables</div>
-                <div className="text-[10px] text-slate-500 mt-1">28,920 Rows</div>
+                <div className="text-slate-200 mt-1 font-semibold">DDL defined</div>
+                <div className="text-[10px] text-slate-500 mt-1">Counts are project summaries</div>
               </div>
               <div className="p-3 bg-slate-900 border border-slate-800 rounded-lg">
                 <div className="text-[10px] text-teal-400 font-bold uppercase">3. Python EDA</div>
-                <div className="text-slate-200 mt-1 font-semibold">Jupyter / Pandas</div>
-                <div className="text-[10px] text-slate-500 mt-1">No Auto-impute</div>
+                <div className="text-slate-200 mt-1 font-semibold">Notebook file</div>
+                <div className="text-[10px] text-slate-500 mt-1">Static EDA summaries</div>
               </div>
               <div className="p-3 bg-slate-900 border border-slate-800 rounded-lg">
                 <div className="text-[10px] text-teal-400 font-bold uppercase">4. Processed</div>
-                <div className="text-slate-200 mt-1 font-semibold">Aggregations</div>
-                <div className="text-[10px] text-slate-500 mt-1">Summary Views</div>
+                <div className="text-slate-200 mt-1 font-semibold">SQL views defined</div>
+                <div className="text-[10px] text-slate-500 mt-1">Not queried by this view</div>
               </div>
               <div className="p-3 bg-slate-900 border border-purple-800/80 bg-purple-950/20 rounded-lg">
                 <div className="text-[10px] text-purple-400 font-bold uppercase">5. Power BI</div>
-                <div className="text-slate-200 mt-1 font-semibold">Executive BI</div>
-                <div className="text-[10px] text-purple-400 mt-1">Separate Scope</div>
+                <div className="text-slate-200 mt-1 font-semibold">Report not included</div>
+                <div className="text-[10px] text-purple-400 mt-1">No refresh verified</div>
               </div>
               <div className="p-3 bg-slate-900 border border-slate-800 rounded-lg">
                 <div className="text-[10px] text-teal-400 font-bold uppercase">6. FastAPI</div>
-                <div className="text-slate-200 mt-1 font-semibold">Backend Engine</div>
-                <div className="text-[10px] text-slate-500 mt-1">RBAC &amp; Gemini</div>
+                <div className="text-slate-200 mt-1 font-semibold">Telemetry API</div>
+                <div className="text-[10px] text-slate-500 mt-1">MySQL config required</div>
               </div>
               <div className="p-3 bg-slate-900 border border-slate-800 rounded-lg">
                 <div className="text-[10px] text-teal-400 font-bold uppercase">7. Frontend</div>
@@ -535,11 +535,11 @@ export const AnalyticsView: React.FC = () => {
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-5 h-5 text-emerald-400" />
                 <h3 className="font-display font-bold text-sm text-white">
-                  MySQL Raw Table Ingestion Verification Audit
+                  Declared Dataset Row Counts
                 </h3>
               </div>
-              <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800">
-                All 5 Validation Gates Passed
+                <span className="text-[10px] font-mono text-amber-300 bg-amber-950/40 px-2 py-0.5 rounded border border-amber-800">
+                Static summaries · database not checked
               </span>
             </div>
 
@@ -547,27 +547,27 @@ export const AnalyticsView: React.FC = () => {
               <div className="p-3 bg-slate-900 rounded-lg border border-slate-800">
                 <div className="text-[10px] text-slate-500">raw_cnc_tool_wear</div>
                 <div className="text-white font-bold mt-1">{pipelineAudit.rawToolWearCount} rows</div>
-                <div className="text-[10px] text-emerald-400 mt-0.5">Matched CSV 100%</div>
+                <div className="text-[10px] text-slate-400 mt-0.5">Project summary; not refreshed</div>
               </div>
               <div className="p-3 bg-slate-900 rounded-lg border border-slate-800">
                 <div className="text-[10px] text-slate-500">raw_turning_roughness</div>
                 <div className="text-white font-bold mt-1">{pipelineAudit.rawRoughnessCount} rows</div>
-                <div className="text-[10px] text-emerald-400 mt-0.5">Matched CSV 100%</div>
+                <div className="text-[10px] text-slate-400 mt-0.5">Project summary; not refreshed</div>
               </div>
               <div className="p-3 bg-slate-900 rounded-lg border border-slate-800">
                 <div className="text-[10px] text-slate-500">raw_mill_telemetry</div>
                 <div className="text-white font-bold mt-1">{pipelineAudit.rawTelemetryCount} rows</div>
-                <div className="text-[10px] text-emerald-400 mt-0.5">Matched CSV 100%</div>
+                <div className="text-[10px] text-slate-400 mt-0.5">Project summary; not refreshed</div>
               </div>
               <div className="p-3 bg-slate-900 rounded-lg border border-slate-800">
                 <div className="text-[10px] text-slate-500">raw_milling_cycles</div>
                 <div className="text-white font-bold mt-1">{pipelineAudit.rawMillingCyclesCount} rows</div>
-                <div className="text-[10px] text-emerald-400 mt-0.5">Matched CSV 100%</div>
+                <div className="text-[10px] text-slate-400 mt-0.5">Project summary; not refreshed</div>
               </div>
               <div className="p-3 bg-slate-900 rounded-lg border border-amber-900/60 bg-amber-950/20">
                 <div className="text-[10px] text-amber-400">sim_telemetry_events</div>
                 <div className="text-white font-bold mt-1">{pipelineAudit.simTelemetryEventsCount} events</div>
-                <div className="text-[10px] text-amber-400 mt-0.5">Isolated Simulator</div>
+                <div className="text-[10px] text-amber-400 mt-0.5">Static value; not queried</div>
               </div>
             </div>
           </div>
@@ -577,23 +577,24 @@ export const AnalyticsView: React.FC = () => {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <span className="text-[10px] font-mono text-purple-400 bg-purple-950/80 px-2 py-0.5 rounded border border-purple-800 uppercase font-semibold">
-                  Executive Business Intelligence Connection
+                  Power BI connection status
                 </span>
                 <h3 className="font-display font-bold text-sm text-white mt-2">
-                  Power BI Integration Specification
+                  No Power BI report is present in this project
                 </h3>
                 <p className="text-xs text-slate-300 mt-1 leading-relaxed max-w-2xl">
-                  Connect Power BI using DirectQuery / MySQL Connector to MySQL views:
-                  <code className="text-purple-300 font-mono ml-1">v_executive_oee_summary</code>,{' '}
-                  <code className="text-purple-300 font-mono">v_quality_roughness_compliance</code>, and{' '}
-                  <code className="text-purple-300 font-mono">v_equipment_downtime_distribution</code>.
+                  The schema defines views including{' '}
+                  <code className="text-purple-300 font-mono">v_executive_oee_summary</code>,{' '}
+                  <code className="text-purple-300 font-mono">v_quality_roughness_compliance</code>,{' '}
+                  <code className="text-purple-300 font-mono">v_machine_current_status</code>, and{' '}
+                  <code className="text-purple-300 font-mono">v_incident_kpi_summary</code>. No Power BI file, MySQL credentials, or refresh evidence is available here; there is no downtime distribution view in the checked-in DDL.
                 </p>
               </div>
 
               <div className="p-3 bg-slate-900 border border-slate-800 rounded-lg text-right font-mono text-xs shrink-0">
-                <div className="text-slate-400 text-[10px]">Connection String Format</div>
-                <div className="text-purple-300 font-semibold mt-1">Server: {pipelineAudit.mysqlHost}</div>
-                <div className="text-slate-400">Database: {pipelineAudit.databaseName}</div>
+                <div className="text-slate-400 text-[10px]">Connection check</div>
+                <div className="text-amber-300 font-semibold mt-1">Not configured or verified</div>
+                <div className="text-slate-400">Schema target: ziro_manufacturing</div>
               </div>
             </div>
           </div>

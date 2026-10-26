@@ -15,7 +15,6 @@ interface DashboardViewProps {
   onCreateIncidentFromSnapshot?: (machineCode: string, snapshot: TelemetryReading, suggestedSymptom: string) => void;
   onRefreshData?: () => void;
   onOpenProfile?: () => void;
-  onSwitchUser?: (user: UserProfile) => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({

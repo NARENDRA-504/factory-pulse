@@ -22,11 +22,13 @@ import { MachineConditionView } from './views/MachineConditionView';
 import { IncidentsView } from './views/IncidentsView';
 import { AnalyticsView } from './views/AnalyticsView';
 import { UsersView } from './views/UsersView';
+import { ActivityLogView } from './views/ActivityLogView';
 
 export default function App() {
-  const [currentUser, setCurrentUser] = useState<UserProfile | null>(apiClient.getCurrentUser());
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+  const [sessionRestoring, setSessionRestoring] = useState(true);
   const [currentScreen, setCurrentScreen] = useState<
-    'dashboard' | 'machines' | 'incidents' | 'analytics' | 'users'
+    'dashboard' | 'machines' | 'incidents' | 'analytics' | 'users' | 'activity'
   >('dashboard');
   const [machines, setMachines] = useState<Machine[]>(SEED_MACHINES);
   const [incidents, setIncidents] = useState<Incident[]>(() => {
@@ -73,6 +75,18 @@ export default function App() {
   };
 
   useEffect(() => {
+    let active = true;
+    apiClient.getCurrentUser().then((user) => {
+      if (active) setCurrentUser(user);
+    }).catch(() => {
+      if (active) setCurrentUser(null);
+    }).finally(() => {
+      if (active) setSessionRestoring(false);
+    });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
     refreshData();
   }, [currentUser]);
 
@@ -108,16 +122,13 @@ export default function App() {
     setCurrentScreen('dashboard');
   };
 
-  const handleLogout = () => {
-    apiClient.logout();
-    setCurrentUser(null);
-  };
-
-  const handleSwitchUser = (user: UserProfile) => {
-    apiClient.login(user.workId);
-    setCurrentUser(user);
-    // If switching to operator while on analytics or users, bounce to dashboard per RBAC
-    if (user.role === 'Operator' && (currentScreen === 'analytics' || currentScreen === 'users')) {
+  const handleLogout = async () => {
+    try {
+      await apiClient.logout();
+    } catch (error) {
+      console.error('Sign-out could not be confirmed by the server.', error);
+    } finally {
+      setCurrentUser(null);
       setCurrentScreen('dashboard');
     }
   };
@@ -133,6 +144,9 @@ export default function App() {
   };
 
   // If unauthenticated, show Screen 1: Login
+  if (sessionRestoring) {
+    return <div className="min-h-screen bg-[#070d18] text-slate-300 flex items-center justify-center text-sm">Checking your FactoryPulse session…</div>;
+  }
   if (!currentUser) {
     return <LoginView onLoginSuccess={handleLoginSuccess} />;
   }
@@ -151,7 +165,6 @@ export default function App() {
           setHandoffMachine(undefined);
           setCurrentScreen(screen);
         }}
-        onSwitchUser={handleSwitchUser}
         onLogout={handleLogout}
         onOpenProfile={() => setIsProfileModalOpen(true)}
         activeIncidentsCount={activeIncidentsCount}
@@ -187,7 +200,6 @@ export default function App() {
                 onCreateIncidentFromSnapshot={handleCreateIncidentFromSnapshot}
                 onRefreshData={refreshData}
                 onOpenProfile={() => setIsProfileModalOpen(true)}
-                onSwitchUser={handleSwitchUser}
               />
             )}
 
@@ -251,9 +263,13 @@ export default function App() {
                   currentUser={currentUser}
                   machines={machines}
                   incidents={incidents}
-                  onSwitchUser={handleSwitchUser}
                 />
               )
+            )}
+            {currentScreen === 'activity' && (
+              currentUser.role !== 'Admin' ? (
+                <div className="m-12 rounded-xl border border-rose-800 bg-[#0c1424] p-8 text-center"><h2 className="font-bold text-white">Admin access required</h2><p className="mt-2 text-sm text-slate-400">This activity log is restricted to administrators.</p></div>
+              ) : <ActivityLogView />
             )}
           </ErrorBoundary>
         </main>
@@ -262,11 +278,11 @@ export default function App() {
         <footer className="border-t border-slate-800/80 py-3.5 bg-[#070d18] text-center text-xs text-slate-400 font-mono">
           <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
             <span className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-teal-400" />
-              <span>FactoryPulse CNC Simulator · ZIRO Manufacturing Platform</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+              <span>FactoryPulse · Manufacturing operations demo</span>
             </span>
             <span className="text-slate-400">
-              MySQL 8.x Architecture · 4 Empirical Machining Research Datasets (28,920 Rows)
+              Readings are simulated; saved history requires a configured API and MySQL database.
             </span>
           </div>
         </footer>
@@ -325,7 +341,6 @@ export default function App() {
         currentUser={currentUser}
         isOpen={isProfileModalOpen}
         onClose={() => setIsProfileModalOpen(false)}
-        onSwitchToUser={handleSwitchUser}
         onLogout={handleLogout}
       />
     </div>

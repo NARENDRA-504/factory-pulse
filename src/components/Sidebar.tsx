@@ -1,12 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { UserProfile, UserRole } from '../types';
-import { SEED_USERS } from '../data/seedData';
 import {
   Activity,
   AlertTriangle,
   BarChart3,
   Cpu,
-  ChevronDown,
   LogOut,
   Sliders,
   ShieldCheck,
@@ -15,15 +13,14 @@ import {
   Gauge,
   Layers,
   Wrench,
-  Radio,
   Users,
+  ClipboardList,
 } from 'lucide-react';
 
 interface SidebarProps {
   currentUser: UserProfile;
-  currentScreen: 'dashboard' | 'machines' | 'incidents' | 'analytics' | 'users';
-  onNavigate: (screen: 'dashboard' | 'machines' | 'incidents' | 'analytics' | 'users') => void;
-  onSwitchUser: (user: UserProfile) => void;
+  currentScreen: 'dashboard' | 'machines' | 'incidents' | 'analytics' | 'users' | 'activity';
+  onNavigate: (screen: 'dashboard' | 'machines' | 'incidents' | 'analytics' | 'users' | 'activity') => void;
   onLogout: () => void;
   onOpenProfile?: () => void;
   activeIncidentsCount?: number;
@@ -35,14 +32,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
   currentUser,
   currentScreen,
   onNavigate,
-  onSwitchUser,
   onLogout,
   onOpenProfile,
   activeIncidentsCount = 0,
   isOpenMobile,
   onCloseMobile,
 }) => {
-  const [roleMenuOpen, setRoleMenuOpen] = useState(false);
 
   const getRoleBadgeColor = (role: UserRole) => {
     switch (role) {
@@ -61,7 +56,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const isOperator = currentUser.role === 'Operator';
 
-  const handleNavClick = (screen: 'dashboard' | 'machines' | 'incidents' | 'analytics' | 'users') => {
+  const handleNavClick = (screen: 'dashboard' | 'machines' | 'incidents' | 'analytics' | 'users' | 'activity') => {
     onNavigate(screen);
     onCloseMobile();
   };
@@ -112,19 +107,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           </div>
 
-          {/* Plant Node Status Pill */}
+          {/* Data mode */}
           <div className="mx-3 my-3 px-3 py-2 rounded-lg bg-[#0b1322] border border-slate-800/80 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
-              </span>
+              <span className="h-2 w-2 rounded-full bg-amber-400" />
               <span className="text-[11px] font-mono text-slate-300 font-medium">
-                Live Simulator Node
+                Data mode
               </span>
             </div>
-            <span className="text-[10px] font-mono text-teal-400 uppercase tracking-wider font-semibold">
-              Online
+            <span className="text-[10px] font-mono text-amber-300 uppercase tracking-wider font-semibold">
+              Demo
             </span>
           </div>
 
@@ -244,6 +236,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   </button>
 
                   {currentUser.role === 'Admin' && (
+                    <>
                     <button
                       onClick={() => handleNavClick('users')}
                       className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${
@@ -264,6 +257,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
                       )}
                     </button>
+                    <button
+                      onClick={() => handleNavClick('activity')}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${currentScreen === 'activity' ? 'bg-rose-500/10 text-rose-300 border border-rose-500/30 shadow-xs' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'}`}
+                    >
+                      <span className="flex items-center gap-2.5"><ClipboardList className="w-4 h-4 text-slate-400"/><span>Activity Log</span></span>
+                      {currentScreen === 'activity' && <span className="w-1.5 h-1.5 rounded-full bg-rose-400"/>}
+                    </button>
+                    </>
                   )}
                 </nav>
               </div>
@@ -273,30 +274,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Bottom Section: Quick Health Info & User Profile Switcher */}
         <div className="p-3 border-t border-slate-800/80 space-y-3">
-          {/* Quick System Telemetry Status Badge */}
+          {/* Project data boundaries */}
           <div className="p-2.5 rounded-lg bg-[#0b1322] border border-slate-800/80 text-[11px] font-mono space-y-1 text-slate-400">
             <div className="flex items-center justify-between">
-              <span className="text-slate-400">Telemetry Stream</span>
-              <span className="text-teal-400 font-semibold flex items-center gap-1">
-                <Radio className="w-3 h-3 text-teal-400 animate-pulse" /> 1.8s
-              </span>
+              <span className="text-slate-400">Dashboard readings</span>
+              <span className="text-amber-300 font-semibold">Simulated</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-slate-400">Database Engine</span>
-              <span className="text-slate-300 font-medium">MySQL 8.x schema</span>
+              <span className="text-slate-400">MySQL history</span>
+              <span className="text-slate-300 font-medium">API required</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-slate-400">Empirical Datasets</span>
-              <span className="text-emerald-400 font-semibold">4 Verified</span>
+              <span className="text-slate-400">Power BI report</span>
+              <span className="text-slate-300 font-medium">Not included</span>
             </div>
           </div>
 
-          {/* User Profile & Demo Switcher */}
-          <div className="relative">
+          {/* Authenticated user profile */}
+          <div>
             <div className="p-2 rounded-lg bg-slate-900/90 border border-slate-800 flex items-center justify-between">
               <button
                 type="button"
-                onClick={() => (onOpenProfile ? onOpenProfile() : setRoleMenuOpen(!roleMenuOpen))}
+                onClick={() => onOpenProfile?.()}
                 className="flex items-center gap-2.5 overflow-hidden text-left hover:opacity-90 transition-opacity flex-1 min-w-0"
                 title="View Personnel Profile & Permissions"
               >
@@ -324,13 +323,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
               <div className="flex items-center gap-1">
                 <button
-                  onClick={() => setRoleMenuOpen(!roleMenuOpen)}
-                  className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-                  title="Switch Demo User Role"
-                >
-                  <ChevronDown className="w-4 h-4" />
-                </button>
-                <button
                   onClick={onLogout}
                   className="p-1 rounded text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition-colors"
                   title="Logout"
@@ -340,45 +332,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </div>
             </div>
 
-            {/* Fast Role Switcher Dropdown */}
-            {roleMenuOpen && (
-              <div className="absolute bottom-full left-0 mb-2 w-full bg-[#0d1627] border border-slate-700 rounded-lg shadow-2xl py-1 z-50">
-                <div className="px-3 py-1.5 border-b border-slate-800">
-                  <span className="text-[10px] font-mono uppercase text-teal-400 tracking-wider font-semibold">
-                    Fast Demo Role Switcher
-                  </span>
-                  <p className="text-[10px] text-slate-400">
-                    Switch user to verify role-based permissions
-                  </p>
-                </div>
-                {SEED_USERS.map((user) => (
-                  <button
-                    key={user.id}
-                    onClick={() => {
-                      onSwitchUser(user);
-                      setRoleMenuOpen(false);
-                    }}
-                    className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-slate-800/80 transition-colors ${
-                      user.id === currentUser.id
-                        ? 'bg-teal-950/40 text-teal-300 font-semibold'
-                        : 'text-slate-300'
-                    }`}
-                  >
-                    <div>
-                      <div className="text-xs">{user.fullName}</div>
-                      <div className="text-[10px] font-mono text-slate-400">{user.workId}</div>
-                    </div>
-                    <span
-                      className={`text-[10px] font-mono px-1.5 py-0.5 rounded border ${getRoleBadgeColor(
-                        user.role
-                      )}`}
-                    >
-                      {user.role}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
         </div>
       </aside>

@@ -1,19 +1,18 @@
 /**
  * Supabase Realtime Service for FactoryPulse
- * Provides cross-device, in-app notifications to Supervisors and Maintenance staff.
+ * Provides local in-app notifications. Cloud delivery remains disabled until the
+ * backend has durable MySQL workflows and server-enforced Supabase authorization.
  * 
  * Key Principles:
  * 1. MySQL is the ONLY source of truth for machine data, telemetry, incidents, and work orders.
  * 2. Supabase is used strictly as an event broker for lightweight Realtime broadcast messages.
- * 3. Role-Based Access Control (RBAC): Enforces channel subscriptions so only authorized
- *    Supervisor, Maintenance, and Admin users receive incoming alerts.
+ * 3. Role and plant checks in this browser are UI filters, not an authorization boundary.
  * 4. Minimal non-sensitive payload: Includes only identifiers and metadata needed to render
  *    the alert; full incident or machine records are retrieved from the MySQL/API backend.
  * 5. Resilient fallback: Seamlessly coordinates with browser BroadcastChannel so local tabs
  *    also sync instantaneously, with graceful offline handling.
  */
 
-import { createClient, SupabaseClient, RealtimeChannel } from '@supabase/supabase-js';
 import { UserRole, IncidentSeverity } from '../types';
 
 export interface SupabaseRealtimeNotificationPayload {
@@ -53,8 +52,6 @@ const STORAGE_KEYS = {
 };
 
 class SupabaseRealtimeService {
-  private client: SupabaseClient | null = null;
-  private activeChannels: Map<string, RealtimeChannel> = new Map();
   private subscribers: Array<(payload: SupabaseRealtimeNotificationPayload) => void> = [];
   private connectionStatusSubscribers: Array<(state: RealtimeConnectionState) => void> = [];
   private connectionState: RealtimeConnectionState = 'local_fallback';
@@ -68,7 +65,8 @@ class SupabaseRealtimeService {
       try {
         this.localBroadcastChannel = new BroadcastChannel('factorypulse_supabase_realtime_bridge');
         this.localBroadcastChannel.onmessage = (event) => {
-          if (event.data && event.data.type === 'SUPABASE_REALTIME_NOTIFICATION') {
+          if (event.data && event.data.type === 'SUPABASE_REALTIME_NOTIFICATION' &&
+              this.currentRole && this.isPayloadAuthorized(event.data.payload, this.currentRole, this.currentPlant || undefined)) {
             this.dispatchToSubscribers(event.data.payload);
           }
         };
@@ -77,7 +75,7 @@ class SupabaseRealtimeService {
       }
     }
 
-    // Try initializing Supabase client from env or local override
+    // Fail closed until workflow writes and channel authorization are enforced server-side.
     this.initClient();
   }
 
@@ -133,107 +131,19 @@ class SupabaseRealtimeService {
    * Initialize or re-initialize Supabase client
    */
   public initClient(): boolean {
-    const { url, anonKey } = this.getCredentials();
-
-    if (url && anonKey && url.startsWith('http')) {
-      try {
-        this.client = createClient(url, anonKey, {
-          realtime: {
-            params: {
-              eventsPerSecond: 10,
-            },
-          },
-        });
-
-        this.setConnectionState('connecting');
-
-        // Reconnect active channels if user role was already configured
-        if (this.currentRole) {
-          this.subscribeUserChannels(this.currentRole, this.currentPlant || undefined);
-        } else {
-          // Connect to base heartbeat channel to test connectivity
-          const testChan = this.client.channel('factorypulse:system_status');
-          testChan.subscribe((status) => {
-            if (status === 'SUBSCRIBED') {
-              this.setConnectionState('connected');
-            } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
-              this.setConnectionState('local_fallback');
-            }
-          });
-        }
-        return true;
-      } catch (err) {
-        console.warn('Supabase client initialization error, falling back to local bus:', err);
-        this.client = null;
-        this.setConnectionState('local_fallback');
-        return false;
-      }
-    } else {
-      this.client = null;
-      this.setConnectionState('local_fallback');
-      return false;
-    }
+    this.setConnectionState('local_fallback');
+    return false;
   }
 
   /**
-   * Configure subscription channels based on Role-Based Access Control
-   * Only Supervisors, Maintenance, and Admins subscribe to alert channels.
-   * Operators only publish alerts and do not receive other machines' triage notifications.
+   * Keep role/plant context for local filtering. Remote subscriptions are disabled
+   * until trusted server-side authorization is available.
    */
   public subscribeUserChannels(role: UserRole, plant?: string): void {
     this.currentRole = role;
     this.currentPlant = plant || null;
 
-    // Clean up existing Supabase channel subscriptions
-    this.activeChannels.forEach((chan) => {
-      try {
-        chan.unsubscribe();
-      } catch {}
-    });
-    this.activeChannels.clear();
-
-    // Access control: Operators do NOT listen to shop-floor triage alert channels
-    if (role === 'Operator') {
-      return;
-    }
-
-    // Role-enforced channel naming
-    const plantSlug = plant ? plant.toLowerCase().replace(/[^a-z0-9]/g, '-') : 'all';
-    const channelNames = [
-      `factorypulse:alerts:${role.toLowerCase()}:all`,
-      `factorypulse:alerts:${role.toLowerCase()}:${plantSlug}`,
-      'factorypulse:alerts:broadcast',
-    ];
-
-    if (this.client) {
-      channelNames.forEach((chanName) => {
-        try {
-          const chan = this.client!.channel(chanName, {
-            config: {
-              broadcast: { self: false },
-            },
-          });
-
-          chan
-            .on('broadcast', { event: 'incident_notification' }, ({ payload }) => {
-              if (this.isPayloadAuthorized(payload, role, plant)) {
-                this.dispatchToSubscribers(payload);
-              }
-            })
-            .subscribe((status) => {
-              if (status === 'SUBSCRIBED') {
-                this.setConnectionState('connected');
-              } else if (status === 'CHANNEL_ERROR') {
-                this.setConnectionState('local_fallback');
-              }
-            });
-
-          this.activeChannels.set(chanName, chan);
-        } catch (err) {
-          console.warn(`Failed to subscribe to channel ${chanName}:`, err);
-        }
-      });
-    }
+    this.setConnectionState('local_fallback');
   }
 
   /**
@@ -259,7 +169,8 @@ class SupabaseRealtimeService {
   }
 
   /**
-   * Publish a minimal, non-sensitive notification event through Supabase Realtime
+   * Publish locally only. Cloud publish is disabled so a frontend mutation or
+   * in-memory backend record cannot be mistaken for a committed MySQL transaction.
    */
   public async publishNotification(
     payload: SupabaseRealtimeNotificationPayload
@@ -281,45 +192,7 @@ class SupabaseRealtimeService {
       this.dispatchToSubscribers(payload);
     }
 
-    // 3. Publish to Supabase Realtime Channels if client is connected
-    if (this.client) {
-      try {
-        const plantSlug = payload.plant
-          ? payload.plant.toLowerCase().replace(/[^a-z0-9]/g, '-')
-          : 'all';
-
-        // Target designated roles (Supervisor, Maintenance, Admin)
-        const targetChannels = payload.targetRoles.map(
-          (r) => `factorypulse:alerts:${r.toLowerCase()}:${plantSlug}`
-        );
-        targetChannels.push('factorypulse:alerts:broadcast');
-
-        const sendPromises = targetChannels.map(async (chanName) => {
-          let chan = this.activeChannels.get(chanName);
-          if (!chan) {
-            chan = this.client!.channel(chanName, {
-              config: { broadcast: { self: true } },
-            });
-            await chan.subscribe();
-            this.activeChannels.set(chanName, chan);
-          }
-
-          return chan.send({
-            type: 'broadcast',
-            event: 'incident_notification',
-            payload,
-          });
-        });
-
-        await Promise.all(sendPromises);
-        return true;
-      } catch (err) {
-        console.warn('Supabase Realtime publish failed, fell back to local bus:', err);
-        return false;
-      }
-    }
-
-    return true;
+    return false;
   }
 
   /**
@@ -380,18 +253,15 @@ class SupabaseRealtimeService {
     activeChannelsCount: number;
     details: string;
   } {
-    const { url } = this.getCredentials();
-    const isConfigured = Boolean(url && url.startsWith('http'));
+    const isConfigured = false;
 
     return {
       isConfigured,
-      provider: isConfigured ? 'Supabase Realtime (Cloud WebSocket)' : 'In-App Live Event Bus (BroadcastChannel)',
+      provider: 'Local notifications only (cloud delivery disabled)',
       connectionState: this.connectionState,
-      configuredUrl: url ? url.replace(/(https?:\/\/[^/]{4})[^/]+/, '$1****') : 'Not Configured',
-      activeChannelsCount: this.activeChannels.size,
-      details: isConfigured
-        ? 'Real-time WebSocket connection active for cross-device broadcast. MySQL remains primary source of truth.'
-        : 'Delivering zero-refresh in-app notifications across views and tabs via resilient BroadcastChannel bus.',
+      configuredUrl: 'Cloud delivery disabled',
+      activeChannelsCount: 0,
+      details: 'Cloud delivery stays disabled until notifications follow committed MySQL writes and Supabase enforces role and plant authorization server-side.',
     };
   }
 }

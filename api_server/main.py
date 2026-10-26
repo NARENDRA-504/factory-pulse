@@ -4,16 +4,20 @@ FastAPI Primary Backend Engine (Port 8000)
 Architecture: Google AI Studio Frontend -> Python FastAPI Backend -> MySQL Database
 """
 
-from fastapi import FastAPI, HTTPException, Depends, Header, status, Query
+from fastapi import FastAPI, HTTPException, Depends, Header, status, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from typing import List, Optional, Dict, Any, Literal
 import datetime
 import math
 import os
-import urllib.request
 import json
 import secrets
+import hashlib
+import hmac
+import base64
+import uuid
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from functools import lru_cache
 from pathlib import Path
 from dotenv import load_dotenv
@@ -26,11 +30,12 @@ app = FastAPI(
     description="Python FastAPI backend serving CNC telemetry, MySQL operational records, and server-side Gemini AI investigation diagnostics."
 )
 
-# Enable CORS for Google AI Studio and local development
+# Allow only explicitly configured frontend origins. Bearer tokens do not use cookies.
+CORS_ORIGINS = [origin.strip() for origin in os.environ.get("CORS_ORIGINS", "http://127.0.0.1:3000,http://localhost:3000").split(",") if origin.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=CORS_ORIGINS,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -91,6 +96,16 @@ class TelemetryRequestSizeLimitMiddleware:
 
 app.add_middleware(TelemetryRequestSizeLimitMiddleware)
 
+@app.middleware("http")
+async def request_id_middleware(request: Request, call_next):
+    request_id = request.headers.get("X-Request-ID", "").strip()
+    if not request_id or len(request_id) > 128:
+        request_id = str(uuid.uuid4())
+    request.state.request_id = request_id
+    response = await call_next(request)
+    response.headers["X-Request-ID"] = request_id
+    return response
+
 # ------------------------------------------------------------------------------
 # Pydantic Schemas with Strict Field Separation & Provenance Tagging
 # ------------------------------------------------------------------------------
@@ -99,6 +114,25 @@ class LoginRequest(BaseModel):
     work_id: str = Field(..., description="Employee badge Work ID e.g. OP-101, SUP-201")
     password: str = Field(..., description="User passphrase (min 3 chars)")
 
+class AdminUserCreateRequest(BaseModel):
+    work_id: str = Field(..., min_length=2, max_length=32)
+    full_name: str = Field(..., min_length=1, max_length=128)
+    password: str = Field(..., min_length=12, max_length=256)
+    role: Literal["Operator", "Supervisor", "Manager", "Maintenance", "Admin"]
+    assigned_machine: Optional[str] = Field(None, max_length=32)
+    department: Optional[str] = Field(None, max_length=128)
+    shift: Optional[Literal["Shift A", "Shift B", "Night Shift"]] = None
+    email: str = Field(..., min_length=3, max_length=128)
+
+class AdminUserUpdateRequest(BaseModel):
+    full_name: Optional[str] = Field(None, min_length=1, max_length=128)
+    role: Optional[Literal["Operator", "Supervisor", "Manager", "Maintenance", "Admin"]] = None
+    assigned_machine: Optional[str] = Field(None, max_length=32)
+    department: Optional[str] = Field(None, max_length=128)
+    shift: Optional[Literal["Shift A", "Shift B", "Night Shift"]] = None
+    email: Optional[str] = Field(None, min_length=3, max_length=128)
+    is_active: Optional[bool] = None
+
 class UserProfileResponse(BaseModel):
     id: int
     work_id: str
@@ -106,11 +140,28 @@ class UserProfileResponse(BaseModel):
     role: str
     assigned_machine: Optional[str] = None
     email: str
+    department: Optional[str] = None
+    shift: Optional[str] = None
+    is_active: bool = True
 
 class LoginResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserProfileResponse
+
+class AuditEventRecord(BaseModel):
+    id: int
+    employee_id: Optional[int] = None
+    employee_work_id: Optional[str] = None
+    employee_name: Optional[str] = None
+    role: Optional[str] = None
+    event_type: str
+    occurred_at_utc: str
+    occurred_at_local: str
+    factory_time_zone: str
+    session_id: Optional[str] = None
+    request_id: Optional[str] = None
+    details: Optional[str] = None
 
 class TelemetryReadingSchema(BaseModel):
     timestamp: str
@@ -206,7 +257,7 @@ class CloseIncidentRequest(BaseModel):
     closure_notes: str
 
 # ------------------------------------------------------------------------------
-# In-Memory Operational Store (Simulating MySQL State for Prototype Testing)
+# In-Memory demo records. Production identity and audit data use MySQL.
 # ------------------------------------------------------------------------------
 
 DEMO_USERS: Dict[str, Dict[str, Any]] = {
@@ -267,23 +318,137 @@ INCIDENTS_STORE: List[Dict[str, Any]] = [
 ]
 
 # ------------------------------------------------------------------------------
-# Auth Dependency & Consistent Role Enforcement
+# Authentication and role enforcement
 # ------------------------------------------------------------------------------
 
-def get_current_user(authorization: Optional[str] = Header(None)) -> Dict[str, Any]:
+DEMO_AUTH_ENABLED = (
+    os.environ.get("DEMO_AUTH_ENABLED", "").strip().lower() == "true"
+    and os.environ.get("APP_ENV", "production").strip().lower() in {"development", "test"}
+)
+DEMO_SESSIONS: Dict[str, Dict[str, Any]] = {}
+SESSION_HOURS = 8
+FACTORY_TIMEZONE = os.environ.get("FACTORY_TIMEZONE", "UTC").strip() or "UTC"
+
+def _utcnow() -> datetime.datetime:
+    return datetime.datetime.now(datetime.timezone.utc)
+
+def _factory_time(value: Any) -> tuple[str, str]:
+    utc_value = datetime.datetime.fromisoformat(_iso_utc(value).replace("Z", "+00:00"))
+    try:
+        zone = ZoneInfo(FACTORY_TIMEZONE)
+        zone_name = FACTORY_TIMEZONE
+    except ZoneInfoNotFoundError:
+        zone = datetime.timezone.utc
+        zone_name = "UTC"
+    return utc_value.astimezone(zone).isoformat(), zone_name
+
+def _hash_password(password: str, salt: bytes, iterations: int = 310_000) -> str:
+    digest = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, iterations)
+    return "pbkdf2_sha256${}${}${}".format(
+        iterations,
+        base64.urlsafe_b64encode(salt).decode("ascii").rstrip("="),
+        base64.urlsafe_b64encode(digest).decode("ascii").rstrip("="),
+    )
+
+def _verify_password(password: str, encoded: str) -> bool:
+    try:
+        algorithm, iterations_text, salt_text, expected_text = encoded.split("$", 3)
+        if algorithm != "pbkdf2_sha256":
+            return False
+        decode = lambda value: base64.urlsafe_b64decode(value + "=" * (-len(value) % 4))
+        actual = _hash_password(password, decode(salt_text), int(iterations_text)).rsplit("$", 1)[1]
+        return hmac.compare_digest(actual, expected_text)
+    except (ValueError, TypeError):
+        return False
+
+def _token_digest(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+def _audit_insert(connection, *, employee_id=None, employee_name=None, role=None,
+                  employee_work_id=None, event_type: str, session_id=None, request_id=None, details=None):
+    connection.execute(_sql_text("""
+        INSERT INTO activity_log
+            (employee_id, employee_work_id, employee_name, role_at_event, event_type, occurred_at_utc,
+             session_id, request_id, details)
+        VALUES (:employee_id, :employee_work_id, :employee_name, :role, :event_type, UTC_TIMESTAMP(6),
+                :session_id, :request_id, :details)
+    """), {
+        "employee_id": employee_id, "employee_work_id": employee_work_id, "employee_name": employee_name, "role": role,
+        "event_type": event_type, "session_id": session_id, "request_id": request_id,
+        "details": (details or "")[:500] or None,
+    })
+
+def record_activity(*, user: Optional[Dict[str, Any]], event_type: str,
+                    request_id: Optional[str] = None, session_id: Optional[str] = None,
+                    details: Optional[str] = None) -> None:
+    if DEMO_AUTH_ENABLED:
+        return  # The test environment deliberately has no durable business audit trail.
+    engine = get_telemetry_engine()
+    try:
+        with engine.begin() as connection:
+            _audit_insert(
+                connection,
+                employee_id=(user or {}).get("id"),
+                employee_name=(user or {}).get("full_name"),
+                employee_work_id=(user or {}).get("work_id"),
+                role=(user or {}).get("role"), event_type=event_type,
+                session_id=session_id or (user or {}).get("session_id"),
+                request_id=request_id, details=details,
+            )
+    except Exception as exc:
+        print(f"[Activity Log] Write failed: {type(exc).__name__}")
+        raise HTTPException(status_code=503, detail="Activity logging is unavailable; the requested action was not completed") from exc
+
+def get_current_user(request: Request, authorization: Optional[str] = Header(None)) -> Dict[str, Any]:
     if not authorization:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Missing Authorization Header. Please provide a valid Bearer token."
         )
-    token = authorization.replace("Bearer ", "").strip().upper()
-    user = DEMO_USERS.get(token)
-    if not user:
+    scheme, _, token = authorization.partition(" ")
+    token = token.strip()
+    if scheme.lower() != "bearer" or not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired Bearer token / Work ID."
+            detail="Invalid bearer session."
         )
-    return user
+    if DEMO_AUTH_ENABLED:
+        session = DEMO_SESSIONS.get(_token_digest(token))
+        if not session or session["expires_at"] <= _utcnow():
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Demo session expired or invalid")
+        return dict(session["user"], session_id=session["session_id"])
+
+    engine = get_telemetry_engine()
+    try:
+        with engine.connect() as connection:
+            row = connection.execute(_sql_text("""
+                SELECT s.session_id, s.employee_id, s.expires_at_utc, s.revoked_at_utc,
+                       u.work_id, u.full_name, u.role, u.assigned_machine, u.email, u.is_active,
+                       u.department, u.shift
+                FROM auth_sessions s JOIN users u ON u.id = s.employee_id
+                WHERE s.token_hash = :token_hash
+            """), {"token_hash": _token_digest(token)}).mappings().first()
+        if not row or not row["is_active"] or row["revoked_at_utc"] is not None:
+            raise HTTPException(status_code=401, detail="Session is invalid or has been revoked")
+        expiry = row["expires_at_utc"]
+        if expiry.tzinfo is None:
+            expiry = expiry.replace(tzinfo=datetime.timezone.utc)
+        if expiry <= _utcnow():
+            with engine.begin() as connection:
+                connection.execute(_sql_text("UPDATE auth_sessions SET revoked_at_utc = UTC_TIMESTAMP(6), revoke_reason = 'expired' WHERE session_id = :session_id AND revoked_at_utc IS NULL"), {"session_id": row["session_id"]})
+                _audit_insert(connection, employee_id=row["employee_id"], employee_work_id=row["work_id"], employee_name=row["full_name"], role=row["role"], event_type="session_expiry", session_id=row["session_id"], request_id=getattr(request.state, "request_id", None))
+            raise HTTPException(status_code=401, detail="Session expired. Sign in again.")
+        return {
+            "id": row["employee_id"], "work_id": row["work_id"], "full_name": row["full_name"],
+            "role": row["role"], "assigned_machine": row["assigned_machine"],
+            "email": row["email"], "department": row["department"], "shift": row["shift"],
+            "is_active": row["is_active"], "session_id": row["session_id"],
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        print(f"[Authentication] Session lookup failed: {type(exc).__name__}")
+        raise HTTPException(status_code=503, detail="Authentication service is unavailable") from exc
 
 def require_roles(allowed_roles: List[str]):
     def role_checker(user: Dict[str, Any] = Depends(get_current_user)):
@@ -300,17 +465,56 @@ def require_roles(allowed_roles: List[str]):
 # ------------------------------------------------------------------------------
 
 @app.post("/api/v1/auth/login", response_model=LoginResponse)
-def login(payload: LoginRequest):
-    user = DEMO_USERS.get(payload.work_id.strip().upper())
-    if not user:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid Work ID")
-    if not payload.password or len(payload.password) < 3:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Password must be at least 3 characters")
-    if payload.password != user.get("password", "pass123"):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
-    
+def login(payload: LoginRequest, request: Request):
+    work_id = payload.work_id.strip().upper()
+    if DEMO_AUTH_ENABLED:
+        user = DEMO_USERS.get(work_id)
+        if not user or not secrets.compare_digest(payload.password, "pass123"):
+            raise HTTPException(status_code=401, detail="Invalid employee ID or password")
+        access_token = secrets.token_urlsafe(32)
+        session_id = str(uuid.uuid4())
+        DEMO_SESSIONS[_token_digest(access_token)] = {
+            "user": {k: v for k, v in user.items() if k != "password"},
+            "session_id": session_id, "expires_at": _utcnow() + datetime.timedelta(hours=SESSION_HOURS),
+        }
+        return LoginResponse(access_token=access_token, user=UserProfileResponse(
+            id=user["id"], work_id=user["work_id"], full_name=user["full_name"], role=user["role"],
+            assigned_machine=user["assigned_machine"], email=user["email"], department=user.get("department"), shift=user.get("shift"),
+        ))
+
+    engine = get_telemetry_engine()
+    user = None
+    credentials_valid = False
+    try:
+        with engine.begin() as connection:
+            user = connection.execute(_sql_text("""
+                SELECT id, work_id, full_name, password_hash, role, assigned_machine, email, department, shift, is_active
+                FROM users WHERE work_id = :work_id
+            """), {"work_id": work_id}).mappings().first()
+            credentials_valid = bool(user and user["is_active"] and user["password_hash"] and _verify_password(payload.password, user["password_hash"]))
+            if not credentials_valid:
+                _audit_insert(connection, employee_id=user["id"] if user else None, employee_work_id=work_id, employee_name=user["full_name"] if user else None,
+                              role=user["role"] if user else None, event_type="failed_sign_in",
+                              request_id=getattr(request.state, "request_id", None), details=f"Failed sign-in for badge {work_id[:32]}")
+            else:
+                session_id = str(uuid.uuid4())
+                access_token = secrets.token_urlsafe(48)
+                expires_at = _utcnow() + datetime.timedelta(hours=SESSION_HOURS)
+                connection.execute(_sql_text("""
+                    INSERT INTO auth_sessions (session_id, employee_id, token_hash, created_at_utc, expires_at_utc)
+                    VALUES (:session_id, :employee_id, :token_hash, UTC_TIMESTAMP(6), :expires_at_utc)
+                """), {"session_id": session_id, "employee_id": user["id"], "token_hash": _token_digest(access_token), "expires_at_utc": expires_at.replace(tzinfo=None)})
+                _audit_insert(connection, employee_id=user["id"], employee_work_id=user["work_id"], employee_name=user["full_name"], role=user["role"],
+                              event_type="sign_in", session_id=session_id, request_id=getattr(request.state, "request_id", None))
+    except HTTPException:
+        raise
+    except Exception as exc:
+        print(f"[Authentication] Login failed: {type(exc).__name__}")
+        raise HTTPException(status_code=503, detail="Authentication service is unavailable") from exc
+    if not credentials_valid:
+        raise HTTPException(status_code=401, detail="Invalid employee ID or password")
     return LoginResponse(
-        access_token=user["work_id"],
+        access_token=access_token,
         token_type="bearer",
         user=UserProfileResponse(
             id=user["id"],
@@ -318,7 +522,7 @@ def login(payload: LoginRequest):
             full_name=user["full_name"],
             role=user["role"],
             assigned_machine=user["assigned_machine"],
-            email=user["email"]
+            email=user["email"], department=user.get("department"), shift=user.get("shift"), is_active=user.get("is_active", True)
         )
     )
 
@@ -330,39 +534,171 @@ def get_me(user: Dict[str, Any] = Depends(get_current_user)):
         full_name=user["full_name"],
         role=user["role"],
         assigned_machine=user["assigned_machine"],
-        email=user["email"]
+        email=user["email"], department=user.get("department"), shift=user.get("shift"), is_active=user.get("is_active", True)
     )
+
+@app.post("/api/v1/auth/logout")
+def logout(request: Request, user: Dict[str, Any] = Depends(get_current_user), authorization: Optional[str] = Header(None)):
+    if DEMO_AUTH_ENABLED:
+        if authorization:
+            _, _, token = authorization.partition(" ")
+            DEMO_SESSIONS.pop(_token_digest(token.strip()), None)
+        return {"signed_out": True}
+    engine = get_telemetry_engine()
+    try:
+        with engine.begin() as connection:
+            connection.execute(_sql_text("UPDATE auth_sessions SET revoked_at_utc = UTC_TIMESTAMP(6), revoke_reason = 'user_sign_out' WHERE session_id = :session_id AND revoked_at_utc IS NULL"), {"session_id": user["session_id"]})
+            _audit_insert(connection, employee_id=user["id"], employee_work_id=user["work_id"], employee_name=user["full_name"], role=user["role"],
+                          event_type="sign_out", session_id=user["session_id"], request_id=getattr(request.state, "request_id", None))
+    except Exception as exc:
+        print(f"[Authentication] Logout failed: {type(exc).__name__}")
+        raise HTTPException(status_code=503, detail="Could not record sign-out") from exc
+    return {"signed_out": True}
+
+@app.get("/api/v1/admin/activity-log")
+def get_admin_activity_log(limit: int = 250, user: Dict[str, Any] = Depends(require_roles(["Admin"]))):
+    if DEMO_AUTH_ENABLED:
+        return {"factory_time_zone": "UTC", "events": [], "demo_mode": True}
+    if limit < 1 or limit > 1000:
+        raise HTTPException(status_code=422, detail="limit must be between 1 and 1000")
+    engine = get_telemetry_engine()
+    try:
+        with engine.connect() as connection:
+            rows = connection.execute(_sql_text("""
+                SELECT id, employee_id, employee_name, role_at_event, event_type, occurred_at_utc,
+                       employee_work_id, session_id, request_id, details
+                FROM activity_log ORDER BY occurred_at_utc DESC, id DESC LIMIT :limit
+            """), {"limit": limit}).mappings().all()
+        events = []
+        for row in rows:
+            local_timestamp, zone_name = _factory_time(row["occurred_at_utc"])
+            events.append(AuditEventRecord(
+                id=row["id"], employee_id=row["employee_id"], employee_work_id=row["employee_work_id"], employee_name=row["employee_name"], role=row["role_at_event"],
+                event_type=row["event_type"], occurred_at_utc=_iso_utc(row["occurred_at_utc"]),
+                occurred_at_local=local_timestamp, factory_time_zone=zone_name,
+                session_id=row["session_id"], request_id=row["request_id"], details=row["details"],
+            ).model_dump())
+        try:
+            ZoneInfo(FACTORY_TIMEZONE)
+            factory_time_zone = FACTORY_TIMEZONE
+        except ZoneInfoNotFoundError:
+            factory_time_zone = "UTC"
+        return {"factory_time_zone": factory_time_zone, "events": events, "demo_mode": False}
+    except Exception as exc:
+        print(f"[Activity Log] Read failed: {type(exc).__name__}")
+        raise HTTPException(status_code=503, detail="Activity log is unavailable") from exc
 
 @app.get("/api/v1/admin/users")
 def get_admin_users(user: Dict[str, Any] = Depends(require_roles(["Admin"]))):
     """Admin only: list registered system users and assigned roles."""
-    return [
-        {
-            "id": u["id"],
-            "work_id": u["work_id"],
-            "full_name": u["full_name"],
-            "role": u["role"],
-            "assigned_machine": u["assigned_machine"],
-            "email": u["email"]
-        }
-        for u in DEMO_USERS.values()
-    ]
+    if DEMO_AUTH_ENABLED:
+        return [{"id": u["id"], "work_id": u["work_id"], "full_name": u["full_name"], "role": u["role"], "assigned_machine": u["assigned_machine"], "email": u["email"], "is_active": True} for u in DEMO_USERS.values()]
+    engine = get_telemetry_engine()
+    try:
+        with engine.connect() as connection:
+            rows = connection.execute(_sql_text("SELECT id, work_id, full_name, role, assigned_machine, email, department, shift, is_active FROM users ORDER BY full_name")).mappings().all()
+        return [dict(row) for row in rows]
+    except Exception as exc:
+        print(f"[Personnel] Read failed: {type(exc).__name__}")
+        raise HTTPException(status_code=503, detail="Personnel directory is unavailable") from exc
+
+@app.post("/api/v1/admin/users", status_code=201)
+def create_admin_user(payload: AdminUserCreateRequest, request: Request, user: Dict[str, Any] = Depends(require_roles(["Admin"]))):
+    if DEMO_AUTH_ENABLED:
+        raise HTTPException(status_code=403, detail="Personnel changes are disabled in demo mode")
+    engine = get_telemetry_engine()
+    try:
+        password_hash = _hash_password(payload.password, secrets.token_bytes(16))
+        work_id = payload.work_id.strip().upper()
+        with engine.begin() as connection:
+            result = connection.execute(_sql_text("""
+                INSERT INTO users (work_id, full_name, password_hash, role, assigned_machine, email, department, shift, is_active)
+                VALUES (:work_id, :full_name, :password_hash, :role, :assigned_machine, :email, :department, :shift, TRUE)
+            """), {"work_id": work_id, "full_name": payload.full_name.strip(), "password_hash": password_hash, "role": payload.role, "assigned_machine": payload.assigned_machine, "email": payload.email.strip(), "department": payload.department, "shift": payload.shift})
+            new_id = result.lastrowid
+            _audit_insert(connection, employee_id=user["id"], employee_work_id=user["work_id"], employee_name=user["full_name"], role=user["role"], event_type="user_created", session_id=user.get("session_id"), request_id=getattr(request.state, "request_id", None), details=f"Created employee {work_id} with role {payload.role}")
+        return {"id": new_id, "work_id": work_id, "full_name": payload.full_name.strip(), "role": payload.role, "assigned_machine": payload.assigned_machine, "email": payload.email.strip(), "department": payload.department, "shift": payload.shift, "is_active": True}
+    except Exception as exc:
+        if isinstance(exc, HTTPException): raise
+        print(f"[Personnel] Create failed: {type(exc).__name__}")
+        raise HTTPException(status_code=409, detail="Personnel record could not be created; check for a duplicate employee ID or email") from exc
+
+@app.patch("/api/v1/admin/users/{employee_id}")
+def update_admin_user(employee_id: int, payload: AdminUserUpdateRequest, request: Request, user: Dict[str, Any] = Depends(require_roles(["Admin"]))):
+    if DEMO_AUTH_ENABLED:
+        raise HTTPException(status_code=403, detail="Personnel changes are disabled in demo mode")
+    updates = payload.model_dump(exclude_unset=True)
+    if not updates:
+        raise HTTPException(status_code=422, detail="No personnel fields supplied")
+    if any(updates.get(field) is None for field in ("full_name", "role", "email", "is_active") if field in updates):
+        raise HTTPException(status_code=422, detail="Name, role, email, and active status cannot be null")
+    if employee_id == user["id"] and (updates.get("role", user["role"]) != "Admin" or updates.get("is_active") is False):
+        raise HTTPException(status_code=409, detail="You cannot remove your own administrator access")
+    engine = get_telemetry_engine()
+    allowed = {"full_name", "role", "assigned_machine", "department", "shift", "email", "is_active"}
+    assignments = ", ".join(f"{key} = :{key}" for key in updates if key in allowed)
+    try:
+        with engine.begin() as connection:
+            before = connection.execute(_sql_text("SELECT id, work_id, role, is_active FROM users WHERE id = :id"), {"id": employee_id}).mappings().first()
+            if not before: raise HTTPException(status_code=404, detail="Employee not found")
+            leaving_admin_role = before["role"] == "Admin" and before["is_active"] and (updates.get("role", "Admin") != "Admin" or updates.get("is_active") is False)
+            if leaving_admin_role:
+                admin_count = connection.execute(_sql_text("SELECT COUNT(*) FROM users WHERE role = 'Admin' AND is_active = TRUE")).scalar_one()
+                if admin_count <= 1: raise HTTPException(status_code=409, detail="At least one active administrator must remain")
+            connection.execute(_sql_text(f"UPDATE users SET {assignments} WHERE id = :id"), {**updates, "id": employee_id})
+            if updates.get("is_active") is False:
+                connection.execute(_sql_text("UPDATE auth_sessions SET revoked_at_utc = UTC_TIMESTAMP(6), revoke_reason = 'account_deactivated' WHERE employee_id = :id AND revoked_at_utc IS NULL"), {"id": employee_id})
+            _audit_insert(connection, employee_id=user["id"], employee_work_id=user["work_id"], employee_name=user["full_name"], role=user["role"], event_type="user_role_changed" if "role" in updates else "user_updated", session_id=user.get("session_id"), request_id=getattr(request.state, "request_id", None), details=f"Updated {before['work_id']}; role {before['role']} -> {updates.get('role', before['role'])}")
+            after = connection.execute(_sql_text("SELECT id, work_id, full_name, role, assigned_machine, email, department, shift, is_active FROM users WHERE id = :id"), {"id": employee_id}).mappings().first()
+        return dict(after)
+    except HTTPException: raise
+    except Exception as exc:
+        print(f"[Personnel] Update failed: {type(exc).__name__}")
+        raise HTTPException(status_code=503, detail="Personnel update failed") from exc
+
+@app.delete("/api/v1/admin/users/{employee_id}")
+def deactivate_admin_user(employee_id: int, request: Request, user: Dict[str, Any] = Depends(require_roles(["Admin"]))):
+    if DEMO_AUTH_ENABLED:
+        raise HTTPException(status_code=403, detail="Personnel changes are disabled in demo mode")
+    if employee_id == user["id"]:
+        raise HTTPException(status_code=409, detail="You cannot deactivate your own account")
+    engine = get_telemetry_engine()
+    try:
+        with engine.begin() as connection:
+            employee = connection.execute(_sql_text("SELECT work_id, role, is_active FROM users WHERE id = :id"), {"id": employee_id}).mappings().first()
+            if not employee: raise HTTPException(status_code=404, detail="Employee not found")
+            if employee["role"] == "Admin" and employee["is_active"]:
+                admin_count = connection.execute(_sql_text("SELECT COUNT(*) FROM users WHERE role = 'Admin' AND is_active = TRUE")).scalar_one()
+                if admin_count <= 1: raise HTTPException(status_code=409, detail="At least one active administrator must remain")
+            connection.execute(_sql_text("UPDATE users SET is_active = FALSE WHERE id = :id"), {"id": employee_id})
+            connection.execute(_sql_text("UPDATE auth_sessions SET revoked_at_utc = UTC_TIMESTAMP(6), revoke_reason = 'account_deactivated' WHERE employee_id = :id AND revoked_at_utc IS NULL"), {"id": employee_id})
+            _audit_insert(connection, employee_id=user["id"], employee_work_id=user["work_id"], employee_name=user["full_name"], role=user["role"], event_type="user_deactivated", session_id=user.get("session_id"), request_id=getattr(request.state, "request_id", None), details=f"Deactivated employee {employee['work_id']}")
+        return {"deactivated": True}
+    except HTTPException: raise
+    except Exception as exc:
+        print(f"[Personnel] Deactivation failed: {type(exc).__name__}")
+        raise HTTPException(status_code=503, detail="Personnel deactivation failed") from exc
 
 # ------------------------------------------------------------------------------
 # Telemetry & Machine Routes
 # ------------------------------------------------------------------------------
 
 @app.get("/api/v1/machines")
-def list_machines():
-    return [
+def list_machines(user: Dict[str, Any] = Depends(get_current_user)):
+    machines = [
         {"code": "CNC-MILL-01", "name": "5-Axis Precision Vertical Mill Alpha", "line_id": "Line 1 - Aerospace Rotor Cell", "status": "Nominal", "cut_hours": 1420.5},
         {"code": "CNC-MILL-02", "name": "High-Speed CNC Milling Center Beta", "line_id": "Line 1 - Aerospace Rotor Cell", "status": "Warning", "cut_hours": 2190.0},
         {"code": "CNC-LATHE-03", "name": "Heavy Duty CNC Turning Center Gamma", "line_id": "Line 2 - Drivetrain Shafts", "status": "Nominal", "cut_hours": 3410.2},
         {"code": "CNC-HEAVY-04", "name": "Multi-Spindle Heavy Gantry Station", "line_id": "Line 3 - Structural Housings", "status": "Critical", "cut_hours": 4890.8},
     ]
+    if user["role"] == "Operator":
+        return [machine for machine in machines if machine["code"] == user.get("assigned_machine")]
+    return machines
 
 @app.get("/api/v1/machines/{code}/telemetry", response_model=TelemetryReadingSchema)
-def get_machine_telemetry(code: str):
+def get_machine_telemetry(code: str, user: Dict[str, Any] = Depends(get_current_user)):
+    if user["role"] == "Operator" and code != user.get("assigned_machine"):
+        raise HTTPException(status_code=403, detail="Operators may view telemetry only for their assigned machine")
     now = datetime.datetime.utcnow().isoformat()
     return TelemetryReadingSchema(
         timestamp=now,
@@ -441,6 +777,8 @@ def _create_telemetry_engine(database_url: str):
     return engine
 
 def get_telemetry_engine():
+    if DEMO_AUTH_ENABLED:
+        raise HTTPException(status_code=503, detail="MySQL access is disabled for demo sessions")
     database_url = os.environ.get("DATABASE_URL", "").strip()
     if not database_url:
         raise HTTPException(status_code=503, detail="Telemetry database is not configured")
@@ -669,60 +1007,16 @@ def get_simulator_telemetry_readings(
         print(f"[Telemetry API] Database read failed: {type(exc).__name__}")
         raise HTTPException(status_code=503, detail="Telemetry database is unavailable") from exc
 
-def publish_supabase_realtime_event(channel_topic: str, event_name: str, payload: Dict[str, Any]) -> bool:
-    """
-    Publishes small notification event via Supabase Realtime HTTP Broadcast API.
-    MySQL remains the ONLY source of truth.
-    Payload contains only non-sensitive notification metadata.
-    """
-    supabase_url = os.environ.get("SUPABASE_URL") or os.environ.get("VITE_SUPABASE_URL")
-    supabase_key = (
-        os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
-        or os.environ.get("SUPABASE_ANON_KEY")
-        or os.environ.get("VITE_SUPABASE_ANON_KEY")
-    )
-
-    if not supabase_url or not supabase_key:
-        return False
-
-    try:
-        clean_url = supabase_url.rstrip("/")
-        broadcast_endpoint = f"{clean_url}/realtime/v1/api/broadcast"
-        req_body = json.dumps({
-            "messages": [
-                {
-                    "topic": channel_topic,
-                    "event": event_name,
-                    "payload": payload,
-                }
-            ]
-        }).encode("utf-8")
-
-        req = urllib.request.Request(
-            broadcast_endpoint,
-            data=req_body,
-            headers={
-                "apikey": supabase_key,
-                "Authorization": f"Bearer {supabase_key}",
-                "Content-Type": "application/json",
-            },
-            method="POST",
-        )
-        with urllib.request.urlopen(req, timeout=3.0) as resp:
-            return resp.status in (200, 202)
-    except Exception as e:
-        print(f"[Supabase Realtime] Broadcast event dispatch warning: {e}")
-        return False
-
 @app.post("/api/v1/machines/inject-telemetry")
 def inject_telemetry(
     machine_code: str,
     anomaly_type: str,
+    request: Request,
     user: Dict[str, Any] = Depends(require_roles(["Supervisor", "Maintenance"]))
 ):
     """
     Supervisor / Maintenance demo generator (Admin forbidden per approved role matrix).
-    Returns a simulated sample and may publish a notification; it does not persist it.
+    Returns a simulated sample; it does not persist the telemetry.
     External simulator persistence uses POST /api/v1/telemetry.
     """
     now = datetime.datetime.utcnow().isoformat()
@@ -740,28 +1034,7 @@ def inject_telemetry(
         "storage_status": "DEMO_ONLY_NOT_PERSISTED"
     }
 
-    # Broadcast to active Supervisor & Maintenance channels via Supabase Realtime
-    if anomaly_type in ["HIGH_CHATTER", "THERMAL_OVERLOAD", "FEED_SPIKE"]:
-        minimal_payload = {
-            "id": f"NOTIF-SIM-{int(datetime.datetime.utcnow().timestamp())}",
-            "machine_code": machine_code,
-            "plant": "Plant A: Precision Machining",
-            "severity": "Critical" if anomaly_type == "THERMAL_OVERLOAD" else "High",
-            "title": f"Abnormal Sensor Activity: {anomaly_type}",
-            "summary": f"Automatic sensor monitor detected threshold breach on {machine_code} during active cut cycle.",
-            "source": "ABNORMAL_TELEMETRY",
-            "target_roles": ["Supervisor", "Maintenance", "Admin"],
-            "timestamp": now,
-            "primary_metric": {
-                "name": "Spindle Vibration" if anomaly_type == "HIGH_CHATTER" else "Coolant Temperature",
-                "observed": 5.45 if anomaly_type == "HIGH_CHATTER" else 54.2,
-                "unit": "m/s²" if anomaly_type == "HIGH_CHATTER" else "°C",
-                "limit": 4.2 if anomaly_type == "HIGH_CHATTER" else 35.0,
-            }
-        }
-        publish_supabase_realtime_event("factorypulse:alerts:supervisor:all", "incident_notification", minimal_payload)
-        publish_supabase_realtime_event("factorypulse:alerts:maintenance:all", "incident_notification", minimal_payload)
-        publish_supabase_realtime_event("factorypulse:alerts:broadcast", "incident_notification", minimal_payload)
+    record_activity(user=user, event_type="simulated_alert_injected", request_id=getattr(request.state, "request_id", None), details=f"Injected {anomaly_type} demo anomaly on {machine_code}; sample not persisted")
 
     return sim_record
 
@@ -783,11 +1056,14 @@ def list_incidents(
         results = [i for i in results if i["severity"] == severity_filter]
     if machine_filter:
         results = [i for i in results if i["machine_code"] == machine_filter]
+    if user["role"] == "Operator" and user.get("assigned_machine"):
+        results = [i for i in results if i["machine_code"] == user["assigned_machine"]]
     return results
 
 @app.post("/api/v1/incidents")
 def create_incident(
     payload: CreateIncidentRequest,
+    request: Request,
     user: Dict[str, Any] = Depends(require_roles(["Operator", "Supervisor", "Maintenance"]))
 ):
     """Operator, Supervisor, Maintenance can create. Manager and Admin cannot."""
@@ -838,76 +1114,30 @@ def create_incident(
         "closed_at": None,
         "notes": None,
     }
+    record_activity(user=user, event_type="incident_created", request_id=getattr(request.state, "request_id", None), details=f"Created {new_code} for machine {payload.machine_code}")
     INCIDENTS_STORE.append(incident_record)
 
-    # 1. Save or confirm the incident in MySQL (done above).
-    # 2. Publish a small, non-sensitive notification event through Supabase Realtime.
-    # 3. Delivers promptly to active Supervisor and Maintenance users without requiring a refresh.
-    machine_plant = "Plant A: Precision Machining"
-    if "TRN" in payload.machine_code:
-        machine_plant = "Plant B: Powertrain Components"
-    elif "HEAVY" in payload.machine_code or "HMC" in payload.machine_code:
-        machine_plant = "Plant C: Heavy Machining"
-    elif "GRD" in payload.machine_code:
-        machine_plant = "Plant D: Finishing and Grinding"
-
-    plant_slug = machine_plant.lower().replace(" ", "-").replace(":", "")
-
-    minimal_event = {
-        "id": f"NOTIF-{new_id}",
-        "incident_id": new_id,
-        "incident_code": new_code,
-        "machine_code": payload.machine_code,
-        "plant": machine_plant,
-        "severity": payload.severity,
-        "title": f"{payload.severity} Alert: {payload.component_area}",
-        "summary": f"{user['full_name']} ({user['role']}) reported: {payload.symptom_description[:120]}",
-        "source": "OPERATOR_ALERT",
-        "target_roles": ["Supervisor", "Maintenance", "Admin"],
-        "timestamp": incident_record["created_at"],
-        "primary_metric": {
-            "name": "Spindle Vibration",
-            "observed": payload.measured_vib_rms,
-            "unit": "m/s²",
-            "limit": 4.2,
-        } if payload.measured_vib_rms > 2.5 else None,
-    }
-
-    # Publish to role and plant specific broadcast channels
-    publish_supabase_realtime_event(f"factorypulse:alerts:supervisor:{plant_slug}", "incident_notification", minimal_event)
-    publish_supabase_realtime_event("factorypulse:alerts:supervisor:all", "incident_notification", minimal_event)
-    publish_supabase_realtime_event(f"factorypulse:alerts:maintenance:{plant_slug}", "incident_notification", minimal_event)
-    publish_supabase_realtime_event("factorypulse:alerts:maintenance:all", "incident_notification", minimal_event)
-    publish_supabase_realtime_event("factorypulse:alerts:broadcast", "incident_notification", minimal_event)
-
+    # This Phase 1 route stores the incident in the in-memory demo store. It is not
+    # committed to MySQL, so it must not publish a cloud notification.
     return incident_record
 
 @app.get("/api/v1/realtime/config")
 def get_realtime_config(user: Dict[str, Any] = Depends(get_current_user)):
     """
-    Returns public Supabase Realtime configuration for client handshake.
-    MySQL is the ONLY source of truth. Secrets remain securely on server.
+    Reports cloud delivery as disabled until transactions and channel authorization
+    are enforced by the backend and Supabase policies.
     """
     supabase_url = os.environ.get("SUPABASE_URL") or os.environ.get("VITE_SUPABASE_URL") or ""
-    has_anon_key = bool(
-        os.environ.get("SUPABASE_ANON_KEY")
-        or os.environ.get("VITE_SUPABASE_ANON_KEY")
-    )
-    role = user["role"].lower()
-    allowed_channels = []
-    if role in ["supervisor", "maintenance", "admin"]:
-        allowed_channels = [
-            f"factorypulse:alerts:{role}:all",
-            "factorypulse:alerts:broadcast",
-        ]
-
     return {
         "provider": "Supabase Realtime",
         "source_of_truth": "MySQL",
-        "is_configured": bool(supabase_url and has_anon_key),
+        "is_configured": False,
+        "delivery_enabled": False,
+        "status": "disabled_pending_mysql_transactions_and_server_authorization",
+        "reason": "Incident and work-order workflows are not MySQL-transaction-backed, and role/plant channel policies are not present in this project.",
         "supabase_url": supabase_url,
         "user_role": user["role"],
-        "authorized_channels": allowed_channels,
+        "authorized_channels": [],
     }
 
 @app.get("/api/v1/incidents/{incident_id}")
@@ -915,18 +1145,22 @@ def get_incident(incident_id: int, user: Dict[str, Any] = Depends(get_current_us
     target = next((i for i in INCIDENTS_STORE if i["id"] == incident_id), None)
     if not target:
         raise HTTPException(status_code=404, detail="Incident ticket not found")
+    if user["role"] == "Operator" and target["machine_code"] != user.get("assigned_machine"):
+        raise HTTPException(status_code=403, detail="Operators may access incidents only for their assigned machine")
     return target
 
 @app.patch("/api/v1/incidents/{incident_id}/assign")
 def assign_incident(
     incident_id: int,
     payload: AssignIncidentRequest,
+    request: Request,
     user: Dict[str, Any] = Depends(require_roles(["Supervisor"]))
 ):
     """Supervisor only: assign technician."""
     target = next((i for i in INCIDENTS_STORE if i["id"] == incident_id), None)
     if not target:
         raise HTTPException(status_code=404, detail="Incident ticket not found")
+    record_activity(user=user, event_type="incident_assigned", request_id=getattr(request.state, "request_id", None), details=f"Assigned {target['incident_code']} to {payload.technician_name}")
     target["assigned_to_name"] = payload.technician_name
     target["status"] = "In_Investigation"
     return target
@@ -935,12 +1169,14 @@ def assign_incident(
 def update_incident_progress(
     incident_id: int,
     payload: UpdateProgressRequest,
+    request: Request,
     user: Dict[str, Any] = Depends(require_roles(["Maintenance"]))
 ):
     """Maintenance only: log investigation findings and repair status."""
     target = next((i for i in INCIDENTS_STORE if i["id"] == incident_id), None)
     if not target:
         raise HTTPException(status_code=404, detail="Incident ticket not found")
+    record_activity(user=user, event_type="incident_progress_updated", request_id=getattr(request.state, "request_id", None), details=f"Updated maintenance progress for {target['incident_code']}")
     existing_notes = target.get("notes") or ""
     target["notes"] = (existing_notes + "\n\n" if existing_notes else "") + f"[Maintenance Log]: {payload.progress_notes}"
     target["status"] = "Action_Required"
@@ -950,12 +1186,14 @@ def update_incident_progress(
 def close_incident(
     incident_id: int,
     payload: CloseIncidentRequest,
+    request: Request,
     user: Dict[str, Any] = Depends(require_roles(["Supervisor", "Maintenance"]))
 ):
     """Supervisor or Maintenance only with verified operational/maintenance sign-off."""
     target = next((i for i in INCIDENTS_STORE if i["id"] == incident_id), None)
     if not target:
         raise HTTPException(status_code=404, detail="Incident ticket not found")
+    record_activity(user=user, event_type="incident_closed", request_id=getattr(request.state, "request_id", None), details=f"Closed {target['incident_code']}")
     target["status"] = "Closed"
     target["closed_at"] = datetime.datetime.utcnow().isoformat()
     target["closed_by_name"] = user["full_name"]
@@ -1023,7 +1261,7 @@ def diagnose_incident(
 # ------------------------------------------------------------------------------
 
 @app.get("/api/v1/analytics/tool-wear")
-def get_tool_wear_analytics():
+def get_tool_wear_analytics(user: Dict[str, Any] = Depends(require_roles(["Supervisor", "Manager", "Maintenance", "Admin"]))):
     """Dataset 1: CNC Machine Tool Wear Dataset (Vb in mm, 2,054 rows)"""
     return {
         "dataset_name": "CNC Machine Tool Wear Dataset",
@@ -1040,7 +1278,7 @@ def get_tool_wear_analytics():
     }
 
 @app.get("/api/v1/analytics/surface-quality")
-def get_surface_quality_analytics():
+def get_surface_quality_analytics(user: Dict[str, Any] = Depends(require_roles(["Supervisor", "Manager", "Maintenance", "Admin"]))):
     """Dataset 2: CNC Turning Roughness Dataset (Ra in µm, 612 rows merged)"""
     return {
         "dataset_name": "CNC Turning Roughness Dataset",
@@ -1056,7 +1294,7 @@ def get_surface_quality_analytics():
     }
 
 @app.get("/api/v1/analytics/telemetry")
-def get_telemetry_analytics():
+def get_telemetry_analytics(user: Dict[str, Any] = Depends(require_roles(["Supervisor", "Manager", "Maintenance", "Admin"]))):
     """
     Dataset 3: CNC Mill Tool Telemetry Dataset
     25,286 rows across 18 experiments with experiment_name preserved.
@@ -1078,7 +1316,7 @@ def get_telemetry_analytics():
     }
 
 @app.get("/api/v1/analytics/cycle-to-failure")
-def get_cycle_to_failure_analytics():
+def get_cycle_to_failure_analytics(user: Dict[str, Any] = Depends(require_roles(["Supervisor", "Manager", "Maintenance", "Admin"]))):
     """Dataset 4: FeatureAndMetadata_Milling (CycleToFailure, 968 rows)"""
     return {
         "dataset_name": "FeatureAndMetadata_Milling",
@@ -1093,7 +1331,7 @@ def get_cycle_to_failure_analytics():
     }
 
 @app.get("/api/v1/analytics/pipeline-health")
-def get_pipeline_health():
+def get_pipeline_health(user: Dict[str, Any] = Depends(require_roles(["Supervisor", "Manager", "Maintenance", "Admin"]))):
     """Raw vs Processed Data Pipeline Health Audit."""
     return {
         "raw_counts": {

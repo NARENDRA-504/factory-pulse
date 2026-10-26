@@ -9,7 +9,6 @@ import {
   Clock,
   CheckCircle2,
   LogOut,
-  ArrowRightLeft,
 } from 'lucide-react';
 
 interface UserProfileModalProps {
@@ -17,7 +16,6 @@ interface UserProfileModalProps {
   currentUser: UserProfile;
   isOpen: boolean;
   onClose: () => void;
-  onSwitchToUser?: (user: UserProfile) => void;
   onLogout?: () => void;
 }
 
@@ -26,7 +24,6 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   currentUser,
   isOpen,
   onClose,
-  onSwitchToUser,
   onLogout,
 }) => {
   if (!isOpen || !user) return null;
@@ -225,24 +222,10 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
         <div className="px-6 py-3.5 bg-slate-900/90 border-t border-slate-800 flex items-center justify-between gap-3">
           <div className="text-[11px] font-mono text-slate-400 flex items-center gap-1">
             <Clock className="w-3.5 h-3.5 text-slate-400" />
-            <span>Active Session Token: {user.workId}</span>
+            <span>Authenticated employee session</span>
           </div>
 
           <div className="flex items-center gap-2">
-            {!isSelf && onSwitchToUser && (
-              <button
-                type="button"
-                onClick={() => {
-                  onSwitchToUser(user);
-                  onClose();
-                }}
-                className="px-3 py-1.5 rounded-lg bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 border border-teal-500/40 text-xs font-medium transition-all flex items-center gap-1.5"
-              >
-                <ArrowRightLeft className="w-3.5 h-3.5" />
-                <span>Switch to this Persona</span>
-              </button>
-            )}
-
             {isSelf && onLogout && (
               <button
                 type="button"

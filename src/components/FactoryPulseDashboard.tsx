@@ -36,27 +36,27 @@ const ROLE_COPY: Record<UserRole, { eyebrow: string; title: string; description:
   Operator: {
     eyebrow: 'My workstation',
     title: 'Machine & shift overview',
-    description: 'Check today’s machine condition, live readings, production progress, and open issues.',
+    description: 'Check the assigned machine, simulated readings, roster shift output, and open issues.',
   },
   Supervisor: {
     eyebrow: 'Shift operations',
     title: 'Floor health at a glance',
-    description: 'Compare plant conditions, spot machines that need attention, and follow the shift queue.',
+    description: 'Compare roster snapshots, spot machines flagged for attention, and follow the issue queue.',
   },
   Manager: {
     eyebrow: 'Operations summary',
     title: 'Production & fleet health',
-    description: 'Review output, machine availability, and operating conditions across the selected fleet.',
+    description: 'Review roster output, machine status, and operating-condition snapshots across the selected fleet.',
   },
   Maintenance: {
     eyebrow: 'Reliability workbench',
     title: 'Equipment condition & work queue',
-    description: 'Prioritize open issues with current machine readings and work order status.',
+    description: 'Prioritize open issues with roster readings and work-order status.',
   },
   Admin: {
     eyebrow: 'Platform overview',
     title: 'Fleet & operations summary',
-    description: 'Review fleet status, production progress, and open operational issues.',
+    description: 'Review fleet roster status, recorded shift counts, and open operational issues.',
   },
 };
 
@@ -70,7 +70,7 @@ const STATUS_COLORS: Record<string, string> = {
 type TrendMetric = { key: MetricKey; label: string; shortLabel: string; unit: string; color: string; limit?: number; limitLabel?: string; value: (row: TelemetryReading) => number };
 
 const TREND_METRICS: TrendMetric[] = [
-  { key: 'vibration', label: 'Spindle vibration', shortLabel: 'Vibration', unit: 'm/s²', color: '#cc6848', limit: 4.2, limitLabel: 'Operating limit', value: (row) => row.vibRms },
+  { key: 'vibration', label: 'Spindle vibration', shortLabel: 'Vibration', unit: 'm/s²', color: '#cc6848', limit: 4.2, limitLabel: 'Reference baseline', value: (row) => row.vibRms },
   { key: 'temperature', label: 'Coolant temperature', shortLabel: 'Coolant temp', unit: '°C', color: '#3287ad', limit: 35, limitLabel: 'Safe limit', value: (row) => row.coolantTempC },
   { key: 'speed', label: 'Spindle speed', shortLabel: 'Speed', unit: 'RPM', color: '#237d70', value: (row) => row.spindleRpm },
   { key: 'load', label: 'Motor load', shortLabel: 'Motor load', unit: '%', color: '#9c6fbd', limit: 85, limitLabel: 'Load limit', value: (row) => row.motorLoadPct },
@@ -178,7 +178,7 @@ const LiveTrend: React.FC<{ readings: TelemetryReading[]; metric: TrendMetric }>
     <div>
       <div className="mb-2 flex flex-wrap items-end justify-between gap-2">
         <div><span className="text-3xl font-semibold tracking-tight text-slate-100 tabular-nums">{displayNumber(current.value, metric.unit === 'RPM' ? 0 : 2)}</span><span className="ml-1.5 text-sm text-slate-400">{metric.unit}</span></div>
-        <span className="text-[11px] text-slate-400">{data.length} recent simulator readings</span>
+        <span className="text-[11px] text-slate-400">{data.length} demo samples</span>
       </div>
       <div className="h-[230px] w-full overflow-hidden rounded-lg bg-slate-950/70">
         <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`${metric.label} recent readings`} className="h-full w-full">
@@ -195,7 +195,7 @@ const LiveTrend: React.FC<{ readings: TelemetryReading[]; metric: TrendMetric }>
           <text x={width - right} y={height - 8} textAnchor="end" fill="#64748b" fontSize="10">{timeLabel(current.time)}</text>
         </svg>
       </div>
-      <p className="mt-2 text-xs text-slate-400">This line uses the readings collected since this page was opened. No earlier history is available in this view.</p>
+      <p className="mt-2 text-xs text-slate-400">Demo simulation samples collected while this page is open. This is not live machine history.</p>
     </div>
   );
 };
@@ -340,7 +340,7 @@ export const FactoryPulseDashboard: React.FC<FactoryPulseDashboardProps> = ({ cu
         <>
           <div className="flex flex-col justify-between gap-2 rounded-xl border border-slate-800/80 bg-[#0c1424] px-4 py-3 shadow-sm sm:flex-row sm:items-center">
             <div className="flex min-w-0 items-center gap-2"><MapPin className="h-4 w-4 shrink-0 text-slate-400"/><span className="truncate text-sm font-semibold text-slate-200">{selectedMachine?.displayName || selectedMachine?.name || 'Assigned machine'}</span><span className="shrink-0 rounded-md bg-slate-800 px-2 py-1 text-[10px] font-semibold text-slate-400">{selectedMachine?.machineCode || selectedMachine?.code || currentUser.assignedMachine}</span></div>
-            <div className="flex items-center gap-2 text-xs"><span className={`rounded-full px-2.5 py-1 font-semibold ${operatorCondition === 'Nominal' ? 'bg-emerald-950/60 text-emerald-300' : operatorCondition === 'Critical' ? 'bg-rose-950/60 text-rose-300' : operatorCondition === 'Warning' ? 'bg-amber-950/60 text-amber-300' : 'bg-slate-800 text-slate-400'}`}>{operatorCondition}</span><button onClick={() => setIsStreaming((value) => !value)} className="inline-flex items-center gap-1.5 rounded-md border border-slate-800/80 px-2.5 py-1.5 text-slate-400 hover:bg-slate-900/70">{isStreaming ? <Pause className="h-3.5 w-3.5"/> : <Play className="h-3.5 w-3.5"/>}{isStreaming ? 'Pause stream' : 'Resume stream'}</button><span className="text-slate-400">Simulator stream</span></div>
+            <div className="flex items-center gap-2 text-xs"><span className={`rounded-full px-2.5 py-1 font-semibold ${operatorCondition === 'Nominal' ? 'bg-emerald-950/60 text-emerald-300' : operatorCondition === 'Critical' ? 'bg-rose-950/60 text-rose-300' : operatorCondition === 'Warning' ? 'bg-amber-950/60 text-amber-300' : 'bg-slate-800 text-slate-400'}`}>{operatorCondition}</span><button onClick={() => setIsStreaming((value) => !value)} className="inline-flex items-center gap-1.5 rounded-md border border-slate-800/80 px-2.5 py-1.5 text-slate-400 hover:bg-slate-900/70">{isStreaming ? <Pause className="h-3.5 w-3.5"/> : <Play className="h-3.5 w-3.5"/>}{isStreaming ? 'Pause preview' : 'Resume preview'}</button><span className="text-amber-300">Demo simulation</span></div>
           </div>
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-6">
             <MeterCard label="Vibration" value={latestTelemetry?.vibRms} unit="m/s²" warningAt={3.2} limit={4.2} limitLabel="Baseline" scaleMax={6.3} digits={2} icon={<Activity className="h-4 w-4"/>}/>
@@ -351,11 +351,11 @@ export const FactoryPulseDashboard: React.FC<FactoryPulseDashboardProps> = ({ cu
             <MetricCard label="Open issues" value={String(activeIncidents.length)} note="Assigned workstation" tone={activeIncidents.length ? 'rose' : 'teal'} icon={<AlertTriangle className="h-4 w-4"/>}/>
           </div>
           <div className="grid grid-cols-1 gap-3.5 xl:grid-cols-12">
-            <Panel title="Recent sensor readings" subtitle="Live simulator readings collected since this page was opened." className="xl:col-span-8" action={<div className="flex flex-wrap gap-1">{TREND_METRICS.map((metric) => <button key={metric.key} onClick={() => setTrendKey(metric.key)} className={`rounded-md px-2 py-1 text-[11px] font-medium transition ${trendKey === metric.key ? 'bg-slate-900 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>{metric.shortLabel}</button>)}</div>}>
+            <Panel title="Simulated sensor trend" subtitle="Preview samples generated by the app; not readings from connected equipment." className="xl:col-span-8" action={<div className="flex flex-wrap gap-1">{TREND_METRICS.map((metric) => <button key={metric.key} onClick={() => setTrendKey(metric.key)} className={`rounded-md px-2 py-1 text-[11px] font-medium transition ${trendKey === metric.key ? 'bg-slate-900 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>{metric.shortLabel}</button>)}</div>}>
               <LiveTrend readings={telemetryHistory} metric={selectedTrend}/>
             </Panel>
             <div className="space-y-3.5 xl:col-span-4">
-              <Panel title="Shift production" subtitle="Progress from the machine roster’s shift count.">
+              <Panel title="Shift production" subtitle="Demo progress from the machine roster’s recorded shift count.">
                 {selectedMachine && operatorTarget > 0 ? <>
                   <div className="flex items-baseline justify-between"><div><span className="text-3xl font-semibold tabular-nums text-slate-100">{operatorProduction.toLocaleString()}</span><span className="ml-1 text-sm text-slate-400">/ {operatorTarget.toLocaleString()} parts</span></div><span className="text-sm font-semibold text-teal-300">{displayNumber(productionPercent, 0)}%</span></div>
                   <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-slate-800"><div className="h-full rounded-full bg-teal-600 transition-all" style={{ width: `${productionPercent}%` }}/></div>
@@ -390,7 +390,7 @@ export const FactoryPulseDashboard: React.FC<FactoryPulseDashboardProps> = ({ cu
             <Panel title="Machine status by plant" subtitle={`${nominalCount} of ${filteredMachines.length} machines are nominal in this selection.`} className="xl:col-span-8">
               <StackedStatusBar machines={filteredMachines}/>
             </Panel>
-            <Panel title="Shift output" subtitle="Production counts and targets from the machine roster." className="xl:col-span-4">
+            <Panel title="Shift output" subtitle="Recorded roster counts and targets; not a live production feed." className="xl:col-span-4">
               <div className="flex items-end justify-between gap-3"><div><span className="text-3xl font-semibold tabular-nums text-slate-100">{produced.toLocaleString()}</span><span className="ml-1 text-sm text-slate-400">/ {target.toLocaleString()} parts</span></div><span className="text-sm font-semibold text-teal-300">{target ? `${displayNumber(productionPercent, 0)}%` : '—'}</span></div>
               <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-slate-800"><div className="h-full rounded-full bg-teal-600" style={{ width: `${productionPercent}%` }}/></div>
               <p className="mt-2 text-xs text-slate-400">{target ? `${Math.max(0, target - produced).toLocaleString()} parts remain to reach the combined target.` : 'Shift target data is unavailable for this selection.'}</p>
@@ -426,7 +426,7 @@ export const FactoryPulseDashboard: React.FC<FactoryPulseDashboardProps> = ({ cu
           </div>
         </>
       )}
-      <div className="flex items-center justify-between border-t border-slate-800/80 px-1 pt-2 text-[10px] text-slate-400"><span>FactoryPulse dashboard · {currentUser.role}</span><span className="inline-flex items-center gap-1"><Clock3 className="h-3 w-3"/>{isOperator ? 'Simulator stream' : 'Current roster values'}</span></div>
+      <div className="flex items-center justify-between border-t border-slate-800/80 px-1 pt-2 text-[10px] text-slate-400"><span>FactoryPulse dashboard · {currentUser.role}</span><span className="inline-flex items-center gap-1"><Clock3 className="h-3 w-3"/>{isOperator ? 'Demo simulation' : 'Roster snapshot'}</span></div>
     </div>
   );
 };

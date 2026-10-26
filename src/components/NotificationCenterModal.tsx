@@ -51,42 +51,15 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
   if (!isOpen) return null;
 
   const [isConfigOpen, setIsConfigOpen] = useState(false);
-  const creds = supabaseRealtime.getCredentials();
-  const [supabaseUrl, setSupabaseUrl] = useState(creds.url);
-  const [supabaseAnonKey, setSupabaseAnonKey] = useState(creds.anonKey);
   const [configFeedback, setConfigFeedback] = useState<string | null>(null);
 
   const realtimeStatus = notificationService.getSupabaseRealtimeStatus();
   const unreadCount = notifications.filter((n) => !n.isRead && !n.acknowledgedAt).length;
 
-  const plantSlug = currentUser.assignedPlant
-    ? currentUser.assignedPlant.toLowerCase().replace(/[^a-z0-9]/g, '-')
-    : 'all';
-
-  const authorizedChannels = [
-    `factorypulse:alerts:${currentUser.role.toLowerCase()}:all`,
-    `factorypulse:alerts:${currentUser.role.toLowerCase()}:${plantSlug}`,
-    'factorypulse:alerts:broadcast',
-  ];
-
-  const handleSaveCredentials = (e: React.FormEvent) => {
-    e.preventDefault();
-    const success = supabaseRealtime.saveCredentials(supabaseUrl, supabaseAnonKey);
-    if (success) {
-      notificationService.syncUserRole(currentUser.role, currentUser.assignedPlant);
-      setConfigFeedback('Supabase credentials saved and real-time channels connected.');
-    } else {
-      setConfigFeedback('Cleared custom credentials. Operating on high-speed in-app BroadcastChannel bus.');
-    }
-    setTimeout(() => setConfigFeedback(null), 4000);
-  };
-
   const handleResetToDefault = () => {
     supabaseRealtime.saveCredentials('', '');
-    setSupabaseUrl('');
-    setSupabaseAnonKey('');
     notificationService.syncUserRole(currentUser.role, currentUser.assignedPlant);
-    setConfigFeedback('Reverted to resilient local broadcast engine.');
+    setConfigFeedback('Saved cloud settings cleared. Notifications remain local-only.');
     setTimeout(() => setConfigFeedback(null), 4000);
   };
 
@@ -102,7 +75,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
-                  Live Notifications &amp; Alerts Hub
+                  Notifications &amp; Alerts
                 </h2>
                 {unreadCount > 0 && (
                   <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">
@@ -111,7 +84,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
                 )}
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                Delivered in real-time to {currentUser.role} without refreshing. Role-based notification stream.
+                Local in-app notifications for {currentUser.role}. Cross-device cloud delivery is disabled.
               </p>
             </div>
           </div>
@@ -160,10 +133,10 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
               <div>
                 <h3 className="font-bold text-slate-800 flex items-center gap-1.5 text-xs">
                   <Radio className="w-3.5 h-3.5 text-teal-600" />
-                  Supabase Realtime Channel Architecture (RBAC Enforced)
+                  Supabase Realtime configuration
                 </h3>
                 <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
-                  PostgreSQL/Supabase is used <strong>strictly as a broadcast event broker</strong>. All machine data, incidents, and work orders reside exclusively in MySQL. Privileged credentials never leave the server.
+                  Supabase should carry notification events only; operational records belong in MySQL. This project has no verified Supabase role/plant policies. Channel names and browser-side filters do not enforce access. Do not use cloud delivery for operational alerts until server-verified authorization is configured.
                 </p>
               </div>
               <span className="shrink-0 px-2 py-1 rounded bg-teal-50 text-teal-800 border border-teal-200 font-mono text-[10px] font-semibold">
@@ -171,52 +144,16 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
               </span>
             </div>
 
-            {/* Authorized Channels List */}
+            {/* Cloud delivery is deliberately disabled in this prototype. */}
             <div className="bg-white p-2.5 rounded-lg border border-slate-200 space-y-1.5">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                Active Subscribed Channels for Current User:
+                Cloud subscription status:
               </span>
-              <div className="flex flex-wrap gap-1.5 font-mono text-[11px]">
-                {authorizedChannels.map((chan, idx) => (
-                  <span
-                    key={idx}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 rounded text-slate-700 border border-slate-200"
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-teal-500" />
-                    {chan}
-                  </span>
-                ))}
-              </div>
+              <p className="font-mono text-[11px] text-amber-700">Disabled until MySQL transaction writes and server-enforced role/plant policies are implemented.</p>
             </div>
 
-            {/* Custom Supabase Credentials Form */}
-            <form onSubmit={handleSaveCredentials} className="space-y-2 pt-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
-                Optional: Connect Live Supabase Cloud Project
-              </span>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <div>
-                  <label className="text-[10px] text-slate-500 block mb-0.5">VITE_SUPABASE_URL</label>
-                  <input
-                    type="url"
-                    placeholder="https://xyzcompany.supabase.co"
-                    value={supabaseUrl}
-                    onChange={(e) => setSupabaseUrl(e.target.value)}
-                    className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-1 focus:ring-teal-500 font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] text-slate-500 block mb-0.5">VITE_SUPABASE_ANON_KEY (Public Key Only)</label>
-                  <input
-                    type="password"
-                    placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                    value={supabaseAnonKey}
-                    onChange={(e) => setSupabaseAnonKey(e.target.value)}
-                    className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-1 focus:ring-teal-500 font-mono"
-                  />
-                </div>
-              </div>
-
+            <div className="space-y-2 pt-1">
+              <p className="text-[10px] text-slate-500">No Supabase credentials are needed for local in-app notifications. Never enter a service-role key in browser code.</p>
               {configFeedback && (
                 <p className="text-[11px] font-medium text-teal-700 bg-teal-50 p-1.5 rounded border border-teal-200">
                   {configFeedback}
@@ -225,7 +162,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
 
               <div className="flex items-center justify-between pt-1">
                 <span className="text-[10px] text-slate-400">
-                  When empty, FactoryPulse defaults to zero-refresh BroadcastChannel multi-tab bus.
+                  In-app and same-browser tab notifications continue locally.
                 </span>
                 <div className="flex items-center gap-2">
                   <button
@@ -233,17 +170,11 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
                     onClick={handleResetToDefault}
                     className="px-2.5 py-1 rounded bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-medium transition-colors"
                   >
-                    Reset
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-3 py-1 rounded bg-teal-600 hover:bg-teal-500 text-white text-xs font-semibold transition-colors shadow-xs"
-                  >
-                    Save &amp; Connect
+                    Clear saved cloud settings
                   </button>
                 </div>
               </div>
-            </form>
+            </div>
           </div>
         )}
 

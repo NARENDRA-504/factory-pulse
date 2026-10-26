@@ -11,7 +11,6 @@ import {
   Search,
   Filter,
   UserPlus,
-  ArrowRightLeft,
   KeyRound,
   Mail,
   Cpu,
@@ -34,7 +33,6 @@ interface AdminDashboardProps {
   incidents: Incident[];
   machines: Machine[];
   onNavigate: (screen: 'dashboard' | 'machines' | 'incidents' | 'analytics' | 'users') => void;
-  onSwitchUser?: (user: UserProfile) => void;
   onRefreshData?: () => void;
   onOpenProfile?: () => void;
 }
@@ -44,7 +42,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   incidents,
   machines,
   onNavigate,
-  onSwitchUser,
   onRefreshData,
   onOpenProfile,
 }) => {
@@ -105,6 +102,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [newUserMachine, setNewUserMachine] = useState('');
   const [newUserShift, setNewUserShift] = useState<'Shift A' | 'Shift B' | 'Night Shift'>('Shift A');
   const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserPassword, setNewUserPassword] = useState('');
   const [formFeedback, setFormFeedback] = useState<string | null>(null);
 
   const fetchUsers = async () => {
@@ -214,6 +212,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       assignedMachine: newUserMachine ? newUserMachine : undefined,
       shift: newUserShift,
       email: newUserEmail.trim() || `${newUserWorkId.toLowerCase()}@ziromfg.internal`,
+      password: newUserPassword,
       status: 'Active',
     });
 
@@ -832,16 +831,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           {isSelected ? '✓ Filtered' : 'View Incidents'}
                         </button>
 
-                        {onSwitchUser && user.workId !== currentUser.workId && (
-                          <button
-                            onClick={() => onSwitchUser(user)}
-                            title={`Simulate session as ${user.fullName} (${user.role})`}
-                            className="px-2 py-1 rounded-lg text-xs bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors flex items-center gap-1 font-semibold"
-                          >
-                            <ArrowRightLeft className="w-3.5 h-3.5 text-teal-600" />
-                            <span>Sim</span>
-                          </button>
-                        )}
                       </div>
                     </div>
                   </div>
@@ -1457,6 +1446,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   onChange={(e) => setNewUserDepartment(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-hidden focus:border-teal-500"
                 />
+              </div>
+
+              <div>
+                <label className="text-slate-700 font-semibold block mb-1">Initial password (12+ characters)</label>
+                <input type="password" required minLength={12} autoComplete="new-password" value={newUserPassword} onChange={(e) => setNewUserPassword(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:bg-white focus:outline-hidden focus:border-teal-500" />
               </div>
 
               <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">

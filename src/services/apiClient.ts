@@ -22,7 +22,6 @@ import {
 } from '../types';
 
 import {
-  SEED_USERS,
   SEED_MACHINES,
   SEED_INCIDENTS,
   SEED_WORK_ORDERS,
@@ -35,8 +34,7 @@ import {
 import { notificationService } from './notificationService';
 
 const STORAGE_KEYS = {
-  CURRENT_USER: 'ziro_current_user',
-  USERS: 'ziro_users_store',
+  AUTH_TOKEN: 'factorypulse_auth_token',
   INCIDENTS: 'ziro_incidents_store',
   WORK_ORDERS: 'ziro_work_orders_store',
   SIM_EVENTS: 'ziro_sim_telemetry_events',
@@ -63,11 +61,42 @@ const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:800
 
 // Resilient in-memory fallback store when localStorage is restricted in iframes / tests
 const memoryStore: Record<string, string> = {
-  [STORAGE_KEYS.USERS]: JSON.stringify(SEED_USERS),
   [STORAGE_KEYS.INCIDENTS]: JSON.stringify(SEED_INCIDENTS),
   [STORAGE_KEYS.WORK_ORDERS]: JSON.stringify(SEED_WORK_ORDERS),
-  [STORAGE_KEYS.CURRENT_USER]: JSON.stringify(SEED_USERS[0]),
 };
+
+function getSessionToken(): string | null {
+  try { return typeof window !== 'undefined' ? window.sessionStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) : null; }
+  catch { return null; }
+}
+
+function setSessionToken(token: string | null): void {
+  try {
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      if (token) window.sessionStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
+      else window.sessionStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+    }
+  } catch { /* session storage may be blocked by an embedded browser */ }
+}
+
+function authHeaders(): HeadersInit {
+  const token = getSessionToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+function toUserProfile(user: any): UserProfile {
+  return {
+    id: user.id,
+    workId: user.work_id,
+    fullName: user.full_name,
+    role: user.role,
+    assignedMachine: user.assigned_machine || undefined,
+    email: user.email,
+    department: user.department || undefined,
+    shift: user.shift || undefined,
+    status: user.is_active === false ? 'Offline' : 'Active',
+  };
+}
 
 function safeGetItem(key: string): string | null {
   try {
@@ -92,32 +121,15 @@ function safeSetItem(key: string, val: string): void {
   }
 }
 
-function safeRemoveItem(key: string): void {
-  delete memoryStore[key];
-  try {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      window.localStorage.removeItem(key);
-    }
-  } catch {
-    // Sandboxed iframe / private window fallback
-  }
-}
-
 // Synchronize memory store with localStorage if present
 function initializePersistence() {
   try {
     if (typeof window !== 'undefined' && window.localStorage) {
-      if (!window.localStorage.getItem(STORAGE_KEYS.USERS)) {
-        window.localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(SEED_USERS));
-      }
       if (!window.localStorage.getItem(STORAGE_KEYS.INCIDENTS)) {
         window.localStorage.setItem(STORAGE_KEYS.INCIDENTS, JSON.stringify(SEED_INCIDENTS));
       }
       if (!window.localStorage.getItem(STORAGE_KEYS.WORK_ORDERS)) {
         window.localStorage.setItem(STORAGE_KEYS.WORK_ORDERS, JSON.stringify(SEED_WORK_ORDERS));
-      }
-      if (!window.localStorage.getItem(STORAGE_KEYS.CURRENT_USER)) {
-        window.localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(SEED_USERS[0]));
       }
     }
   } catch {
@@ -192,7 +204,7 @@ export const apiClient = {
   ): Promise<PersistedSimulatorReading[]> {
     const query = new URLSearchParams({ limit: String(limit), data_source: 'AI_SIMULATOR' });
     const response = await fetch(`${API_BASE_URL}/api/v1/telemetry/latest/${encodeURIComponent(machineId)}?${query}`, {
-      headers: { Authorization: `Bearer ${workId}` },
+      headers: authHeaders(),
     });
     if (!response.ok) {
       let detail = `Telemetry API returned ${response.status}`;
@@ -208,88 +220,76 @@ export const apiClient = {
   // -------------------------------------------------------------
   // Authentication & Session
   // -------------------------------------------------------------
-  async login(workId: string, password?: string): Promise<UserProfile> {
-    const users = await this.getUsers();
-    const user = users.find(
-      (u) => u.workId.trim().toUpperCase() === workId.trim().toUpperCase()
-    );
-    if (!user) {
-      throw new Error(`Invalid Work ID "${workId}". Available demo IDs: OP-101, SUP-201, MGR-301, MNT-401, ADM-001.`);
-    }
-    // In demo mode, verify non-empty password if provided or match standard
-    if (password && password.length < 3) {
-      throw new Error('Password must be at least 3 characters.');
-    }
-    safeSetItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
-    return user;
+  async login(workId: string, password: string): Promise<UserProfile> {
+    const response = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ work_id: workId.trim().toUpperCase(), password }),
+    });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(body.detail || `Sign-in failed (${response.status})`);
+    if (!body.access_token || !body.user) throw new Error('Authentication service returned an invalid session.');
+    setSessionToken(body.access_token);
+    return toUserProfile(body.user);
   },
 
-  getCurrentUser(): UserProfile | null {
-    const raw = safeGetItem(STORAGE_KEYS.CURRENT_USER);
-    return raw ? JSON.parse(raw) : null;
+  async getCurrentUser(): Promise<UserProfile | null> {
+    if (!getSessionToken()) return null;
+    const response = await fetch(`${API_BASE_URL}/api/v1/auth/me`, { headers: authHeaders() });
+    if (!response.ok) { setSessionToken(null); return null; }
+    return toUserProfile(await response.json());
   },
 
-  logout(): void {
-    safeRemoveItem(STORAGE_KEYS.CURRENT_USER);
+  async logout(): Promise<void> {
+    try {
+      if (getSessionToken()) {
+        const response = await fetch(`${API_BASE_URL}/api/v1/auth/logout`, { method: 'POST', headers: authHeaders() });
+        if (!response.ok) throw new Error(`Sign-out audit could not be confirmed (${response.status}).`);
+      }
+    }
+    finally { setSessionToken(null); }
+  },
+
+  async getActivityLog(limit = 250): Promise<{ factory_time_zone: string; events: any[]; demo_mode?: boolean }> {
+    const response = await fetch(`${API_BASE_URL}/api/v1/admin/activity-log?limit=${limit}`, { headers: authHeaders() });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(body.detail || `Activity log request failed (${response.status})`);
+    return body;
   },
 
   // -------------------------------------------------------------
   // User Management & Access Governance
   // -------------------------------------------------------------
   async getUsers(): Promise<UserProfile[]> {
-    const raw = safeGetItem(STORAGE_KEYS.USERS);
-    if (raw) {
-      try {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
-        }
-      } catch {
-        // Fallback to seed users
-      }
-    }
-    return SEED_USERS;
+    const response = await fetch(`${API_BASE_URL}/api/v1/admin/users`, { headers: authHeaders() });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(body.detail || `Personnel request failed (${response.status})`);
+    return body.map(toUserProfile);
   },
 
-  async createUser(newUser: Omit<UserProfile, 'id'>): Promise<UserProfile> {
-    const users = await this.getUsers();
-    const existing = users.find(
-      (u) => u.workId.trim().toUpperCase() === newUser.workId.trim().toUpperCase()
-    );
-    if (existing) {
-      throw new Error(`User with Work ID ${newUser.workId} already exists.`);
-    }
-    const nextId = users.length > 0 ? Math.max(...users.map((u) => u.id)) + 1 : 1;
-    const created: UserProfile = { ...newUser, id: nextId };
-    const updatedList = [...users, created];
-    safeSetItem(STORAGE_KEYS.USERS, JSON.stringify(updatedList));
-    return created;
+  async createUser(newUser: Omit<UserProfile, 'id'> & { password: string }): Promise<UserProfile> {
+    const response = await fetch(`${API_BASE_URL}/api/v1/admin/users`, {
+      method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ work_id: newUser.workId, full_name: newUser.fullName, password: newUser.password, role: newUser.role, assigned_machine: newUser.assignedMachine || null, department: newUser.department || null, shift: newUser.shift || null, email: newUser.email }),
+    });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(body.detail || `Personnel create failed (${response.status})`);
+    return toUserProfile(body);
   },
 
   async updateUser(id: number, data: Partial<UserProfile>): Promise<UserProfile> {
-    const users = await this.getUsers();
-    const index = users.findIndex((u) => u.id === id);
-    if (index === -1) {
-      throw new Error(`User with ID ${id} not found.`);
-    }
-    const updated = { ...users[index], ...data };
-    users[index] = updated;
-    safeSetItem(STORAGE_KEYS.USERS, JSON.stringify(users));
-    return updated;
+    const response = await fetch(`${API_BASE_URL}/api/v1/admin/users/${id}`, {
+      method: 'PATCH', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ full_name: data.fullName, role: data.role, assigned_machine: data.assignedMachine ?? null, department: data.department ?? null, shift: data.shift ?? null, email: data.email }),
+    });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(body.detail || `Personnel update failed (${response.status})`);
+    return toUserProfile(body);
   },
 
   async deleteUser(id: number): Promise<void> {
-    const users = await this.getUsers();
-    if (users.length <= 1) {
-      throw new Error('Cannot delete the last remaining platform user.');
-    }
-    const updatedList = users.filter((u) => u.id !== id);
-    safeSetItem(STORAGE_KEYS.USERS, JSON.stringify(updatedList));
-  },
-
-  async resetUsersToDefaults(): Promise<UserProfile[]> {
-    safeSetItem(STORAGE_KEYS.USERS, JSON.stringify(SEED_USERS));
-    return SEED_USERS;
+    const response = await fetch(`${API_BASE_URL}/api/v1/admin/users/${id}`, { method: 'DELETE', headers: authHeaders() });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(body.detail || `Personnel deactivation failed (${response.status})`);
   },
 
   // -------------------------------------------------------------
