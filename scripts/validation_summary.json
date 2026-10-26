@@ -1,0 +1,41 @@
+{
+  "audit_passed": true,
+  "datasets_verified": [
+    {
+      "name": "CNC Machine Tool Wear Dataset",
+      "target": "Vb (Flank Wear Width)",
+      "unit": "mm",
+      "rows": 2054,
+      "cols": 154,
+      "null_policy": "Verified missing values in sensor_channel_14 and 15 (kept NULL, no auto-impute)",
+      "status": "VALIDATED"
+    },
+    {
+      "name": "CNC Turning Roughness Dataset",
+      "target": "Ra (Surface Roughness Arithmetic Mean)",
+      "unit": "\u00b5m",
+      "rows": 612,
+      "cols": 6,
+      "null_policy": "0 missing values. Exp1 (306 rows) + Exp2 (306 rows) merged with source_experiment.",
+      "status": "VALIDATED"
+    },
+    {
+      "name": "CNC Mill Tool Telemetry Dataset",
+      "target": "Machine Telemetry & Potential Anomaly Streams",
+      "unit": "RPM, mm/min, m/s\u00b2, A",
+      "rows": 25286,
+      "cols": 49,
+      "null_policy": "0 missing values across 18 merged experiment files.",
+      "status": "VALIDATED"
+    },
+    {
+      "name": "FeatureAndMetadata_Milling",
+      "target": "CycleToFailure (Tool Life to Failure)",
+      "unit": "Discrete cut cycles",
+      "rows": 968,
+      "cols": 131,
+      "null_policy": "0 missing values in target CycleToFailure.",
+      "status": "VALIDATED"
+    }
+  ]
+}

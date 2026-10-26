@@ -1,0 +1,6 @@
+{
+  "name": "ZIRO Manufacturing Incident & Maintenance Response Platform",
+  "description": "An AI-powered manufacturing incident response and maintenance intelligence platform for CNC condition monitoring, empirical dataset analytics, and root cause investigation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

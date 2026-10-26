@@ -1,0 +1,6 @@
+{
+  "summary": "Master dataset of exactly 400 CNC machines across 4 manufacturing plants and 7 machine categories. Contains complete machine identification, hierarchy, model specs, initial telemetry, and telemetry keys for AI Simulator synchronization.",
+  "updatedAt": "2026-10-19T06:09:00.000000000Z",
+  "requestFeedback": false,
+  "userFacing": true
+}

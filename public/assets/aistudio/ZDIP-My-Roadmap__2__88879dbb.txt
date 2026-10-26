@@ -1,0 +1,37 @@
+ZIRO DIGITAL INTERNSHIP PROGRAM
+AI Manufacturing Incident and Maintenance Response Platform
+My Roadmap · AI App Development
+
+Phase 1: AI App Development · Python · SQL · Statistics · Data Analytics · Generative AI Features
+
+WEEK 1
+• Plan the user flow and up to five main app screens
+• Set up the Google AI Studio app and navigation
+• Build forms, inputs, outputs and basic user actions
+• Connect screens to the team's project data
+• Recap the Phase 1 topics needed for this project
+• Understand the approved project and your personal responsibility
+• Explain what you learned and what you built
+• Show proof of your work at the end of the week
+
+WEEK 2
+• Build the main screens and complete core user flows
+• Connect application screens to SQL-backed data and Python/API outputs
+• Add the Generative AI user experience where useful
+• Handle loading, empty, validation and error states
+• Continue only with Phase 1 scope
+• Connect your work with the other two team members
+• Test your part using real project examples
+• Explain your implementation and show a working result
+
+WEEK 3
+• Complete remaining Phase 1 screens and integrations
+• Improve usability and responsive layout
+• Run end-to-end user-flow testing
+• Prepare and deliver the product demo
+• Complete your Phase 1 responsibility
+• Test and fix your work
+• Prepare a simple explanation of your contribution
+• Showcase your working output in the team V1 demo
+
+Weekly rhythm: RECAP → BUILD → EXPLAIN → SHOWCASE

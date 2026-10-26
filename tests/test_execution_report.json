@@ -1,0 +1,128 @@
+{
+  "report_title": "ZIRO Manufacturing Platform Verification Audit Report",
+  "generated_at": "2026-10-26T09:10:15.901021Z",
+  "overall_status": "PASSED",
+  "total_unit_tests": 92,
+  "total_passed": 92,
+  "total_failures": 0,
+  "total_errors": 0,
+  "total_elapsed_seconds": 3.7643,
+  "suites": [
+    {
+      "suite_name": "Dataset Engineering & Baselines",
+      "module_path": "tests.test_dataset_validation",
+      "tests_run": 6,
+      "passed": 6,
+      "failures": 0,
+      "errors": 0,
+      "status": "PASSED",
+      "elapsed_seconds": 0.0007
+    },
+    {
+      "suite_name": "RBAC & Auth Security",
+      "module_path": "tests.test_rbac_and_auth",
+      "tests_run": 10,
+      "passed": 10,
+      "failures": 0,
+      "errors": 0,
+      "status": "PASSED",
+      "elapsed_seconds": 0.0005
+    },
+    {
+      "suite_name": "FastAPI API Contracts & Safety",
+      "module_path": "tests.test_api_contracts_and_models",
+      "tests_run": 14,
+      "passed": 14,
+      "failures": 0,
+      "errors": 0,
+      "status": "PASSED",
+      "elapsed_seconds": 0.0026
+    },
+    {
+      "suite_name": "MySQL Schema DDL Integrity",
+      "module_path": "tests.test_mysql_schema_ddl",
+      "tests_run": 13,
+      "passed": 13,
+      "failures": 0,
+      "errors": 0,
+      "status": "PASSED",
+      "elapsed_seconds": 0.002
+    },
+    {
+      "suite_name": "Frontend Seed Data & Types",
+      "module_path": "tests.test_frontend_benchmarks",
+      "tests_run": 9,
+      "passed": 9,
+      "failures": 0,
+      "errors": 0,
+      "status": "PASSED",
+      "elapsed_seconds": 0.0009
+    },
+    {
+      "suite_name": "Live Relational SQL Engine",
+      "module_path": "tests.test_live_database_engine",
+      "tests_run": 7,
+      "passed": 7,
+      "failures": 0,
+      "errors": 0,
+      "status": "PASSED",
+      "elapsed_seconds": 0.0053
+    },
+    {
+      "suite_name": "Live In-Process HTTP Wire Server",
+      "module_path": "tests.test_live_http_server",
+      "tests_run": 10,
+      "passed": 10,
+      "failures": 0,
+      "errors": 0,
+      "status": "PASSED",
+      "elapsed_seconds": 0.5438
+    },
+    {
+      "suite_name": "Dashboard Control Room Upgrade",
+      "module_path": "tests.test_dashboard_upgrade",
+      "tests_run": 12,
+      "passed": 12,
+      "failures": 0,
+      "errors": 0,
+      "status": "PASSED",
+      "elapsed_seconds": 0.0333
+    },
+    {
+      "suite_name": "Operator Dashboard Functional Audit",
+      "module_path": "tests.test_operator_dashboard_audit",
+      "tests_run": 11,
+      "passed": 11,
+      "failures": 0,
+      "errors": 0,
+      "status": "PASSED",
+      "elapsed_seconds": 0.5223
+    }
+  ],
+  "dataset_validation_gate": {
+    "status": "PASSED",
+    "elapsed_seconds": 0.0032,
+    "total_empirical_rows": 28920
+  },
+  "typescript_typecheck": {
+    "status": "PASSED",
+    "elapsed_seconds": 1.3886
+  },
+  "frontend_production_build": {
+    "status": "PASSED",
+    "elapsed_seconds": 1.2607
+  },
+  "verified_requirements": [
+    "TC-DATA: 4 Empirical datasets validated with 28,920 rows total",
+    "TC-AUTH: 5 user roles with strict RBAC permission matrix",
+    "TC-API: Distinct motor_power_kw and motor_load_pct fields",
+    "TC-AI: Investigation hypotheses marked unverified with LOTO safety disclaimer",
+    "TC-AI-MODEL: gemini-3.8-flash tagged Pending API Model Verification",
+    "TC-SQL: MySQL 8.x schema DDL with raw, simulated, and operational layers",
+    "TC-FE: React 19 + TypeScript + Tailwind SPA fully built and verified",
+    "TC-LIVE-SQL: Real database engine parses DDL, seeds data, links FKs, and runs analytical views",
+    "TC-LIVE-HTTP: Real socket wire calls executed across all endpoints (200, 400, 401, 403, 404)",
+    "TC-ALERT: Zero window.alert blocking calls in frontend ensuring non-blocking iframe operation",
+    "TC-DASH: Control room dashboard upgrade with live CNC schematic, telemetry charts, factory overview, and event stream"
+  ]
+}

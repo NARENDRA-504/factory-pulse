@@ -1,0 +1,6 @@
+{
+  "summary": "Master dataset of exactly 400 CNC machines in JSON format for the AI Simulator. Contains complete machine identification, hierarchy, model specs, initial telemetry, and telemetry keys.",
+  "updatedAt": "2026-10-19T06:09:00.000000000Z",
+  "requestFeedback": false,
+  "userFacing": true
+}
