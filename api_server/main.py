@@ -30,6 +30,11 @@ app = FastAPI(
     description="Python FastAPI backend serving CNC telemetry, MySQL operational records, and server-side Gemini AI investigation diagnostics."
 )
 
+@app.get("/health", tags=["Operations"])
+def health_check():
+    """Liveness probe for the API process; database readiness is checked by DB-backed endpoints."""
+    return {"status": "ok"}
+
 # Allow only explicitly configured frontend origins. Bearer tokens do not use cookies.
 CORS_ORIGINS = [origin.strip() for origin in os.environ.get("CORS_ORIGINS", "http://127.0.0.1:3000,http://localhost:3000").split(",") if origin.strip()]
 app.add_middleware(
@@ -837,6 +842,9 @@ def get_telemetry_engine():
     database_url = os.environ.get("DATABASE_URL", "").strip()
     if not database_url:
         raise HTTPException(status_code=503, detail="Telemetry database is not configured")
+    # Railway exposes MySQL_URL as mysql://; use the PyMySQL driver included here.
+    if database_url.startswith("mysql://"):
+        database_url = "mysql+pymysql://" + database_url[len("mysql://"):]
     try:
         return _create_telemetry_engine(database_url)
     except Exception as exc:
