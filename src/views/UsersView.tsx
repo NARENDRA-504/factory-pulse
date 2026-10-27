@@ -23,6 +23,8 @@ import {
   Layers,
   ChevronDown,
   ChevronUp,
+  Eye,
+  EyeOff,
   X,
 } from 'lucide-react';
 
@@ -56,6 +58,8 @@ export const UsersView: React.FC<UsersViewProps> = ({
   const [formShift, setFormShift] = useState<'Shift A' | 'Shift B' | 'Night Shift'>('Shift A');
   const [formEmail, setFormEmail] = useState('');
   const [formPassword, setFormPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [formActive, setFormActive] = useState(true);
   const [formError, setFormError] = useState<string | null>(null);
 
   const fetchUsers = async () => {
@@ -117,6 +121,8 @@ export const UsersView: React.FC<UsersViewProps> = ({
     setFormShift('Shift A');
     setFormEmail('');
     setFormPassword('');
+    setShowPassword(false);
+    setFormActive(true);
     setFormError(null);
     setIsRegisterModalOpen(true);
   };
@@ -130,6 +136,9 @@ export const UsersView: React.FC<UsersViewProps> = ({
     setFormMachine(user.assignedMachine || '');
     setFormShift(user.shift || 'Shift A');
     setFormEmail(user.email);
+    setFormPassword('');
+    setShowPassword(false);
+    setFormActive(user.status !== 'Offline');
     setFormError(null);
     setIsRegisterModalOpen(true);
   };
@@ -138,8 +147,8 @@ export const UsersView: React.FC<UsersViewProps> = ({
     e.preventDefault();
     setFormError(null);
 
-    if (!formName.trim() || !formWorkId.trim() || !formEmail.trim() || (!isEditingUser && formPassword.length < 12)) {
-      setFormError('Please fill out all required fields.');
+    if (!formName.trim() || !formWorkId.trim() || !formEmail.trim() || (!isEditingUser && formPassword.length < 12) || (formPassword.length > 0 && formPassword.length < 12)) {
+      setFormError('Complete the required fields. Passwords must be at least 12 characters.');
       return;
     }
 
@@ -153,8 +162,10 @@ export const UsersView: React.FC<UsersViewProps> = ({
           assignedMachine: formMachine.trim() || undefined,
           shift: formShift,
           email: formEmail.trim(),
+          password: formPassword || undefined,
+          isActive: formActive,
         });
-        setFeedbackMessage(`Updated personnel profile for ${formName}.`);
+        setFeedbackMessage(formPassword ? `Updated ${formName}'s profile and reset their password. Existing sessions were revoked.` : `Updated personnel profile for ${formName}.`);
       } else {
         await apiClient.createUser({
           fullName: formName.trim(),
@@ -191,6 +202,18 @@ export const UsersView: React.FC<UsersViewProps> = ({
       setTimeout(() => setFeedbackMessage(null), 4000);
     } catch (err: any) {
       setFeedbackMessage(err.message || 'Failed to delete user.');
+      setTimeout(() => setFeedbackMessage(null), 4000);
+    }
+  };
+
+  const handleSetUserActive = async (user: UserProfile, active: boolean) => {
+    try {
+      await apiClient.updateUser(user.id, { isActive: active });
+      await fetchUsers();
+      setFeedbackMessage(active ? `Reactivated ${user.workId}; the employee can sign in again.` : `Deactivated ${user.workId}; existing sessions were revoked.`);
+      setTimeout(() => setFeedbackMessage(null), 4000);
+    } catch (err: any) {
+      setFeedbackMessage(err.message || 'Failed to update user access.');
       setTimeout(() => setFeedbackMessage(null), 4000);
     }
   };
@@ -266,12 +289,12 @@ export const UsersView: React.FC<UsersViewProps> = ({
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="p-4 rounded-xl bg-[#0c1424] border border-slate-800/80">
           <div className="flex items-center justify-between text-xs font-mono text-slate-400 mb-1">
-            <span>Total Registered</span>
+            <span>Registered Accounts</span>
             <Users className="w-3.5 h-3.5 text-teal-400" />
           </div>
           <span className="text-2xl font-bold font-mono text-white">{usersList.length}</span>
           <span className="text-[11px] font-mono text-teal-400 block mt-1">
-            5 Distinct Tier Roles
+            {usersList.filter((user) => user.status !== 'Offline').length} active accounts
           </span>
         </div>
 
@@ -303,21 +326,12 @@ export const UsersView: React.FC<UsersViewProps> = ({
 
         <div className="p-4 rounded-xl bg-[#0c1424] border border-slate-800/80">
           <div className="flex items-center justify-between text-xs font-mono text-slate-400 mb-1">
-            <span>Current Persona</span>
-            <ShieldCheck className="w-3.5 h-3.5 text-purple-400" />
+            <span>Total Machines</span>
+            <Cpu className="w-3.5 h-3.5 text-purple-400" />
           </div>
-          <div className="flex items-center gap-2 mt-1">
-            <span className="text-sm font-bold text-white truncate">{currentUser.fullName}</span>
-            <span
-              className={`text-[9px] font-mono px-1.5 py-0.2 rounded border font-bold uppercase ${getRoleBadgeStyle(
-                currentUser.role
-              )}`}
-            >
-              {currentUser.role}
-            </span>
-          </div>
+          <span className="text-2xl font-bold font-mono text-purple-300">{machines.length}</span>
           <span className="text-[11px] font-mono text-slate-400 block mt-1">
-            Work ID: {currentUser.workId}
+            Machines in the current plant roster
           </span>
         </div>
       </div>
@@ -593,8 +607,8 @@ export const UsersView: React.FC<UsersViewProps> = ({
 
                       {/* Status */}
                       <td className="py-3 px-3">
-                        <span className="inline-flex items-center gap-1 text-[11px] font-mono text-emerald-400">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                        <span className={`inline-flex items-center gap-1 text-[11px] font-mono ${user.status === 'Offline' ? 'text-slate-500' : 'text-emerald-400'}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${user.status === 'Offline' ? 'bg-slate-500' : 'bg-emerald-400'}`} />
                           <span>{user.status || 'Active'}</span>
                         </span>
                       </td>
@@ -623,14 +637,24 @@ export const UsersView: React.FC<UsersViewProps> = ({
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
                               </button>
-                              {!isCurrent && (
+                              {!isCurrent && user.status !== 'Offline' && (
                                 <button
                                   type="button"
                                   onClick={() => handleDeleteUser(user)}
                                   className="p-1 rounded text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition-colors"
-                                  title="Delete Personnel Record"
+                                  title="Remove account access (deactivate; keeps audit history)"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                              {!isCurrent && user.status === 'Offline' && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleSetUserActive(user, true)}
+                                  className="p-1 rounded text-slate-500 hover:text-emerald-400 hover:bg-slate-800 transition-colors"
+                                  title="Reactivate account"
+                                >
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
                                 </button>
                               )}
                             </>
@@ -793,10 +817,23 @@ export const UsersView: React.FC<UsersViewProps> = ({
                 />
               </div>
 
-              {!isEditingUser && <div>
-                <label className="block text-xs font-mono font-medium text-slate-300 mb-1">Initial password *</label>
-                <input type="password" required minLength={12} maxLength={256} autoComplete="new-password" value={formPassword} onChange={(e) => setFormPassword(e.target.value)} placeholder="At least 12 characters" className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-teal-500 font-mono" />
-                <p className="mt-1 text-[10px] text-slate-500">Provide the initial password securely to the employee.</p>
+              <div>
+                <label className="block text-xs font-mono font-medium text-slate-300 mb-1">{isEditingUser ? 'Set a new password (optional)' : 'Initial password *'}</label>
+                <div className="relative">
+                  <input type={showPassword ? 'text' : 'password'} required={!isEditingUser} minLength={12} maxLength={256} autoComplete="new-password" value={formPassword} onChange={(e) => setFormPassword(e.target.value)} placeholder={isEditingUser ? 'Leave blank to keep current password' : 'At least 12 characters'} className="w-full px-3 py-2 pr-11 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-teal-500 font-mono" />
+                  <button type="button" onClick={() => setShowPassword((shown) => !shown)} aria-label={showPassword ? 'Hide typed password' : 'Show typed password'} aria-pressed={showPassword} className="absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 hover:text-teal-300" title={showPassword ? 'Hide password' : 'Show password'}>
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                <p className="mt-1 text-[10px] text-slate-500">Passwords are stored as one-way hashes and can’t be viewed. Setting a new password revokes existing sessions.</p>
+              </div>
+
+              {isEditingUser && <div>
+                <label className="block text-xs font-mono font-medium text-slate-300 mb-1">Account access</label>
+                <select value={formActive ? 'active' : 'inactive'} onChange={(e) => setFormActive(e.target.value === 'active')} className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-teal-500 font-mono">
+                  <option value="active">Active — may sign in</option>
+                  <option value="inactive">Deactivated — sign-in blocked</option>
+                </select>
               </div>}
 
               <div className="pt-3 border-t border-slate-800 flex items-center justify-end gap-2.5">

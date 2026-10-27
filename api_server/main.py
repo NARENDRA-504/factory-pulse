@@ -125,6 +125,7 @@ class AdminUserCreateRequest(BaseModel):
     email: str = Field(..., min_length=3, max_length=128)
 
 class AdminUserUpdateRequest(BaseModel):
+    work_id: Optional[str] = Field(None, min_length=2, max_length=32)
     full_name: Optional[str] = Field(None, min_length=1, max_length=128)
     role: Optional[Literal["Operator", "Supervisor", "Manager", "Maintenance", "Admin"]] = None
     assigned_machine: Optional[str] = Field(None, max_length=32)
@@ -132,6 +133,7 @@ class AdminUserUpdateRequest(BaseModel):
     shift: Optional[Literal["Shift A", "Shift B", "Night Shift"]] = None
     email: Optional[str] = Field(None, min_length=3, max_length=128)
     is_active: Optional[bool] = None
+    password: Optional[str] = Field(None, min_length=12, max_length=256)
 
 class UserProfileResponse(BaseModel):
     id: int
@@ -416,7 +418,11 @@ def get_current_user(request: Request, authorization: Optional[str] = Header(Non
         session = DEMO_SESSIONS.get(_token_digest(token))
         if not session or session["expires_at"] <= _utcnow():
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Demo session expired or invalid")
-        return dict(session["user"], session_id=session["session_id"])
+        current = next((item for item in DEMO_USERS.values() if item["id"] == session["user"]["id"]), None)
+        if not current or not current.get("is_active", True):
+            DEMO_SESSIONS.pop(_token_digest(token), None)
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Account is inactive")
+        return {k: v for k, v in current.items() if k not in {"password", "password_hash"}} | {"session_id": session["session_id"]}
 
     engine = get_telemetry_engine()
     try:
@@ -469,7 +475,11 @@ def login(payload: LoginRequest, request: Request):
     work_id = payload.work_id.strip().upper()
     if DEMO_AUTH_ENABLED:
         user = DEMO_USERS.get(work_id)
-        if not user or not secrets.compare_digest(payload.password, "pass123"):
+        password_valid = bool(user and (
+            _verify_password(payload.password, user["password_hash"]) if user.get("password_hash")
+            else secrets.compare_digest(payload.password, user.get("password", ""))
+        ))
+        if not user or not user.get("is_active", True) or not password_valid:
             raise HTTPException(status_code=401, detail="Invalid employee ID or password")
         access_token = secrets.token_urlsafe(32)
         session_id = str(uuid.uuid4())
@@ -592,7 +602,7 @@ def get_admin_activity_log(limit: int = 250, user: Dict[str, Any] = Depends(requ
 def get_admin_users(user: Dict[str, Any] = Depends(require_roles(["Admin"]))):
     """Admin only: list registered system users and assigned roles."""
     if DEMO_AUTH_ENABLED:
-        return [{"id": u["id"], "work_id": u["work_id"], "full_name": u["full_name"], "role": u["role"], "assigned_machine": u["assigned_machine"], "email": u["email"], "is_active": True} for u in DEMO_USERS.values()]
+        return [{"id": u["id"], "work_id": u["work_id"], "full_name": u["full_name"], "role": u["role"], "assigned_machine": u["assigned_machine"], "email": u["email"], "department": u.get("department"), "shift": u.get("shift"), "is_active": u.get("is_active", True)} for u in DEMO_USERS.values()]
     engine = get_telemetry_engine()
     try:
         with engine.connect() as connection:
@@ -605,7 +615,17 @@ def get_admin_users(user: Dict[str, Any] = Depends(require_roles(["Admin"]))):
 @app.post("/api/v1/admin/users", status_code=201)
 def create_admin_user(payload: AdminUserCreateRequest, request: Request, user: Dict[str, Any] = Depends(require_roles(["Admin"]))):
     if DEMO_AUTH_ENABLED:
-        raise HTTPException(status_code=403, detail="Personnel changes are disabled in demo mode")
+        work_id = payload.work_id.strip().upper()
+        if work_id in DEMO_USERS:
+            raise HTTPException(status_code=409, detail="That employee ID already exists")
+        new_user = {"id": max((item["id"] for item in DEMO_USERS.values()), default=0) + 1,
+                    "work_id": work_id, "full_name": payload.full_name.strip(),
+                    "password_hash": _hash_password(payload.password, secrets.token_bytes(16)),
+                    "role": payload.role, "assigned_machine": payload.assigned_machine,
+                    "email": payload.email.strip(), "department": payload.department,
+                    "shift": payload.shift, "is_active": True}
+        DEMO_USERS[work_id] = new_user
+        return {k: v for k, v in new_user.items() if k != "password_hash"}
     engine = get_telemetry_engine()
     try:
         password_hash = _hash_password(payload.password, secrets.token_bytes(16))
@@ -625,8 +645,6 @@ def create_admin_user(payload: AdminUserCreateRequest, request: Request, user: D
 
 @app.patch("/api/v1/admin/users/{employee_id}")
 def update_admin_user(employee_id: int, payload: AdminUserUpdateRequest, request: Request, user: Dict[str, Any] = Depends(require_roles(["Admin"]))):
-    if DEMO_AUTH_ENABLED:
-        raise HTTPException(status_code=403, detail="Personnel changes are disabled in demo mode")
     updates = payload.model_dump(exclude_unset=True)
     if not updates:
         raise HTTPException(status_code=422, detail="No personnel fields supplied")
@@ -634,8 +652,33 @@ def update_admin_user(employee_id: int, payload: AdminUserUpdateRequest, request
         raise HTTPException(status_code=422, detail="Name, role, email, and active status cannot be null")
     if employee_id == user["id"] and (updates.get("role", user["role"]) != "Admin" or updates.get("is_active") is False):
         raise HTTPException(status_code=409, detail="You cannot remove your own administrator access")
+    if DEMO_AUTH_ENABLED:
+        target = next((item for item in DEMO_USERS.values() if item["id"] == employee_id), None)
+        if not target:
+            raise HTTPException(status_code=404, detail="Employee not found")
+        next_work_id = updates.get("work_id", target["work_id"]).strip().upper()
+        if next_work_id != target["work_id"] and next_work_id in DEMO_USERS:
+            raise HTTPException(status_code=409, detail="That employee ID already exists")
+        leaving_admin = target["role"] == "Admin" and target.get("is_active", True) and (updates.get("role", "Admin") != "Admin" or updates.get("is_active") is False)
+        if leaving_admin and sum(1 for item in DEMO_USERS.values() if item["role"] == "Admin" and item.get("is_active", True)) <= 1:
+            raise HTTPException(status_code=409, detail="At least one active administrator must remain")
+        target.update({k: v for k, v in updates.items() if k != "password"})
+        target["work_id"] = next_work_id
+        if "password" in updates:
+            target["password_hash"] = _hash_password(updates["password"], secrets.token_bytes(16))
+        if next_work_id != user["work_id"]:
+            DEMO_USERS.pop(user["work_id"], None)
+        DEMO_USERS[next_work_id] = target
+        if "password" in updates or updates.get("is_active") is False:
+            for digest, session in list(DEMO_SESSIONS.items()):
+                if session["user"]["id"] == employee_id:
+                    DEMO_SESSIONS.pop(digest, None)
+        return {k: v for k, v in target.items() if k not in {"password", "password_hash"}}
+    password_to_hash = updates.pop("password", None)
+    if password_to_hash:
+        updates["password_hash"] = _hash_password(password_to_hash, secrets.token_bytes(16))
     engine = get_telemetry_engine()
-    allowed = {"full_name", "role", "assigned_machine", "department", "shift", "email", "is_active"}
+    allowed = {"work_id", "full_name", "role", "assigned_machine", "department", "shift", "email", "is_active", "password_hash"}
     assignments = ", ".join(f"{key} = :{key}" for key in updates if key in allowed)
     try:
         with engine.begin() as connection:
@@ -648,7 +691,10 @@ def update_admin_user(employee_id: int, payload: AdminUserUpdateRequest, request
             connection.execute(_sql_text(f"UPDATE users SET {assignments} WHERE id = :id"), {**updates, "id": employee_id})
             if updates.get("is_active") is False:
                 connection.execute(_sql_text("UPDATE auth_sessions SET revoked_at_utc = UTC_TIMESTAMP(6), revoke_reason = 'account_deactivated' WHERE employee_id = :id AND revoked_at_utc IS NULL"), {"id": employee_id})
-            _audit_insert(connection, employee_id=user["id"], employee_work_id=user["work_id"], employee_name=user["full_name"], role=user["role"], event_type="user_role_changed" if "role" in updates else "user_updated", session_id=user.get("session_id"), request_id=getattr(request.state, "request_id", None), details=f"Updated {before['work_id']}; role {before['role']} -> {updates.get('role', before['role'])}")
+            if password_to_hash:
+                connection.execute(_sql_text("UPDATE auth_sessions SET revoked_at_utc = UTC_TIMESTAMP(6), revoke_reason = 'password_reset' WHERE employee_id = :id AND revoked_at_utc IS NULL"), {"id": employee_id})
+            event_type = "user_password_reset" if password_to_hash else ("user_role_changed" if "role" in updates else "user_updated")
+            _audit_insert(connection, employee_id=user["id"], employee_work_id=user["work_id"], employee_name=user["full_name"], role=user["role"], event_type=event_type, session_id=user.get("session_id"), request_id=getattr(request.state, "request_id", None), details=f"Updated {before['work_id']}; role {before['role']} -> {updates.get('role', before['role'])}")
             after = connection.execute(_sql_text("SELECT id, work_id, full_name, role, assigned_machine, email, department, shift, is_active FROM users WHERE id = :id"), {"id": employee_id}).mappings().first()
         return dict(after)
     except HTTPException: raise
@@ -658,10 +704,19 @@ def update_admin_user(employee_id: int, payload: AdminUserUpdateRequest, request
 
 @app.delete("/api/v1/admin/users/{employee_id}")
 def deactivate_admin_user(employee_id: int, request: Request, user: Dict[str, Any] = Depends(require_roles(["Admin"]))):
-    if DEMO_AUTH_ENABLED:
-        raise HTTPException(status_code=403, detail="Personnel changes are disabled in demo mode")
     if employee_id == user["id"]:
         raise HTTPException(status_code=409, detail="You cannot deactivate your own account")
+    if DEMO_AUTH_ENABLED:
+        target = next((item for item in DEMO_USERS.values() if item["id"] == employee_id), None)
+        if not target:
+            raise HTTPException(status_code=404, detail="Employee not found")
+        if target["role"] == "Admin" and target.get("is_active", True) and sum(1 for item in DEMO_USERS.values() if item["role"] == "Admin" and item.get("is_active", True)) <= 1:
+            raise HTTPException(status_code=409, detail="At least one active administrator must remain")
+        target["is_active"] = False
+        for digest, session in list(DEMO_SESSIONS.items()):
+            if session["user"]["id"] == employee_id:
+                DEMO_SESSIONS.pop(digest, None)
+        return {"deactivated": True}
     engine = get_telemetry_engine()
     try:
         with engine.begin() as connection:

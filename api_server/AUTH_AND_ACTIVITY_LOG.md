@@ -9,7 +9,7 @@ FactoryPulse no longer accepts a role or employee selection from the browser. Th
 3. Configure frontend `VITE_API_BASE_URL` to this FastAPI service. Do not place database, simulator, or other server secrets in `VITE_*` values.
 4. Provision employee rows in `users` with a PBKDF2 hash. Generate one interactively using `python scripts/hash_factorypulse_password.py`; the password is not echoed. Do not send passwords through chat, source control, SQL logs, or Power BI.
 
-Demo accounts exist only when both `APP_ENV=development` (or `test`) and `DEMO_AUTH_ENABLED=true` are explicitly set in the backend environment. The user interface has no demo role switcher. Demo sessions are in-memory and cannot be enabled when `APP_ENV=production`.
+Demo accounts exist only when both `APP_ENV=development` (or `test`) and `DEMO_AUTH_ENABLED=true` are explicitly set in the backend environment. The user interface has no demo role switcher. Demo sessions and Admin user changes are in-memory and disappear when the backend restarts; they cannot be enabled when `APP_ENV=production`. Production user creation, updates, password resets, and deactivation are transactionally written to MySQL. Password reset stores a one-way PBKDF2 hash and revokes the employee's existing sessions; plaintext passwords are never returned or readable.
 
 ## Audit coverage and limits
 

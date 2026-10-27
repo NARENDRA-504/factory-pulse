@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { UserProfile } from '../types';
 import { apiClient } from '../services/apiClient';
-import { Activity, AlertCircle, ArrowRight, Factory, KeyRound, LockKeyhole, ShieldCheck } from 'lucide-react';
+import { Activity, AlertCircle, ArrowRight, Eye, EyeOff, Factory, KeyRound, LockKeyhole, ShieldCheck } from 'lucide-react';
 
 interface LoginViewProps { onLoginSuccess: (user: UserProfile) => void; }
 
 export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
   const [workId, setWorkId] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -50,7 +51,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
           {errorMessage && <div role="alert" className="mb-5 flex gap-2 rounded-lg border border-rose-800 bg-rose-950/50 p-3 text-sm text-rose-200"><AlertCircle className="h-4 w-4 shrink-0 mt-0.5"/><span>{errorMessage}</span></div>}
           <form onSubmit={handleLogin} className="space-y-5">
             <div><label htmlFor="employee-id" className="mb-2 block text-xs font-medium text-slate-300">Employee ID</label><div className="relative"><KeyRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"/><input id="employee-id" autoComplete="username" required maxLength={32} value={workId} onChange={(event) => setWorkId(event.target.value.toUpperCase())} className="w-full rounded-lg border border-slate-700 bg-slate-950 py-3 pl-10 pr-3 text-sm text-white outline-none focus:border-teal-500" placeholder="Enter your employee ID"/></div></div>
-            <div><label htmlFor="password" className="mb-2 block text-xs font-medium text-slate-300">Password</label><div className="relative"><LockKeyhole className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"/><input id="password" type="password" autoComplete="current-password" required maxLength={256} value={password} onChange={(event) => setPassword(event.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-950 py-3 pl-10 pr-3 text-sm text-white outline-none focus:border-teal-500" placeholder="Enter your password"/></div></div>
+            <div><label htmlFor="password" className="mb-2 block text-xs font-medium text-slate-300">Password</label><div className="relative"><LockKeyhole className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"/><input id="password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" required maxLength={256} value={password} onChange={(event) => setPassword(event.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-950 py-3 pl-10 pr-11 text-sm text-white outline-none focus:border-teal-500" placeholder="Enter your password"/><button type="button" onClick={() => setShowPassword((shown) => !shown)} aria-label={showPassword ? 'Hide password' : 'Show password'} aria-pressed={showPassword} title={showPassword ? 'Hide password' : 'Show password'} className="absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 hover:text-teal-300">{showPassword ? <EyeOff className="h-4 w-4"/> : <Eye className="h-4 w-4"/>}</button></div></div>
             <button type="submit" disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-lg bg-teal-400 px-4 py-3 text-sm font-bold text-slate-950 transition hover:bg-teal-300 disabled:opacity-60">{loading ? 'Verifying account…' : 'Continue to FactoryPulse'}{!loading && <ArrowRight className="h-4 w-4"/>}</button>
           </form>
           <p className="mt-6 border-t border-slate-800 pt-5 text-xs leading-5 text-slate-500">Accounts are provisioned by your administrator. If access is unavailable, contact your site administrator; do not use another employee’s credentials.</p>

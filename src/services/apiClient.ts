@@ -276,10 +276,10 @@ export const apiClient = {
     return toUserProfile(body);
   },
 
-  async updateUser(id: number, data: Partial<UserProfile>): Promise<UserProfile> {
+  async updateUser(id: number, data: Partial<UserProfile> & { password?: string; isActive?: boolean }): Promise<UserProfile> {
     const response = await fetch(`${API_BASE_URL}/api/v1/admin/users/${id}`, {
       method: 'PATCH', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-      body: JSON.stringify({ full_name: data.fullName, role: data.role, assigned_machine: data.assignedMachine ?? null, department: data.department ?? null, shift: data.shift ?? null, email: data.email }),
+      body: JSON.stringify({ work_id: data.workId, full_name: data.fullName, role: data.role, assigned_machine: data.assignedMachine ?? null, department: data.department ?? null, shift: data.shift ?? null, email: data.email, ...(data.password ? { password: data.password } : {}), ...(data.isActive === undefined ? {} : { is_active: data.isActive }) }),
     });
     const body = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(body.detail || `Personnel update failed (${response.status})`);
