@@ -16,7 +16,7 @@ export const MachineConditionView: React.FC<MachineConditionViewProps> = ({ curr
       <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-teal-300">Machine condition · MySQL records</p>
       <h1 className="mt-1 text-xl font-semibold sm:text-2xl">AI Simulator machine telemetry</h1>
       <p className="mt-1 max-w-3xl text-xs leading-relaxed text-slate-400">
-        Current readings and trends below are fetched from telemetry saved by FactoryPulse in MySQL. Current values refresh every second and history every 2 seconds. No browser-generated readings are used.
+        Current readings and trends below are fetched from telemetry saved by FactoryPulse in MySQL. Current values refresh four times per second and history every second. No browser-generated readings are used.
       </p>
     </header>
     <SimulatorFleetTelemetryDashboard user={currentUser} machines={machines} />
