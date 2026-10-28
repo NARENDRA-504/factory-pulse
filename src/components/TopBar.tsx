@@ -13,7 +13,7 @@ import {
 
 interface TopBarProps {
   currentUser: UserProfile;
-  currentScreen: 'dashboard' | 'machines' | 'incidents' | 'analytics' | 'users' | 'activity';
+  currentScreen: 'dashboard' | 'machines' | 'incidents' | 'analytics' | 'users' | 'activity' | 'inventory';
   onOpenMobileSidebar: () => void;
   onRefreshData?: () => void;
   onRaiseAlert?: () => void;
@@ -45,7 +45,7 @@ export const TopBar: React.FC<TopBarProps> = ({
         return {
           parent: 'Operations',
           current: 'Control Console',
-          subtitle: 'Machine roster, simulator preview & issue response',
+          subtitle: 'Live machine readings and operational actions',
         };
       case 'machines':
         return {
@@ -77,6 +77,8 @@ export const TopBar: React.FC<TopBarProps> = ({
         current: 'Activity Log',
         subtitle: 'Authentication and operational audit events',
       };
+    case 'inventory':
+      return { parent: 'Governance', current: 'Machine Management', subtitle: 'Registry provenance, live connections and selected machine evidence' };
     }
   };
 
@@ -118,12 +120,6 @@ export const TopBar: React.FC<TopBarProps> = ({
 
         {/* Right: Quick Operational Actions */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          {/* Demo context, not a live machine connection indicator. */}
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-950/40 border border-amber-800/70 text-xs text-amber-200 font-medium">
-            <span className="w-2 h-2 rounded-full bg-amber-400" />
-            <span>Demo · Shift A</span>
-          </div>
-
           {/* Refresh Button */}
           {onRefreshData && (
             <button

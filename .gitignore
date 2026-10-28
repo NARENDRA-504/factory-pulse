@@ -7,5 +7,6 @@ coverage/
 .env*
 !.env.example
 .venv/
+.local/
 __pycache__/
 *.py[cod]

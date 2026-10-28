@@ -215,6 +215,7 @@ export interface ManagerMTTAMetrics {
 }
 
 export interface Incident {
+  sensorSnapshot?: Array<{reading_id:string;sensor_name:string;sensor_value:number|string|null;sensor_unit:string;timestamp:string}>;
   id: number;
   incidentCode: string;
   machineCode: string;

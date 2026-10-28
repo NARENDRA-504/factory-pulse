@@ -23,30 +23,17 @@ import { IncidentsView } from './views/IncidentsView';
 import { AnalyticsView } from './views/AnalyticsView';
 import { UsersView } from './views/UsersView';
 import { ActivityLogView } from './views/ActivityLogView';
+import { MachineManagementView } from './views/MachineManagementView';
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [sessionRestoring, setSessionRestoring] = useState(true);
   const [currentScreen, setCurrentScreen] = useState<
-    'dashboard' | 'machines' | 'incidents' | 'analytics' | 'users' | 'activity'
+    'dashboard' | 'machines' | 'incidents' | 'analytics' | 'users' | 'activity' | 'inventory'
   >('dashboard');
   const [machines, setMachines] = useState<Machine[]>(SEED_MACHINES);
-  const [incidents, setIncidents] = useState<Incident[]>(() => {
-    try {
-      const raw = localStorage.getItem('ziro_incidents_store');
-      return raw ? JSON.parse(raw) : SEED_INCIDENTS;
-    } catch {
-      return SEED_INCIDENTS;
-    }
-  });
-  const [workOrders, setWorkOrders] = useState<MaintenanceWorkOrder[]>(() => {
-    try {
-      const raw = localStorage.getItem('ziro_work_orders_store');
-      return raw ? JSON.parse(raw) : SEED_WORK_ORDERS;
-    } catch {
-      return SEED_WORK_ORDERS;
-    }
-  });
+  const [incidents, setIncidents] = useState<Incident[]>([]);
+  const [workOrders, setWorkOrders] = useState<MaintenanceWorkOrder[]>([]);
   const [selectedMachineCode, setSelectedMachineCode] = useState<string>('CNC-MILL-01');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
   const [isGlobalAlertOpen, setIsGlobalAlertOpen] = useState<boolean>(false);
@@ -63,10 +50,11 @@ export default function App() {
 
   // Load initial data
   const refreshData = async () => {
+    if (!currentUser) return;
     const [machList, incList, woList] = await Promise.all([
       apiClient.getMachines(),
       apiClient.getIncidents(),
-      apiClient.getWorkOrders(),
+      currentUser.role === 'Operator' ? Promise.resolve([]) : apiClient.getWorkOrders(),
     ]);
     if (machList && machList.length > 0) setMachines(machList);
     if (incList) setIncidents(incList);
@@ -87,8 +75,22 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    refreshData();
+    refreshData().catch(console.error);
+    const timer=window.setInterval(()=>refreshData().catch(console.error),10000);
+    return ()=>window.clearInterval(timer);
   }, [currentUser]);
+
+  // Account assignments can change while an employee is signed in.
+  useEffect(() => {
+    if (!currentUser) return;
+    const timer = window.setInterval(async () => {
+      try {
+        const next = await apiClient.getCurrentUser();
+        setCurrentUser(previous => JSON.stringify(previous) === JSON.stringify(next) ? previous : next);
+      } catch { /* Keep the current page visible during a temporary API outage. */ }
+    }, 10000);
+    return () => window.clearInterval(timer);
+  }, [currentUser?.workId]);
 
   // Live real-time notification subscription: delivers notifications without page refresh
   useEffect(() => {
@@ -266,6 +268,9 @@ export default function App() {
                 />
               )
             )}
+            {currentScreen === 'inventory' && (currentUser.role === 'Admin'
+              ? <MachineManagementView user={currentUser} machines={machines}/>
+              : <p className="rounded-lg border border-rose-900 p-5 text-rose-200">Machine management requires Admin access.</p>)}
             {currentScreen === 'activity' && (
               currentUser.role !== 'Admin' ? (
                 <div className="m-12 rounded-xl border border-rose-800 bg-[#0c1424] p-8 text-center"><h2 className="font-bold text-white">Admin access required</h2><p className="mt-2 text-sm text-slate-400">This activity log is restricted to administrators.</p></div>
@@ -279,10 +284,10 @@ export default function App() {
           <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
             <span className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-              <span>FactoryPulse · Manufacturing operations demo</span>
+              <span>FactoryPulse · Manufacturing operations</span>
             </span>
             <span className="text-slate-400">
-              Readings are simulated; saved history requires a configured API and MySQL database.
+              AI Simulator readings · persisted telemetry and history in MySQL
             </span>
           </div>
         </footer>

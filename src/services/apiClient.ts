@@ -46,6 +46,9 @@ export interface PersistedSimulatorReading {
   machine_code: string;
   display_name: string;
   timestamp: string;
+  machine_type: string;
+  department: string;
+  production_line: string;
   sensor_name: string;
   sensor_unit: string;
   sensor_value: number | string | null;
@@ -197,6 +200,36 @@ if (typeof window !== 'undefined') {
 }
 
 export const apiClient = {
+  async saveMachineRegistration(machineId: string, payload: any): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/api/v1/admin/machine-inventory/${encodeURIComponent(machineId)}`, { method: 'PUT', headers: { ...authHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify(payload), signal: AbortSignal.timeout(20000) });
+    const body = await response.json();
+    if (!response.ok) throw new Error(body.detail || 'Machine registration could not be saved');
+    return body;
+  },
+  async getMachineInventory(): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/api/v1/admin/machine-inventory`, { headers: authHeaders(), signal: AbortSignal.timeout(20000) });
+    const body = await response.json();
+    if (!response.ok) throw new Error(body.detail || 'Machine inventory is unavailable');
+    return body;
+  },
+  async getMachineDowntime(machineId: string, minutes = 60): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/api/v1/telemetry/downtime/${encodeURIComponent(machineId)}?minutes=${minutes}`, { headers: authHeaders(), signal: AbortSignal.timeout(20000) });
+    const body = await response.json();
+    if (!response.ok) throw new Error(body.detail || 'Recorded downtime is unavailable');
+    return body;
+  },
+  async queryFactoryIntelligence(question: string, machineId?: string, useAi = false, priorQuestions: string[] = []): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/api/v1/intelligence/query`, { method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify({ question, machine_id: machineId, use_ai: useAi, prior_questions: priorQuestions }), signal: AbortSignal.timeout(useAi ? 45000 : 20000) });
+    const body = await response.json();
+    if (!response.ok) throw new Error(body.detail || 'Factory evidence is unavailable');
+    return body;
+  },
+  async getSystemHealth(): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/api/v1/admin/system-health`, { headers: authHeaders(), signal: AbortSignal.timeout(20000) });
+    const body = await response.json();
+    if (!response.ok) throw new Error(body.detail || 'System health is unavailable');
+    return body;
+  },
   async getPersistedSimulatorTelemetry(
     machineId: string,
     workId: string,
@@ -204,6 +237,21 @@ export const apiClient = {
   ): Promise<PersistedSimulatorReading[]> {
     const query = new URLSearchParams({ limit: String(limit), data_source: 'AI_SIMULATOR' });
     const response = await fetch(`${API_BASE_URL}/api/v1/telemetry/latest/${encodeURIComponent(machineId)}?${query}`, {
+      headers: authHeaders(),
+    });
+    if (!response.ok) {
+      let detail = `Telemetry API returned ${response.status}`;
+      try {
+        const body = await response.json();
+        if (typeof body.detail === 'string') detail = body.detail;
+      } catch { /* keep status-based message */ }
+      throw new Error(detail);
+    }
+    return response.json() as Promise<PersistedSimulatorReading[]>;
+  },
+
+  async getLatestSimulatorFleetTelemetry(): Promise<PersistedSimulatorReading[]> {
+    const response = await fetch(`${API_BASE_URL}/api/v1/telemetry/fleet/latest`, {
       headers: authHeaders(),
     });
     if (!response.ok) {
@@ -459,283 +507,30 @@ export const apiClient = {
   // -------------------------------------------------------------
   // Incidents Workflow & Consistent Permissions
   // -------------------------------------------------------------
-  async getIncidents(): Promise<Incident[]> {
-    const raw = safeGetItem(STORAGE_KEYS.INCIDENTS);
-    return raw ? JSON.parse(raw) : SEED_INCIDENTS;
+  async incidentRequest(path: string, method = 'GET', payload?: any): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/api/v1/${path}`, { method, headers: {...authHeaders(),'Content-Type':'application/json'}, body: payload ? JSON.stringify(payload) : undefined, signal:AbortSignal.timeout(20000) });
+    const body=await response.json(); if(!response.ok) throw new Error(typeof body.detail==='string'?body.detail:'Incident request failed');return body;
   },
-
-  async getIncidentById(id: number): Promise<Incident | undefined> {
-    const incidents = await this.getIncidents();
-    return incidents.find((inc) => inc.id === id);
+  toIncident(row:any): Incident {
+    return {sensorSnapshot:typeof row.sensor_snapshot==='string'?JSON.parse(row.sensor_snapshot):row.sensor_snapshot,id:row.id,incidentCode:row.incident_code,machineCode:row.machine_code,reporterId:row.reporter_id,reporterName:row.reporter_name,reporterRole:row.reporter_role,severity:row.severity,symptomDescription:row.symptom_description,componentArea:row.component_area,operatorNotes:row.operator_notes,measuredVibRms:row.measured_vib_rms,measuredMotorPowerKw:row.measured_motor_power_kw,measuredMotorLoadPct:row.measured_motor_load_pct,dataProvenance:row.data_provenance,assignedToId:row.assigned_to_id,assignedToName:row.assigned_to_name,status:row.status,createdAt:row.created_at,closedAt:row.closed_at,closedByName:row.closed_by_name,closedRole:row.closed_role,closureNotes:row.closure_notes,notes:row.notes};
   },
-
-  async createIncident(params: {
-    machineCode: string;
-    severity: Incident['severity'];
-    symptomDescription: string;
-    componentArea: string;
-    operatorNotes?: string;
-    snapshot: TelemetryReading;
-    user: UserProfile;
-  }): Promise<Incident> {
-    // Operator, Supervisor, Maintenance can create (Manager and Admin cannot)
-    if (params.user.role !== 'Operator' && params.user.role !== 'Supervisor' && params.user.role !== 'Maintenance') {
-      throw new Error(`Permission Denied: User role '${params.user.role}' cannot create incident reports.`);
-    }
-
-    // Machine authorization enforcement: Operator cannot report against unauthorized machines
-    if (
-      params.user.role === 'Operator' &&
-      params.user.assignedMachine &&
-      params.user.assignedMachine !== params.machineCode
-    ) {
-      throw new Error(
-        `Permission Denied: Operator ${params.user.workId} is assigned to ${params.user.assignedMachine} and cannot report incidents for unauthorized machine ${params.machineCode}.`
-      );
-    }
-
-    const incidents = await this.getIncidents();
-
-    // Deduplication Policy: Prevent duplicate active incidents for same machine and component area
-    const duplicate = incidents.find(
-      (i) =>
-        i.machineCode === params.machineCode &&
-        i.componentArea === params.componentArea &&
-        i.status !== 'Closed'
-    );
-    if (duplicate) {
-      throw new Error(
-        `Duplicate Incident Prevented: Active ticket ${duplicate.incidentCode} already exists for ${params.machineCode} (${params.componentArea}) with status ${duplicate.status}.`
-      );
-    }
-
-    const newId = Math.max(...incidents.map((i) => i.id), 100) + 1;
-    const incidentCode = `INC-${new Date().getFullYear()}-${String(newId).padStart(3, '0')}`;
-
-    const newIncident: Incident = {
-      id: newId,
-      incidentCode,
-      machineCode: params.machineCode,
-      reporterId: params.user.id,
-      reporterName: params.user.fullName,
-      reporterRole: params.user.role,
-      severity: params.severity,
-      symptomDescription: params.symptomDescription,
-      operatorNotes: params.operatorNotes,
-      componentArea: params.componentArea,
-      measuredVibRms: params.snapshot.vibRms,
-      measuredMotorPowerKw: params.snapshot.motorPowerKw,
-      measuredMotorLoadPct: params.snapshot.motorLoadPct,
-      correlatedVbMm: +(0.18 + Math.random() * 0.15).toFixed(2),
-      correlatedRaUm: +(1.1 + Math.random() * 0.5).toFixed(2),
-      dataProvenance: params.snapshot.dataProvenance,
-      status: 'Open',
-      createdAt: new Date().toISOString().replace('T', ' ').substring(0, 19),
-    };
-
-    incidents.unshift(newIncident);
-    safeSetItem(STORAGE_KEYS.INCIDENTS, JSON.stringify(incidents));
-
-    // Instantly notify Supervisors and Maintenance without page refresh
-    try {
-      notificationService.notifyOperatorAlert({
-        incident: newIncident,
-        machineName: params.machineCode,
-      });
-    } catch (e) {
-      console.warn('Failed to dispatch operator alert notification', e);
-    }
-
-    return newIncident;
+  async getIncidents():Promise<Incident[]> {return (await this.incidentRequest('incidents')).map((row:any)=>this.toIncident(row));},
+  async getIncidentById(id:number):Promise<Incident|undefined>{return this.toIncident(await this.incidentRequest(`incidents/${id}`));},
+  async getMaintenanceTechnicians():Promise<any[]>{return this.incidentRequest('maintenance/technicians');},
+  async createIncident(params:{machineCode:string;severity:Incident['severity'];symptomDescription:string;componentArea:string;operatorNotes?:string;snapshot:TelemetryReading;user:UserProfile}):Promise<Incident>{
+    return this.toIncident(await this.incidentRequest('incidents','POST',{machine_code:params.machineCode,severity:params.severity,symptom_description:params.symptomDescription,component_area:params.componentArea,operator_notes:params.operatorNotes||''}));
   },
-
-  async assignIncident(
-    incidentId: number,
-    technicianName: string,
-    userRole: UserRole
-  ): Promise<Incident> {
-    // Supervisor only
-    if (userRole !== 'Supervisor') {
-      throw new Error('Permission Denied: Only Supervisors can review, assign, and prioritize incidents.');
-    }
-
-    const incidents = await this.getIncidents();
-    const target = incidents.find((i) => i.id === incidentId);
-    if (!target) throw new Error('Incident not found.');
-
-    target.assignedToName = technicianName;
-    target.status = 'In_Investigation';
-
-    safeSetItem(STORAGE_KEYS.INCIDENTS, JSON.stringify(incidents));
-    return target;
-  },
-
-  async updateIncidentProgress(
-    incidentId: number,
-    actionNotes: string,
-    userRole: UserRole
-  ): Promise<Incident> {
-    // Maintenance only
-    if (userRole !== 'Maintenance') {
-      throw new Error('Permission Denied: Only Maintenance personnel can investigate and update progress.');
-    }
-
-    const incidents = await this.getIncidents();
-    const target = incidents.find((i) => i.id === incidentId);
-    if (!target) throw new Error('Incident not found.');
-
-    target.notes = (target.notes ? target.notes + '\n\n' : '') + `[Maintenance Progress]: ${actionNotes}`;
-    target.status = 'Action_Required';
-
-    safeSetItem(STORAGE_KEYS.INCIDENTS, JSON.stringify(incidents));
-    return target;
-  },
-
-  async closeIncident(
-    incidentId: number,
-    closureNotes: string,
-    user: UserProfile
-  ): Promise<Incident> {
-    // Only Supervisor or Maintenance with operational sign-off can close
-    if (user.role !== 'Supervisor' && user.role !== 'Maintenance') {
-      throw new Error('Permission Denied: Only Supervisor or Maintenance personnel with operational qualification may close an incident.');
-    }
-
-    const incidents = await this.getIncidents();
-    const target = incidents.find((i) => i.id === incidentId);
-    if (!target) throw new Error('Incident not found.');
-
-    target.status = 'Closed';
-    target.closedAt = new Date().toISOString().replace('T', ' ').substring(0, 19);
-    target.closedByName = user.fullName;
-    target.closedRole = user.role;
-    target.closureNotes = closureNotes;
-
-    safeSetItem(STORAGE_KEYS.INCIDENTS, JSON.stringify(incidents));
-    return target;
-  },
+  async assignIncident(id:number,technicianName:string,_role:UserRole):Promise<Incident>{return this.toIncident(await this.incidentRequest(`incidents/${id}/assign`,'PATCH',{technician_name:technicianName}));},
+  async updateIncidentProgress(id:number,notes:string,_role:UserRole):Promise<Incident>{return this.toIncident(await this.incidentRequest(`incidents/${id}/progress`,'PATCH',{progress_notes:notes}));},
+  async closeIncident(id:number,notes:string,_user:UserProfile):Promise<Incident>{return this.toIncident(await this.incidentRequest(`incidents/${id}/close`,'PATCH',{closure_notes:notes}));},
 
   // -------------------------------------------------------------
   // AI Incident Investigation Assistant (Server-Side Calling Pattern)
   // -------------------------------------------------------------
-  async diagnoseIncidentWithAI(incidentId: number): Promise<AIDiagnosisResult> {
-    const incidents = await this.getIncidents();
-    const incident = incidents.find((i) => i.id === incidentId);
-    if (!incident) throw new Error('Incident not found.');
-
-    // Simulate server-side processing delay
-    await new Promise((resolve) => setTimeout(resolve, 800));
-
-    // Construct verified sensor readings with explicit physical units
-    const verifiedReadings: VerifiedSensorReading[] = [
-      {
-        metric: 'Vibration RMS',
-        measuredValue: incident.measuredVibRms,
-        unit: 'm/s²',
-        statusNote: 'Measured by machine accelerometer spindle collar',
-      },
-      {
-        metric: 'Motor Power',
-        measuredValue: incident.measuredMotorPowerKw,
-        unit: 'kW',
-        statusNote: 'Measured by spindle variable-frequency drive power meter',
-      },
-      {
-        metric: 'Motor Load',
-        measuredValue: incident.measuredMotorLoadPct,
-        unit: '%',
-        statusNote: 'Calculated as percentage of machine continuous kW rating',
-      },
-    ];
-
-    if (incident.correlatedVbMm !== undefined) {
-      verifiedReadings.push({
-        metric: 'Tool Flank Wear (Vb)',
-        measuredValue: incident.correlatedVbMm,
-        unit: 'mm',
-        statusNote: 'Empirical measurement from Dataset 1 correlation',
-      });
-    }
-
-    if (incident.correlatedRaUm !== undefined) {
-      verifiedReadings.push({
-        metric: 'Surface Roughness (Ra)',
-        measuredValue: incident.correlatedRaUm,
-        unit: 'µm',
-        statusNote: 'Empirical surface profilometer reading from Dataset 2 correlation',
-      });
-    }
-
-    // Excluded auxiliary channels
-    const unverifiedExcluded = [
-      {
-        metric: 'Raw Accelerometer Sensor Channel 14',
-        reason: 'Unit unverified in primary dataset documentation — excluded from physical diagnostic inference.',
-      },
-      {
-        metric: 'Acoustic Emission High-Frequency Raw Voltage',
-        reason: 'Calibration gain factor unverified — excluded from unit-dependent physical reasoning.',
-      },
-    ];
-
-    // Grounded diagnostic hypotheses
-    const hypotheses: DiagnosticHypothesis[] = [];
-
-    if (incident.measuredVibRms > 4.0) {
-      hypotheses.push({
-        hypothesis: 'Mechanical toolholder taper fretting or insufficient collet clamping torque',
-        rationale: `Vibration RMS is ${incident.measuredVibRms} m/s² with elevated motor load (${incident.measuredMotorLoadPct}%). Concentrated harmonic resonance frequently points to toolholder seat play.`,
-        verificationStatus: 'Unverified hypothesis — physical dial indicator sweep required',
-      });
-    }
-
-    if (incident.measuredMotorLoadPct > 95.0) {
-      hypotheses.push({
-        hypothesis: 'Z-Axis ball screw pre-load binding or guideway lubrication starvation',
-        rationale: `Motor load is surging to ${incident.measuredMotorLoadPct}%, indicating severe mechanical friction along feed axes.`,
-        verificationStatus: 'Unverified hypothesis — physical way-lube pressure check required',
-      });
-    } else {
-      hypotheses.push({
-        hypothesis: 'Progressive abrasive tool flank wear causing cutting edge micro-chipping',
-        rationale: `Correlated Vb flank wear is ${incident.correlatedVbMm ?? 'elevated'} mm. Increased rubbing friction elevates cutting forces without total mechanical seizure.`,
-        verificationStatus: 'Unverified hypothesis — optical microscope insert inspection required',
-      });
-    }
-
-    const investigationSteps = [
-      'Step 1: Check spindle runout at tool shank with calibrated 0.001 mm dial test indicator.',
-      'Step 2: Inspect collet bore, pull-stud, and toolholder 7:24 taper for fretting corrosion or foreign chip entrapment.',
-      'Step 3: Measure workpiece surface finish at 3 distinct cut locations with a calibrated stylus profilometer.',
-      'Step 4: Verify way-lube pump discharge pressure against machine hydraulic gauge specification.',
-    ];
-
-    const diagnosis: AIDiagnosisResult = {
-      incidentId: incident.id,
-      incidentSummary: `Investigation Analysis for ${incident.incidentCode} on ${incident.machineCode}: ${incident.symptomDescription}`,
-      dataProvenance: incident.dataProvenance,
-      verifiedSensorReadings: verifiedReadings,
-      unverifiedMetricsExcluded: unverifiedExcluded,
-      diagnosticHypotheses: hypotheses,
-      suggestedInvestigationSteps: investigationSteps,
-      safetyDisclaimer:
-        'AI-generated diagnostic guidance. All causes are preliminary hypotheses and do NOT replace official manufacturer standard operating procedures or certified maintenance personnel. Follow all facility Lock-Out/Tag-Out (LOTO) procedures before touching machinery.',
-      futureSopCapabilityNote:
-        'Manufacturer-verified SOP retrieval is reserved for future phases pending integration of validated technical documentation.',
-      modelId: 'gemini-3.8-flash (Pending API Model Verification)',
-      generatedAt: new Date().toISOString().replace('T', ' ').substring(0, 19),
-    };
-
-    // Save diagnosis to incident in store
-    incident.diagnosis = diagnosis;
-    safeSetItem(STORAGE_KEYS.INCIDENTS, JSON.stringify(incidents));
-
-    return diagnosis;
+  async diagnoseIncidentWithAI(_incidentId:number):Promise<AIDiagnosisResult>{
+    throw new Error('Incident AI diagnosis is unavailable. Use Factory Intelligence on the live dashboard for SQL evidence and optional selected-machine AI analysis.');
   },
 
-  // -------------------------------------------------------------
-  // Analytics Endpoints (Datasets 1, 2, 3, 4)
-  // -------------------------------------------------------------
   async getToolWearAnalytics(): Promise<Dataset1ToolWearSummary> {
     return DATASET_1_SUMMARY;
   },
@@ -753,21 +548,12 @@ export const apiClient = {
   },
 
   async getWorkOrders(): Promise<MaintenanceWorkOrder[]> {
-    const raw = safeGetItem(STORAGE_KEYS.WORK_ORDERS);
-    return raw ? JSON.parse(raw) : SEED_WORK_ORDERS;
+    const rows=await this.incidentRequest('work-orders');
+    return rows.map((row:any)=>({id:row.id,orderCode:row.order_code,incidentCode:row.incident_code,machineCode:row.machine_code,technicianName:row.technician_name,priority:row.priority,actionTaken:row.action_taken,status:row.status,createdAt:row.created_at,completedAt:row.completed_at}));
   },
-
-  async updateWorkOrderStatus(orderId: number, status: 'Pending' | 'In_Progress' | 'Completed'): Promise<MaintenanceWorkOrder[]> {
-    const orders = await this.getWorkOrders();
-    const target = orders.find((o) => o.id === orderId);
-    if (target) {
-      target.status = status;
-      if (status === 'Completed') {
-        target.completedAt = new Date().toISOString().replace('T', ' ').substring(0, 19);
-      }
-      safeSetItem(STORAGE_KEYS.WORK_ORDERS, JSON.stringify(orders));
-    }
-    return orders;
+  async updateWorkOrderStatus(_orderId:number,_status:'Pending'|'In_Progress'|'Completed'):Promise<MaintenanceWorkOrder[]> {
+    await this.incidentRequest(`work-orders/${_orderId}`,'PATCH',{status:_status});
+    return this.getWorkOrders();
   },
 
   async getSimulatedEvents(): Promise<any[]> {

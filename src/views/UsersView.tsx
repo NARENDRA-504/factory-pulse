@@ -55,6 +55,7 @@ export const UsersView: React.FC<UsersViewProps> = ({
   const [formRole, setFormRole] = useState<UserRole>('Operator');
   const [formDepartment, setFormDepartment] = useState('');
   const [formMachine, setFormMachine] = useState('');
+  const [machineSearch, setMachineSearch] = useState('');
   const [formShift, setFormShift] = useState<'Shift A' | 'Shift B' | 'Night Shift'>('Shift A');
   const [formEmail, setFormEmail] = useState('');
   const [formPassword, setFormPassword] = useState('');
@@ -118,6 +119,7 @@ export const UsersView: React.FC<UsersViewProps> = ({
     setFormRole('Operator');
     setFormDepartment('Milling & Machining Cell 1');
     setFormMachine('CNC-MILL-01');
+    setMachineSearch('');
     setFormShift('Shift A');
     setFormEmail('');
     setFormPassword('');
@@ -134,6 +136,7 @@ export const UsersView: React.FC<UsersViewProps> = ({
     setFormRole(user.role);
     setFormDepartment(user.department || '');
     setFormMachine(user.assignedMachine || '');
+    setMachineSearch(user.assignedMachine || '');
     setFormShift(user.shift || 'Shift A');
     setFormEmail(user.email);
     setFormPassword('');
@@ -775,18 +778,32 @@ export const UsersView: React.FC<UsersViewProps> = ({
                   <label className="block text-xs font-mono font-medium text-slate-300 mb-1">
                     Assigned Machine
                   </label>
+                  <input
+                    type="search"
+                    value={machineSearch}
+                    onChange={(e) => setMachineSearch(e.target.value)}
+                    placeholder="Search machine ID, code, or name (e.g. MCH-001)"
+                    className="mb-2 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white placeholder:text-slate-500 focus:border-teal-500 focus:outline-none"
+                  />
                   <select
                     value={formMachine}
                     onChange={(e) => setFormMachine(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-teal-500 font-mono"
                   >
                     <option value="">None (Plant-Wide / Roaming)</option>
-                    {machines.map((m) => (
-                      <option key={m.code} value={m.code}>
-                        {m.code} ({m.name})
-                      </option>
-                    ))}
+                    {machines
+                      .filter((m) => {
+                        const query = machineSearch.trim().toLowerCase();
+                        return !query || [m.machineId, m.code, m.machineCode, m.displayName, m.name]
+                          .some((value) => value?.toLowerCase().includes(query));
+                      })
+                      .map((m) => (
+                        <option key={m.machineId || m.code} value={m.code || m.machineCode}>
+                          {m.machineId} · {m.code || m.machineCode} ({m.displayName || m.name})
+                        </option>
+                      ))}
                   </select>
+                  <p className="mt-1 text-[10px] text-slate-500">Simulator machine: MCH-001 · CNC-5AX-001 · 5-Axis-01 — Mazak VARIAXIS C-600</p>
                 </div>
 
                 <div>

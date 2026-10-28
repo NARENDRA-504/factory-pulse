@@ -1070,6 +1070,80 @@ def get_simulator_telemetry_readings(
         print(f"[Telemetry API] Database read failed: {type(exc).__name__}")
         raise HTTPException(status_code=503, detail="Telemetry database is unavailable") from exc
 
+@app.get("/api/v1/telemetry/fleet/latest", response_model=List[TelemetryReadingRecord])
+def get_simulator_fleet_latest_readings(
+    user: Dict[str, Any] = Depends(get_current_user),
+):
+    """Return the newest persisted simulator reading for each machine and sensor.
+
+    Fleet roles can compare the records across plants. Operators are restricted
+    to their assigned machine, matching the per-machine history endpoint.
+    """
+    master = load_canonical_machine_master()
+    assigned_machine_id = None
+    if user.get("role") == "Operator":
+        assigned_code = user.get("assigned_machine")
+        assigned_machine_id = next(
+            (machine_id for machine_id, machine in master.items() if machine["machineCode"] == assigned_code),
+            None,
+        )
+        if assigned_machine_id is None:
+            return []
+
+    engine = get_telemetry_engine()
+    try:
+        machine_filter = "WHERE machine_id = :machine_id" if assigned_machine_id else ""
+        parameters = {"machine_id": assigned_machine_id} if assigned_machine_id else {}
+        # Loose index grouping followed by bounded index seeks avoids a window
+        # sort of every historical JSON row on each dashboard refresh.
+        query = """
+            SELECT reading_id, machine_id, machine_code, reading_timestamp, machine_type, department,
+                   production_line, sensor_name, sensor_unit, sensor_value_json, expected_min,
+                   expected_max, machine_status, data_quality, fault_mode, data_provenance
+            FROM simulator_sensor_readings
+            WHERE machine_id = :machine_id AND sensor_name = :sensor_name
+              AND data_source = 'AI_SIMULATOR'
+            ORDER BY reading_timestamp DESC, id DESC LIMIT 1
+        """
+        with engine.connect() as connection:
+            streams = connection.execute(_sql_text(f"""
+                SELECT machine_id, sensor_name FROM simulator_sensor_readings
+                {machine_filter} GROUP BY machine_id, sensor_name
+            """), parameters).mappings().all()
+            rows = []
+            for stream in streams:
+                row = connection.execute(_sql_text(query), dict(stream)).mappings().first()
+                if row:
+                    rows.append(row)
+        response = []
+        for row in rows:
+            machine = master.get(row["machine_id"])
+            if machine is None:
+                continue
+            response.append(TelemetryReadingRecord(
+                reading_id=row["reading_id"],
+                machine_id=row["machine_id"],
+                timestamp=_iso_utc(row["reading_timestamp"]),
+                machine_type=row["machine_type"],
+                department=row["department"],
+                production_line=row["production_line"],
+                sensor_name=row["sensor_name"],
+                sensor_unit=row["sensor_unit"],
+                sensor_value=_decode_sensor_value(row["sensor_value_json"]),
+                expected_min=row["expected_min"],
+                expected_max=row["expected_max"],
+                machine_status=row["machine_status"],
+                data_quality=row["data_quality"],
+                fault_mode=row["fault_mode"],
+                machine_code=machine["machineCode"],
+                display_name=machine["displayName"],
+                data_provenance="SIMULATED",
+            ))
+        return response
+    except Exception as exc:
+        print(f"[Telemetry API] Fleet read failed: {type(exc).__name__}")
+        raise HTTPException(status_code=503, detail="Telemetry database is unavailable") from exc
+
 @app.post("/api/v1/machines/inject-telemetry")
 def inject_telemetry(
     machine_code: str,
@@ -1273,51 +1347,7 @@ def diagnose_incident(
     incident_id: int,
     user: Dict[str, Any] = Depends(get_current_user)
 ):
-    """
-    Invokes Google Gemini model from server-side.
-    Status: Model ID gemini-3.8-flash (Pending API Model Verification).
-    Credentials remain strictly on server.
-    """
-    target = next((i for i in INCIDENTS_STORE if i["id"] == incident_id), None)
-    if not target:
-        raise HTTPException(status_code=404, detail="Incident ticket not found")
-
-    model_id = "gemini-3.8-flash (Pending API Model Verification)"
-
-    verified_readings = [
-        {"metric": "Vibration RMS", "measured_value": target["measured_vib_rms"], "unit": "m/s²"},
-        {"metric": "Motor Power", "measured_value": target["measured_motor_power_kw"], "unit": "kW"},
-        {"metric": "Motor Load", "measured_value": target["measured_motor_load_pct"], "unit": "%"}
-    ]
-    if target.get("correlated_vb_mm") is not None:
-        verified_readings.append({"metric": "Tool Flank Wear (Vb)", "measured_value": target["correlated_vb_mm"], "unit": "mm"})
-    if target.get("correlated_ra_um") is not None:
-        verified_readings.append({"metric": "Surface Roughness (Ra)", "measured_value": target["correlated_ra_um"], "unit": "µm"})
-
-    return {
-        "incident_id": incident_id,
-        "incident_summary": f"Automated Root Cause Investigation for Incident {target['incident_code']}: {target['symptom_description']}",
-        "data_provenance": target["data_provenance"],
-        "verified_sensor_readings": verified_readings,
-        "unverified_metrics_excluded": [
-            {"metric": "Sensor Channel 14", "reason": "Unit unverified in dataset documentation"}
-        ],
-        "diagnostic_hypotheses": [
-            {
-                "hypothesis": "Possible spindle collet fretting or toolholder taper runout",
-                "rationale": f"Measured vibration RMS is {target['measured_vib_rms']} m/s² with motor load at {target['measured_motor_load_pct']}%. Elevated harmonic resonance without catastrophic drive overload.",
-                "verification_status": "Unverified hypothesis — physical dial indicator sweep required"
-            }
-        ],
-        "suggested_investigation_steps": [
-            "Step 1: Check spindle runout with calibrated 0.001mm dial test indicator",
-            "Step 2: Inspect collet bore and toolholder taper for fretting corrosion",
-            "Step 3: Measure workpiece surface finish at 3 distinct cut locations"
-        ],
-        "safety_disclaimer": "AI-generated diagnostic guidance. All causes are preliminary hypotheses and do NOT replace official manufacturer standard operating procedures or certified maintenance personnel. Follow all facility Lock-Out/Tag-Out (LOTO) procedures before touching machinery.",
-        "future_sop_capability_note": "Manufacturer-verified SOP retrieval is reserved for future phases pending integration of validated technical documentation.",
-        "model_id": model_id
-    }
+    raise HTTPException(status_code=503, detail="Incident AI diagnosis is unavailable. Use the authorized Factory Intelligence endpoint for SQL evidence and optional selected-machine analysis.")
 
 # ------------------------------------------------------------------------------
 # Analytics Endpoints (Datasets 1, 2, 3, 4)
@@ -1409,3 +1439,14 @@ def get_pipeline_health(user: Dict[str, Any] = Depends(require_roles(["Superviso
         "total_empirical_rows": 28920,
         "calculation_formula": "2,054 (D1) + 612 (D2) + 25,286 (D3) + 968 (D4) = 28,920 raw empirical rows"
     }
+
+from .operational_insights import register as register_operational_insights
+register_operational_insights(app, globals())
+from .machine_inventory import register as register_machine_inventory
+register_machine_inventory(app, globals())
+
+# Replace legacy in-memory incident handlers with transaction-backed routes.
+from api_server.sql_incidents import register as register_sql_incidents
+_sql_incident_paths={'/api/v1/incidents','/api/v1/incidents/{incident_id}','/api/v1/incidents/{incident_id}/assign','/api/v1/incidents/{incident_id}/progress','/api/v1/incidents/{incident_id}/close'}
+app.router.routes[:]=[route for route in app.router.routes if getattr(route,'path',None) not in _sql_incident_paths]
+register_sql_incidents(app,globals())

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Incident, UserProfile, TelemetryReading, AIDiagnosisResult } from '../types';
 import { apiClient } from '../services/apiClient';
 import { SEED_MACHINES } from '../data/seedData';
@@ -45,7 +45,7 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
 
   // Modal states
   const [isNewModalOpen, setIsNewModalOpen] = useState(!!initialSnapshotForReport);
-  const [newMachineCode, setNewMachineCode] = useState(initialMachineForReport || 'CNC-MILL-01');
+  const [newMachineCode, setNewMachineCode] = useState(initialMachineForReport || currentUser.assignedMachine || SEED_MACHINES[0].code);
   const [newSeverity, setNewSeverity] = useState<Incident['severity']>('Medium');
   const [newSymptom, setNewSymptom] = useState(
     initialSnapshotForReport?.injectedAnomalyType
@@ -55,12 +55,14 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
   const [newComponentArea, setNewComponentArea] = useState('Spindle & Toolholder');
   const [newOperatorNotes, setNewOperatorNotes] = useState('');
   const [formSnapshot, setFormSnapshot] = useState<TelemetryReading>(
-    initialSnapshotForReport || apiClient.getLiveTelemetrySnapshot(initialMachineForReport || 'CNC-MILL-01')
+    initialSnapshotForReport || apiClient.getLiveTelemetrySnapshot(initialMachineForReport || currentUser.assignedMachine || SEED_MACHINES[0].code)
   );
 
   // Workflow actions
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
-  const [assigneeName, setAssigneeName] = useState('Frank Kowalski');
+  const [assigneeName, setAssigneeName] = useState('');
+  const [technicians,setTechnicians]=useState<any[]>([]);
+  useEffect(()=>{if(currentUser.role==='Supervisor') apiClient.getMaintenanceTechnicians().then(setTechnicians).catch(()=>setTechnicians([]));},[currentUser.role]);
   const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
   const [closureNotes, setClosureNotes] = useState('');
   const [isProgressModalOpen, setIsProgressModalOpen] = useState(false);
@@ -529,7 +531,7 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
                   <div className="p-2.5 bg-slate-900 border border-slate-800 rounded-lg">
                     <div className="text-[10px] font-mono text-slate-500 uppercase">Vibration RMS</div>
                     <div className="text-base font-mono font-bold text-white font-mono-numbers">
-                      {selectedIncident.measuredVibRms.toFixed(2)}{' '}
+                      {(selectedIncident.measuredVibRms == null ? 'Not measured' : selectedIncident.measuredVibRms.toFixed(2))}{' '}
                       <span className="text-xs font-normal text-slate-400">m/s²</span>
                     </div>
                   </div>
@@ -537,7 +539,7 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
                   <div className="p-2.5 bg-slate-900 border border-slate-800 rounded-lg">
                     <div className="text-[10px] font-mono text-slate-500 uppercase">Motor Power (kW)</div>
                     <div className="text-base font-mono font-bold text-teal-300 font-mono-numbers">
-                      {selectedIncident.measuredMotorPowerKw.toFixed(1)}{' '}
+                      {(selectedIncident.measuredMotorPowerKw == null ? 'Not measured' : selectedIncident.measuredMotorPowerKw.toFixed(1))}{' '}
                       <span className="text-xs font-normal text-slate-400">kW</span>
                     </div>
                   </div>
@@ -545,7 +547,7 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
                   <div className="p-2.5 bg-slate-900 border border-slate-800 rounded-lg">
                     <div className="text-[10px] font-mono text-slate-500 uppercase">Motor Load (%)</div>
                     <div className="text-base font-mono font-bold text-amber-400 font-mono-numbers">
-                      {selectedIncident.measuredMotorLoadPct.toFixed(1)}{' '}
+                      {(selectedIncident.measuredMotorLoadPct == null ? 'Not measured' : selectedIncident.measuredMotorLoadPct.toFixed(1))}{' '}
                       <span className="text-xs font-normal text-slate-400">%</span>
                     </div>
                   </div>
@@ -595,6 +597,7 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
               )}
 
               {/* ------------------------------------------------------------- */}
+              {selectedIncident.sensorSnapshot && <section className="rounded-xl border border-slate-800 p-4"><h3 className="font-semibold text-sm">Saved sensor evidence at report time</h3><p className="mt-1 text-xs text-slate-400">Original readings attached by FactoryPulse from MySQL.</p><div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">{selectedIncident.sensorSnapshot.map(reading=><div key={reading.reading_id} className="rounded-lg bg-slate-950 p-3"><p className="text-xs text-slate-400">{reading.sensor_name}</p><p className="mt-1 text-sm text-cyan-200">{reading.sensor_value??'Unavailable'} {reading.sensor_unit}</p><p className="mt-1 text-[10px] text-slate-500">{new Date(reading.timestamp).toLocaleString()}</p></div>)}</div></section>}
               {/* AI Incident Investigation Assistant Panel */}
               {/* ------------------------------------------------------------- */}
               <div className="pt-4 border-t border-slate-800">
@@ -606,30 +609,12 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
                         AI Incident Investigation Assistant
                       </h3>
                       <p className="text-[11px] text-slate-400">
-                        Synthesizes sensor snapshot telemetry into structured root cause hypotheses
+                        Use Factory Intelligence on the live dashboard for authorized SQL evidence. Optional Google analysis requires backend configuration.
                       </p>
                     </div>
                   </div>
 
-                  {!selectedIncident.diagnosis && (
-                    <button
-                      onClick={handleRunAIAssistant}
-                      disabled={isAILoading}
-                      className="px-3.5 py-2 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-all shadow-md disabled:opacity-50 font-mono"
-                    >
-                      {isAILoading ? (
-                        <>
-                          <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                          Generating Hypotheses...
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="w-3.5 h-3.5 text-teal-200" />
-                          Run AI Investigation Analysis
-                        </>
-                      )}
-                    </button>
-                  )}
+                  <span className="text-xs text-amber-200">Provider not configured</span>
                 </div>
 
                 {selectedIncident.diagnosis ? (
@@ -716,7 +701,7 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
                   </div>
                 ) : (
                   <div className="p-4 bg-slate-900/40 border border-dashed border-slate-800 rounded-xl text-center text-xs text-slate-500">
-                    Click "Run AI Investigation Analysis" to synthesize sensor readings into root cause hypotheses.
+                    No generated diagnosis is available. Recorded sensor evidence remains accessible on the live dashboard.
                   </div>
                 )}
               </div>
@@ -823,34 +808,8 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
                   <span className="font-mono text-[10px] text-slate-400 uppercase font-semibold">
                     Attached Sensor Telemetry Snapshot
                   </span>
-                  <button
-                    type="button"
-                    onClick={handleCaptureFreshSnapshot}
-                    className="text-[10px] font-mono text-teal-400 hover:underline"
-                  >
-                    Refresh Snapshot
-                  </button>
                 </div>
-
-                <div className="grid grid-cols-3 gap-2 text-center font-mono text-xs">
-                  <div className="p-1.5 bg-slate-950 rounded">
-                    <div className="text-[10px] text-slate-500">Vibration RMS</div>
-                    <div className="text-white font-bold">{formSnapshot.vibRms} m/s²</div>
-                  </div>
-                  <div className="p-1.5 bg-slate-950 rounded">
-                    <div className="text-[10px] text-slate-500">Motor Power</div>
-                    <div className="text-teal-400 font-bold">{formSnapshot.motorPowerKw} kW</div>
-                  </div>
-                  <div className="p-1.5 bg-slate-950 rounded">
-                    <div className="text-[10px] text-slate-500">Motor Load</div>
-                    <div className="text-amber-400 font-bold">{formSnapshot.motorLoadPct}%</div>
-                  </div>
-                </div>
-
-                <div className="mt-2 flex items-center justify-between text-[10px] font-mono text-slate-500">
-                  <span>Provenance: {formSnapshot.dataProvenance}</span>
-                  <span>{formSnapshot.timestamp.substring(11, 19)}</span>
-                </div>
+                <p className="text-xs text-slate-400">FactoryPulse attaches the latest saved MySQL sensor readings when you submit. Original sensor units and timestamps are preserved. Unmeasured vibration acceleration, motor power and motor load remain unavailable.</p>
               </div>
 
               <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
@@ -890,10 +849,8 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
                   onChange={(e) => setAssigneeName(e.target.value)}
                   className="w-full bg-slate-900 border border-slate-700 text-white rounded p-2 font-mono"
                 >
-                  <option value="Frank Kowalski">Frank Kowalski (Senior Reliability Engineer)</option>
-                  <option value="Liam O'Connor">Liam O'Connor (Mechanical Specialist)</option>
-                  <option value="Anika Patel">Anika Patel (Electrical / VFD Technician)</option>
-                </select>
+                  <option value="">Choose an active technician</option>{technicians.map(person=><option key={person.id} value={person.full_name}>{person.full_name} ({person.work_id})</option>)}
+                  </select>
               </div>
 
               <div className="flex justify-end gap-2 pt-3">

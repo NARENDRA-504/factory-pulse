@@ -19,8 +19,8 @@ import {
 
 interface SidebarProps {
   currentUser: UserProfile;
-  currentScreen: 'dashboard' | 'machines' | 'incidents' | 'analytics' | 'users' | 'activity';
-  onNavigate: (screen: 'dashboard' | 'machines' | 'incidents' | 'analytics' | 'users' | 'activity') => void;
+  currentScreen: 'dashboard' | 'machines' | 'incidents' | 'analytics' | 'users' | 'activity' | 'inventory';
+  onNavigate: (screen: 'dashboard' | 'machines' | 'incidents' | 'analytics' | 'users' | 'activity' | 'inventory') => void;
   onLogout: () => void;
   onOpenProfile?: () => void;
   activeIncidentsCount?: number;
@@ -56,7 +56,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const isOperator = currentUser.role === 'Operator';
 
-  const handleNavClick = (screen: 'dashboard' | 'machines' | 'incidents' | 'analytics' | 'users' | 'activity') => {
+  const handleNavClick = (screen: 'dashboard' | 'machines' | 'incidents' | 'analytics' | 'users' | 'activity' | 'inventory') => {
     onNavigate(screen);
     onCloseMobile();
   };
@@ -106,18 +106,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <X className="w-5 h-5" />
             </button>
           </div>
-
-          {/* Data mode */}
-          <div className="mx-3 my-3 px-3 py-2 rounded-lg bg-[#0b1322] border border-slate-800/80 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-amber-400" />
-              <span className="text-[11px] font-mono text-slate-300 font-medium">
-                Data mode
-              </span>
-            </div>
-            <span className="text-[10px] font-mono text-amber-300 uppercase tracking-wider font-semibold">
-              Demo
-            </span>
+          <div className="mx-3 my-3 rounded-lg border border-cyan-900/70 bg-[#0b1322] px-3 py-2">
+            <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Telemetry source</div>
+            <div className="mt-1 text-xs font-medium text-cyan-300">AI Simulator → FactoryPulse MySQL</div>
           </div>
 
           {/* Navigation Links Grouped */}
@@ -237,6 +228,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                   {currentUser.role === 'Admin' && (
                     <>
+                    <button onClick={() => handleNavClick('inventory')} className={`w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium ${currentScreen === 'inventory' ? 'border border-teal-500/30 bg-teal-500/10 text-teal-300' : 'text-slate-400 hover:bg-slate-900/60 hover:text-slate-200'}`}><Cpu className="h-4 w-4"/>Machine Management</button>
                     <button
                       onClick={() => handleNavClick('users')}
                       className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${
@@ -278,11 +270,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="p-2.5 rounded-lg bg-[#0b1322] border border-slate-800/80 text-[11px] font-mono space-y-1 text-slate-400">
             <div className="flex items-center justify-between">
               <span className="text-slate-400">Dashboard readings</span>
-              <span className="text-amber-300 font-semibold">Simulated</span>
+              <span className="text-teal-300 font-semibold">Simulator → MySQL</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-slate-400">MySQL history</span>
-              <span className="text-slate-300 font-medium">API required</span>
+              <span className="text-teal-300 font-medium">API configured</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-slate-400">Power BI report</span>
