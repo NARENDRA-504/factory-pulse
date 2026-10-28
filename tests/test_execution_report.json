@@ -1,12 +1,12 @@
 {
   "report_title": "ZIRO Manufacturing Platform Verification Audit Report",
-  "generated_at": "2026-10-28T07:17:21.649083Z",
+  "generated_at": "2026-10-28T10:24:07.617887Z",
   "overall_status": "PASSED",
-  "total_unit_tests": 107,
-  "total_passed": 107,
+  "total_unit_tests": 109,
+  "total_passed": 109,
   "total_failures": 0,
   "total_errors": 0,
-  "total_elapsed_seconds": 5.8273,
+  "total_elapsed_seconds": 5.6246,
   "suites": [
     {
       "suite_name": "Dataset Engineering & Baselines",
@@ -16,7 +16,7 @@
       "failures": 0,
       "errors": 0,
       "status": "PASSED",
-      "elapsed_seconds": 0.0016
+      "elapsed_seconds": 0.002
     },
     {
       "suite_name": "RBAC & Auth Security",
@@ -36,7 +36,7 @@
       "failures": 0,
       "errors": 0,
       "status": "PASSED",
-      "elapsed_seconds": 0.0092
+      "elapsed_seconds": 0.0088
     },
     {
       "suite_name": "MySQL Schema DDL Integrity",
@@ -46,7 +46,7 @@
       "failures": 0,
       "errors": 0,
       "status": "PASSED",
-      "elapsed_seconds": 0.0048
+      "elapsed_seconds": 0.005
     },
     {
       "suite_name": "Frontend Seed Data & Types",
@@ -66,7 +66,7 @@
       "failures": 0,
       "errors": 0,
       "status": "PASSED",
-      "elapsed_seconds": 0.0148
+      "elapsed_seconds": 0.024
     },
     {
       "suite_name": "Live In-Process HTTP Wire Server",
@@ -76,7 +76,7 @@
       "failures": 0,
       "errors": 0,
       "status": "PASSED",
-      "elapsed_seconds": 0.574
+      "elapsed_seconds": 0.6262
     },
     {
       "suite_name": "Dashboard Control Room Upgrade",
@@ -86,7 +86,7 @@
       "failures": 0,
       "errors": 0,
       "status": "PASSED",
-      "elapsed_seconds": 0.0716
+      "elapsed_seconds": 0.0699
     },
     {
       "suite_name": "Operator Dashboard Functional Audit",
@@ -96,7 +96,7 @@
       "failures": 0,
       "errors": 0,
       "status": "PASSED",
-      "elapsed_seconds": 0.5429
+      "elapsed_seconds": 0.5407
     },
     {
       "suite_name": "Python Telemetry Cleaner & Stats",
@@ -106,7 +106,7 @@
       "failures": 0,
       "errors": 0,
       "status": "PASSED",
-      "elapsed_seconds": 0.0062
+      "elapsed_seconds": 0.0097
     },
     {
       "suite_name": "Simulator Machine Management (Tests A-F)",
@@ -116,21 +116,31 @@
       "failures": 0,
       "errors": 0,
       "status": "PASSED",
-      "elapsed_seconds": 0.047
+      "elapsed_seconds": 0.0708
+    },
+    {
+      "suite_name": "Machine Roster Available Master",
+      "module_path": "tests.test_machine_roster",
+      "tests_run": 2,
+      "passed": 2,
+      "failures": 0,
+      "errors": 0,
+      "status": "PASSED",
+      "elapsed_seconds": 0.01
     }
   ],
   "dataset_validation_gate": {
     "status": "PASSED",
-    "elapsed_seconds": 0.0016,
+    "elapsed_seconds": 0.0014,
     "total_empirical_rows": 28920
   },
   "typescript_typecheck": {
     "status": "PASSED",
-    "elapsed_seconds": 2.7199
+    "elapsed_seconds": 2.4902
   },
   "frontend_production_build": {
     "status": "PASSED",
-    "elapsed_seconds": 1.83
+    "elapsed_seconds": 1.7612
   },
   "verified_requirements": [
     "TC-DATA: 4 Empirical datasets validated with 28,920 rows total",

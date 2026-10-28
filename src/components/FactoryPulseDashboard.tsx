@@ -1,51 +1,423 @@
-import React from 'react';
-import { Activity, AlertTriangle, ArrowRight, CheckCircle2, ClipboardList, Cpu, Users } from 'lucide-react';
+import React, { useState } from 'react';
+import { Activity, AlertTriangle, ArrowRight, CheckCircle2, ClipboardList, Cpu, Users, BarChart3, TrendingUp, Radio } from 'lucide-react';
 import { SimulatorFleetTelemetryDashboard } from './SimulatorFleetTelemetryDashboard';
+import { SupervisorDashboard } from './SupervisorDashboard';
+import { ManagerDashboard } from './ManagerDashboard';
 import { Incident, Machine, MaintenanceWorkOrder, UserProfile, UserRole } from '../types';
 import { apiClient } from '../services/apiClient';
 
-type Screen = 'dashboard' | 'machines' | 'incidents' | 'analytics' | 'users';
+type Screen = 'dashboard' | 'machines' | 'incidents' | 'analytics' | 'users' | 'activity' | 'inventory' | 'maintenance';
+
 interface FactoryPulseDashboardProps {
-  currentUser: UserProfile; machines: Machine[]; incidents: Incident[]; workOrders: MaintenanceWorkOrder[];
-  onNavigate: (screen: Screen) => void; onSelectMachine: (code: string) => void; onRefreshData?: () => void;
+  currentUser: UserProfile;
+  machines: Machine[];
+  incidents: Incident[];
+  workOrders: MaintenanceWorkOrder[];
+  onNavigate: (screen: Screen) => void;
+  onSelectMachine: (code: string) => void;
+  onRefreshData?: () => void;
 }
+
 const ROLE_COPY: Record<UserRole, { eyebrow: string; title: string; description: string }> = {
-  Operator: { eyebrow: 'My workstation', title: 'Machine & shift overview', description: 'Live Simulator readings for your assigned machine, plus issues that need your attention.' },
-  Supervisor: { eyebrow: 'Shift operations', title: 'Plant & fleet health', description: 'Review incoming machine conditions, prioritize incidents, and coordinate the shift response.' },
-  Maintenance: { eyebrow: 'Reliability workbench', title: 'Machine condition & work queue', description: 'Use saved sensor history to investigate equipment and move assigned work forward.' },
-  Manager: { eyebrow: 'Operations summary', title: 'Fleet health & operational risk', description: 'Compare incoming machine readings and focus on the risks requiring a decision.' },
-  Admin: { eyebrow: 'Platform overview', title: 'Telemetry & operations oversight', description: 'Monitor incoming machine data and open the tools for user and activity administration.' },
+  Operator: {
+    eyebrow: 'My Workstation Console',
+    title: 'Machine & Shift Overview',
+    description: 'Live Simulator readings for your assigned machine, plus issues that need your attention.',
+  },
+  Supervisor: {
+    eyebrow: 'Shift Operations Management',
+    title: 'Plant Operations & Fleet Health',
+    description: 'Review incoming machine conditions, prioritize incidents, coordinate technician response, and maintain plant line readiness.',
+  },
+  Maintenance: {
+    eyebrow: 'Reliability Workbench',
+    title: 'Machine Condition & Work Queue',
+    description: 'Use saved sensor history to investigate equipment and move assigned work orders forward.',
+  },
+  Manager: {
+    eyebrow: 'Operations Summary & Executive Governance',
+    title: 'Multi-Facility OEE & Operational Risk',
+    description: 'Compare plant efficiency, 7-day downtime patterns, electrical substation limits, and sign off on executive maintenance actions.',
+  },
+  Admin: {
+    eyebrow: 'Platform Governance & Master Oversight',
+    title: 'Telemetry & Operations Control Room',
+    description: 'Monitor incoming machine data, manage user credentials, and administer platform policies.',
+  },
 };
-export const MeterCard: React.FC<{ label: string; value: number | undefined; unit: string; limit: number; warningAt: number; limitLabel: string; scaleMax: number; digits?: number; icon: React.ReactNode }> = ({ label, value, unit, limit, warningAt, limitLabel, scaleMax, digits = 1, icon }) => {
+
+export const MeterCard: React.FC<{
+  label: string;
+  value: number | undefined;
+  unit: string;
+  limit: number;
+  warningAt: number;
+  limitLabel: string;
+  scaleMax: number;
+  digits?: number;
+  icon: React.ReactNode;
+}> = ({ label, value, unit, limit, warningAt, limitLabel, scaleMax, digits = 1, icon }) => {
   const ok = typeof value === 'number' && Number.isFinite(value);
   const fraction = ok ? Math.max(0, Math.min(1, value / scaleMax)) : 0;
   const color = !ok ? '#64748b' : value > limit ? '#fb7185' : value >= warningAt ? '#fbbf24' : '#2dd4bf';
-  return <section className="rounded-xl border border-slate-800 bg-[#0c1424] p-3"><div className="flex items-center justify-between text-xs font-semibold uppercase text-slate-400"><span>{label}</span><span className="text-teal-300">{icon}</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-800"><div className="h-full rounded-full" style={{ width: `${fraction * 100}%`, backgroundColor: color }}/></div><p className="mt-2 text-lg font-semibold tabular-nums text-slate-100">{ok ? value.toLocaleString(undefined, { maximumFractionDigits: digits }) : '—'} <span className="text-xs font-normal text-slate-400">{unit}</span></p><p className="text-[10px] text-slate-500">{ok ? `${limitLabel} ${limit} ${unit}` : 'No Simulator value received'}</p></section>;
+  return (
+    <section className="rounded-xl border border-slate-800 bg-[#0c1424] p-3">
+      <div className="flex items-center justify-between text-xs font-semibold uppercase text-slate-400">
+        <span>{label}</span>
+        <span className="text-teal-300">{icon}</span>
+      </div>
+      <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-800">
+        <div className="h-full rounded-full" style={{ width: `${fraction * 100}%`, backgroundColor: color }} />
+      </div>
+      <p className="mt-2 text-lg font-semibold tabular-nums text-slate-100">
+        {ok ? value.toLocaleString(undefined, { maximumFractionDigits: digits }) : '—'} <span className="text-xs font-normal text-slate-400">{unit}</span>
+      </p>
+      <p className="text-[10px] text-slate-500">
+        {ok ? `${limitLabel} ${limit} ${unit}` : 'No Simulator value received'}
+      </p>
+    </section>
+  );
 };
-const RoleActions: React.FC<{ user: UserProfile; incidents: Incident[]; workOrders: MaintenanceWorkOrder[]; onNavigate: (screen: Screen) => void; onSelectMachine: (code: string) => void; onRefreshData?: () => void }> = ({ user, incidents, workOrders, onNavigate, onSelectMachine, onRefreshData }) => {
+
+const RoleActions: React.FC<{
+  user: UserProfile;
+  incidents: Incident[];
+  workOrders: MaintenanceWorkOrder[];
+  onNavigate: (screen: Screen) => void;
+  onSelectMachine: (code: string) => void;
+  onRefreshData?: () => void;
+}> = ({ user, incidents, workOrders, onNavigate, onSelectMachine, onRefreshData }) => {
   const [feedback, setFeedback] = React.useState('');
-  const scopedIncidents = incidents.filter((i) => i.status !== 'Closed' && (user.role !== 'Operator' || i.machineCode === user.assignedMachine));
+  const scopedIncidents = incidents.filter(
+    (i) => i.status !== 'Closed' && (user.role !== 'Operator' || i.machineCode === user.assignedMachine)
+  );
   const openOrders = workOrders.filter((o) => o.status !== 'Completed');
+
   const actions: Record<UserRole, { label: string; target: Screen; icon: React.ReactNode; note: string }> = {
-    Operator: { label: 'Report a machine issue', target: 'incidents', icon: <AlertTriangle className="h-4 w-4"/>, note: 'Report abnormal readings or a safety concern for your assigned workstation.' },
-    Supervisor: { label: 'Prioritize open incidents', target: 'incidents', icon: <ClipboardList className="h-4 w-4"/>, note: 'Review open and high-severity incidents, then assign the next response.' },
-    Maintenance: { label: 'Open maintenance queue', target: 'incidents', icon: <ClipboardList className="h-4 w-4"/>, note: 'Review work orders and update their status from the incident board.' },
-    Manager: { label: 'Review operations analytics', target: 'analytics', icon: <Activity className="h-4 w-4"/>, note: 'Review machine health. Production totals and downtime are not sent by the Simulator.' },
-    Admin: { label: 'Manage users and access', target: 'users', icon: <Users className="h-4 w-4"/>, note: 'Administer employee accounts and role access.' },
+    Operator: {
+      label: 'Report a machine issue',
+      target: 'incidents',
+      icon: <AlertTriangle className="h-4 w-4" />,
+      note: 'Report abnormal readings or a safety concern for your assigned workstation.',
+    },
+    Supervisor: {
+      label: 'Prioritize open incidents',
+      target: 'incidents',
+      icon: <ClipboardList className="h-4 w-4" />,
+      note: 'Review open and high-severity incidents, then assign the next response.',
+    },
+    Maintenance: {
+      label: 'Open maintenance queue',
+      target: 'maintenance',
+      icon: <ClipboardList className="h-4 w-4" />,
+      note: 'Review work orders and update their status from the maintenance board.',
+    },
+    Manager: {
+      label: 'Review operations analytics',
+      target: 'analytics',
+      icon: <Activity className="h-4 w-4" />,
+      note: 'Review plant OEE, downtime analytics, and empirical machine datasets.',
+    },
+    Admin: {
+      label: 'Manage users and access',
+      target: 'users',
+      icon: <Users className="h-4 w-4" />,
+      note: 'Administer employee accounts, permissions, and role access.',
+    },
   };
+
   const action = actions[user.role];
+
   const update = async (order: MaintenanceWorkOrder, status: MaintenanceWorkOrder['status']) => {
-    try { await apiClient.updateWorkOrderStatus(order.id, status); setFeedback(`${order.orderCode} updated.`); onRefreshData?.(); }
-    catch (error) { setFeedback(error instanceof Error ? error.message : 'Could not update work order.'); }
+    try {
+      await apiClient.updateWorkOrderStatus(order.id, status);
+      setFeedback(`${order.orderCode} updated.`);
+      onRefreshData?.();
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : 'Could not update work order.');
+    }
   };
-  return <aside className="space-y-3"><section className="rounded-xl border border-slate-800 bg-[#0c1424] p-4"><div className="flex items-center gap-2 text-teal-300">{action.icon}<h2 className="text-sm font-semibold text-slate-100">Your next step</h2></div><p className="mt-2 text-xs leading-relaxed text-slate-400">{action.note}</p><button onClick={() => onNavigate(action.target)} className="mt-3 inline-flex items-center gap-2 rounded-lg bg-teal-600 px-3 py-2 text-xs font-semibold text-slate-950 hover:bg-teal-500">{action.label}<ArrowRight className="h-3.5 w-3.5"/></button>{user.role !== 'Operator' && <button onClick={() => onNavigate('machines')} className="ml-2 mt-3 inline-flex items-center gap-2 rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-800"><Cpu className="h-3.5 w-3.5"/>Machine roster</button>}</section>
-    {user.role === 'Maintenance' ? <section className="rounded-xl border border-slate-800 bg-[#0c1424] p-4"><div className="flex items-center justify-between"><h2 className="text-sm font-semibold text-slate-100">Open work orders</h2><span className="text-xs text-amber-300">{openOrders.length}</span></div>{feedback && <p role="status" className="mt-2 text-xs text-teal-300">{feedback}</p>}<div className="mt-2 divide-y divide-slate-800">{openOrders.slice(0, 5).map((o) => <div key={o.id} className="flex items-center justify-between gap-2 py-2"><div className="min-w-0"><p className="truncate text-xs font-semibold text-slate-200">{o.orderCode} · {o.machineCode}</p><p className="text-[10px] text-slate-500">{o.priority} priority · {o.status.replace('_', ' ')}</p></div><div className="flex gap-1">{o.status === 'Pending' && <button onClick={() => update(o, 'In_Progress')} className="rounded border border-amber-800 px-2 py-1 text-[10px] text-amber-200">Start</button>}<button onClick={() => update(o, 'Completed')} className="rounded border border-emerald-800 px-2 py-1 text-[10px] text-emerald-200">Complete</button></div></div>)}</div>{!openOrders.length && <p className="mt-2 text-xs text-slate-400">No open work orders.</p>}</section> : <section className="rounded-xl border border-slate-800 bg-[#0c1424] p-4"><div className="flex items-center justify-between"><h2 className="text-sm font-semibold text-slate-100">Open incidents</h2><span className="text-xs text-rose-300">{scopedIncidents.length}</span></div><div className="mt-2 space-y-2">{scopedIncidents.slice(0, 4).map((i) => <button key={i.id} onClick={() => { onSelectMachine(i.machineCode); onNavigate('incidents'); }} className="flex w-full items-start justify-between gap-2 rounded-lg bg-slate-950/50 p-2 text-left hover:bg-slate-900"><span className="min-w-0"><span className="block truncate text-xs font-semibold text-slate-200">{i.incidentCode} · {i.machineCode}</span><span className="block truncate text-[10px] text-slate-500">{i.symptomDescription}</span></span><span className="shrink-0 text-[10px] text-amber-300">{i.severity}</span></button>)}</div>{!scopedIncidents.length && <p className="mt-2 flex items-center gap-2 text-xs text-emerald-300"><CheckCircle2 className="h-4 w-4"/>No open incidents in this view.</p>}</section>}
-    {user.role === 'Manager' && <p className="rounded-lg border border-amber-900/60 bg-amber-950/20 p-3 text-[11px] leading-relaxed text-amber-200">The Simulator sends sensor readings and machine status, but not production totals or downtime duration. Those KPIs are not inferred.</p>}</aside>;
+
+  return (
+    <aside className="space-y-3">
+      <section className="rounded-xl border border-slate-800 bg-[#0c1424] p-4">
+        <div className="flex items-center gap-2 text-teal-300">
+          {action.icon}
+          <h2 className="text-sm font-semibold text-slate-100">Your next step</h2>
+        </div>
+        <p className="mt-2 text-xs leading-relaxed text-slate-400">{action.note}</p>
+        <button
+          onClick={() => onNavigate(action.target)}
+          className="mt-3 inline-flex items-center gap-2 rounded-lg bg-teal-600 px-3 py-2 text-xs font-semibold text-slate-950 hover:bg-teal-500"
+        >
+          {action.label}
+          <ArrowRight className="h-3.5 w-3.5" />
+        </button>
+        {user.role !== 'Operator' && (
+          <button
+            onClick={() => onNavigate('machines')}
+            className="ml-2 mt-3 inline-flex items-center gap-2 rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-800"
+          >
+            <Cpu className="h-3.5 w-3.5" />
+            Machine roster
+          </button>
+        )}
+      </section>
+
+      {user.role === 'Maintenance' ? (
+        <section className="rounded-xl border border-slate-800 bg-[#0c1424] p-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-slate-100">Open work orders</h2>
+            <span className="text-xs font-mono text-amber-300">{openOrders.length}</span>
+          </div>
+          {feedback && <p role="status" className="mt-2 text-xs text-teal-300">{feedback}</p>}
+          <div className="mt-2 divide-y divide-slate-800">
+            {openOrders.slice(0, 5).map((o) => (
+              <div key={o.id} className="flex items-center justify-between gap-2 py-2">
+                <div className="min-w-0">
+                  <p className="truncate text-xs font-semibold text-slate-200">
+                    {o.orderCode} · {o.machineCode}
+                  </p>
+                  <p className="text-[10px] text-slate-500 font-mono">
+                    {o.priority} priority · {o.status.replace('_', ' ')}
+                  </p>
+                </div>
+                <div className="flex gap-1">
+                  {o.status === 'Pending' && (
+                    <button
+                      onClick={() => update(o, 'In_Progress')}
+                      className="rounded border border-amber-800 px-2 py-1 text-[10px] text-amber-200"
+                    >
+                      Start
+                    </button>
+                  )}
+                  <button
+                    onClick={() => update(o, 'Completed')}
+                    className="rounded border border-emerald-800 px-2 py-1 text-[10px] text-emerald-200"
+                  >
+                    Complete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+          {!openOrders.length && <p className="mt-2 text-xs text-slate-400">No open work orders.</p>}
+        </section>
+      ) : (
+        <section className="rounded-xl border border-slate-800 bg-[#0c1424] p-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-slate-100">Open incidents</h2>
+            <span className="text-xs font-mono text-rose-300">{scopedIncidents.length}</span>
+          </div>
+          <div className="mt-2 space-y-2">
+            {scopedIncidents.slice(0, 4).map((i) => (
+              <button
+                key={i.id}
+                onClick={() => {
+                  onSelectMachine(i.machineCode);
+                  onNavigate('incidents');
+                }}
+                className="flex w-full items-start justify-between gap-2 rounded-lg bg-slate-950/50 p-2 text-left hover:bg-slate-900"
+              >
+                <span className="min-w-0">
+                  <span className="block truncate text-xs font-semibold text-slate-200">
+                    {i.incidentCode} · {i.machineCode}
+                  </span>
+                  <span className="block truncate text-[10px] text-slate-500">{i.symptomDescription}</span>
+                </span>
+                <span className="shrink-0 text-[10px] font-mono text-amber-300">{i.severity}</span>
+              </button>
+            ))}
+          </div>
+          {!scopedIncidents.length && (
+            <p className="mt-2 flex items-center gap-2 text-xs text-emerald-300">
+              <CheckCircle2 className="h-4 w-4" />
+              No open incidents in this view.
+            </p>
+          )}
+        </section>
+      )}
+
+      {user.role === 'Manager' && (
+        <p className="rounded-lg border border-amber-900/60 bg-amber-950/20 p-3 text-[11px] leading-relaxed text-amber-200">
+          The Simulator sends sensor readings and machine status, but not production totals or downtime duration. Those KPIs are not inferred.
+        </p>
+      )}
+    </aside>
+  );
 };
-export const FactoryPulseDashboard: React.FC<FactoryPulseDashboardProps> = ({ currentUser, machines, incidents, workOrders, onNavigate, onSelectMachine, onRefreshData }) => {
+
+export const FactoryPulseDashboard: React.FC<FactoryPulseDashboardProps> = ({
+  currentUser,
+  machines,
+  incidents,
+  workOrders,
+  onNavigate,
+  onSelectMachine,
+  onRefreshData,
+}) => {
   const copy = ROLE_COPY[currentUser.role];
+  const [activeTab, setActiveTab] = useState<'role_dashboard' | 'fleet_telemetry'>('role_dashboard');
+
   const assignedMachine = currentUser.assignedMachine
-    ? machines.find((machine) => machine.code === currentUser.assignedMachine || machine.machineCode === currentUser.assignedMachine)
+    ? machines.find(
+        (machine) => machine.code === currentUser.assignedMachine || machine.machineCode === currentUser.assignedMachine
+      )
     : undefined;
-  return <div className="mx-auto w-full max-w-[1600px] space-y-4 pb-6 text-slate-100"><header className="flex flex-col gap-3 rounded-xl border border-slate-800 bg-[#0c1424] p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5"><div><p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-teal-300">{copy.eyebrow}</p><h1 className="mt-1 text-xl font-semibold sm:text-2xl">{copy.title}</h1><p className="mt-1 max-w-3xl text-xs leading-relaxed text-slate-400">{copy.description}</p>{currentUser.role === 'Operator' && <div className="mt-3 space-y-2"><div className="inline-flex max-w-full flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-cyan-900/70 bg-slate-950/60 px-3 py-2 text-xs"><Cpu className="h-4 w-4 shrink-0 text-cyan-300"/><span className="text-slate-400">Assigned machine</span><strong className="font-mono text-cyan-200">{currentUser.assignedMachine || 'Unassigned'}</strong>{assignedMachine?.machineId && <span className="font-mono text-slate-400">· {assignedMachine.machineId}</span>}{assignedMachine?.displayName && <span className="text-slate-400">· {assignedMachine.displayName}</span>}</div>{currentUser.assignedMachine !== 'CNC-5AX-001' && <p className="text-[11px] text-amber-300">Simulator station: MCH-001 · CNC-5AX-001. Your assigned station must match before its readings appear.</p>}</div>}</div><div className="flex items-center gap-2"><span className="rounded-full border border-slate-700 px-3 py-1.5 text-xs text-slate-300">{currentUser.role}</span>{onRefreshData && <button onClick={onRefreshData} className="rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-300 hover:bg-slate-800">Refresh operations data</button>}</div></header><div className="grid grid-cols-1 gap-4 2xl:grid-cols-12"><div className="min-w-0 2xl:col-span-9"><SimulatorFleetTelemetryDashboard user={currentUser} machines={machines}/></div><div className="2xl:col-span-3"><RoleActions user={currentUser} incidents={incidents} workOrders={workOrders} onNavigate={onNavigate} onSelectMachine={onSelectMachine} onRefreshData={onRefreshData}/></div></div><footer className="border-t border-slate-800 pt-2 text-[10px] text-slate-500">Sensor values and trends: FactoryPulse MySQL records received from AI Simulator. Operational queues: FactoryPulse incident and work-order records.</footer></div>;
+
+  // For Supervisor: render specialized SupervisorDashboard
+  if (currentUser.role === 'Supervisor' && activeTab === 'role_dashboard') {
+    return (
+      <div className="mx-auto w-full max-w-[1600px] space-y-4 pb-6 text-slate-100">
+        {/* Sub-view navigation switcher */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#0c1424] border border-slate-800 rounded-xl p-3 px-4">
+          <div className="flex items-center gap-2 text-xs font-mono text-slate-400">
+            <span className="text-teal-300 font-bold">SUPERVISOR VIEW:</span>
+            <span>Elena Rostova · Shift A Operations</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setActiveTab('role_dashboard')}
+              className="px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-colors flex items-center gap-1.5 bg-teal-600 text-slate-950"
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>Shift Operations Console</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('fleet_telemetry')}
+              className="px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-colors flex items-center gap-1.5 bg-slate-900 text-slate-400 hover:text-slate-200"
+            >
+              <Radio className="w-3.5 h-3.5" />
+              <span>Simulator Fleet Telemetry ({machines.length})</span>
+            </button>
+          </div>
+        </div>
+
+        <SupervisorDashboard
+          currentUser={currentUser}
+          machines={machines}
+          incidents={incidents}
+          workOrders={workOrders}
+          onNavigate={onNavigate}
+          onSelectMachine={onSelectMachine}
+          onRefreshData={onRefreshData}
+        />
+      </div>
+    );
+  }
+
+  // For Manager: render specialized ManagerDashboard
+  if (currentUser.role === 'Manager' && activeTab === 'role_dashboard') {
+    return (
+      <div className="mx-auto w-full max-w-[1600px] space-y-4 pb-6 text-slate-100">
+        {/* Sub-view navigation switcher */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#0c1424] border border-slate-800 rounded-xl p-3 px-4">
+          <div className="flex items-center gap-2 text-xs font-mono text-slate-400">
+            <span className="text-purple-300 font-bold">PLANT MANAGER VIEW:</span>
+            <span>David Sterling · Multi-Facility Oversight</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setActiveTab('role_dashboard')}
+              className="px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-colors flex items-center gap-1.5 bg-purple-600 text-white"
+            >
+              <TrendingUp className="w-3.5 h-3.5" />
+              <span>Executive Operations Dashboard</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('fleet_telemetry')}
+              className="px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-colors flex items-center gap-1.5 bg-slate-900 text-slate-400 hover:text-slate-200"
+            >
+              <Radio className="w-3.5 h-3.5" />
+              <span>Simulator Fleet Telemetry ({machines.length})</span>
+            </button>
+          </div>
+        </div>
+
+        <ManagerDashboard
+          currentUser={currentUser}
+          machines={machines}
+          incidents={incidents}
+          workOrders={workOrders}
+          onNavigate={onNavigate}
+          onSelectMachine={onSelectMachine}
+          onRefreshData={onRefreshData}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto w-full max-w-[1600px] space-y-4 pb-6 text-slate-100">
+      <header className="flex flex-col gap-3 rounded-xl border border-slate-800 bg-[#0c1424] p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-teal-300 font-mono">
+            {copy.eyebrow}
+          </p>
+          <h1 className="mt-1 text-xl font-semibold sm:text-2xl font-display">{copy.title}</h1>
+          <p className="mt-1 max-w-3xl text-xs leading-relaxed text-slate-400">{copy.description}</p>
+          {currentUser.role === 'Operator' && (
+            <div className="mt-3 space-y-2">
+              <div className="inline-flex max-w-full flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-cyan-900/70 bg-slate-950/60 px-3 py-2 text-xs">
+                <Cpu className="h-4 w-4 shrink-0 text-cyan-300" />
+                <span className="text-slate-400">Assigned machine:</span>
+                <strong className="font-mono text-cyan-200">{currentUser.assignedMachine || 'Unassigned'}</strong>
+                {assignedMachine?.machineId && (
+                  <span className="font-mono text-slate-400">· {assignedMachine.machineId}</span>
+                )}
+                {assignedMachine?.displayName && (
+                  <span className="text-slate-400">· {assignedMachine.displayName}</span>
+                )}
+              </div>
+              {currentUser.assignedMachine !== 'CNC-5AX-001' && (
+                <p className="text-[11px] text-amber-300 font-mono">
+                  Simulator station: MCH-001 · CNC-5AX-001. Your assigned station must match before its readings appear.
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {(currentUser.role === 'Supervisor' || currentUser.role === 'Manager') && (
+            <button
+              onClick={() => setActiveTab('role_dashboard')}
+              className="rounded-lg border border-teal-700 bg-teal-950/70 px-3 py-1.5 text-xs font-mono font-semibold text-teal-300 hover:bg-teal-900"
+            >
+              Switch to {currentUser.role} Console
+            </button>
+          )}
+          <span className="rounded-full border border-slate-700 px-3 py-1.5 text-xs text-slate-300 font-mono">
+            {currentUser.role}
+          </span>
+          {onRefreshData && (
+            <button
+              onClick={onRefreshData}
+              className="rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-300 hover:bg-slate-800 font-mono"
+            >
+              Refresh Operations Data
+            </button>
+          )}
+        </div>
+      </header>
+
+      <div className="grid grid-cols-1 gap-4 2xl:grid-cols-12">
+        <div className="min-w-0 2xl:col-span-9">
+          <SimulatorFleetTelemetryDashboard user={currentUser} machines={machines} />
+        </div>
+        <div className="2xl:col-span-3">
+          <RoleActions
+            user={currentUser}
+            incidents={incidents}
+            workOrders={workOrders}
+            onNavigate={onNavigate}
+            onSelectMachine={onSelectMachine}
+            onRefreshData={onRefreshData}
+          />
+        </div>
+      </div>
+      <footer className="border-t border-slate-800 pt-2 text-[10px] text-slate-500 font-mono">
+        Sensor values and trends: FactoryPulse MySQL records received from AI Simulator. Operational queues: FactoryPulse incident and work-order records.
+      </footer>
+    </div>
+  );
 };
