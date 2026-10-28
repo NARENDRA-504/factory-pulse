@@ -38,6 +38,7 @@ TEST_MODULES = [
     ("Operator Dashboard Functional Audit", "tests.test_operator_dashboard_audit"),
     ("Python Telemetry Cleaner & Stats", "tests.test_telemetry_cleaner_and_stats"),
     ("Simulator Machine Management (Tests A-F)", "tests.test_factorypulse_simulator_management"),
+    ("Machine Roster Available Master", "tests.test_machine_roster"),
 ]
 
 def run_test_suite():

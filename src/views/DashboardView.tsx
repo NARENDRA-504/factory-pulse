@@ -20,7 +20,7 @@ interface DashboardViewProps {
   machines: Machine[];
   incidents: Incident[];
   workOrders: MaintenanceWorkOrder[];
-  onNavigate: (screen: 'dashboard' | 'machines' | 'incidents' | 'analytics' | 'users') => void;
+  onNavigate: (screen: 'dashboard' | 'machines' | 'incidents' | 'analytics' | 'users' | 'activity' | 'inventory' | 'maintenance') => void;
   onSelectMachine: (code: string) => void;
   onCreateIncidentFromSnapshot?: (machineCode: string, snapshot: TelemetryReading, suggestedSymptom: string) => void;
   onRefreshData?: () => void;
