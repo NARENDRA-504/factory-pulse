@@ -497,7 +497,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
         </div>
 
-        {/* Visualization 2: 400-CNC Fleet Allocation by Plant */}
+        {/* Visualization 2: {machines.length}-CNC Fleet Allocation by Plant */}
         <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
@@ -543,7 +543,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
 
           <div className="mt-5 p-3 bg-sky-50/70 border border-sky-200/80 rounded-xl text-xs text-sky-950 leading-relaxed">
-            <span className="font-bold text-sky-900">What to notice:</span> Fleet allocation is uniformly balanced (100 machines per plant), with Plant C currently experiencing the lowest nominal operating readiness (89%).
+            <span className="font-bold text-sky-900">What to notice:</span> Fleet allocation reflects the currently available machine roster.
           </div>
         </div>
       </div>
@@ -695,7 +695,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           }`}
         >
           <Cpu className="w-4 h-4 text-teal-600" />
-          <span>400-CNC Fleet Allocation &amp; Audit</span>
+          <span>{machines.length}-CNC Fleet Allocation &amp; Audit</span>
           <span className="px-2 py-0.5 bg-white border border-slate-200 rounded-md text-[10px] text-teal-800 font-bold">
             {machines.length}
           </span>
@@ -1026,7 +1026,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <div>
               <h2 className="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-2">
                 <Cpu className="w-4 h-4 text-teal-600" />
-                <span>400-CNC Fleet Allocation &amp; Floor Governance</span>
+                <span>{machines.length}-CNC Fleet Allocation &amp; Floor Governance</span>
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
                 Complete machinery master roster across Plants A-D with live telemetry &amp; shift roster.

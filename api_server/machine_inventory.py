@@ -67,10 +67,13 @@ def register(app,api):
             rows=connection.execute(api['_sql_text']('SELECT * FROM machines ORDER BY machine_code')).mappings().all()
             columns=connection.execute(api['_sql_text']("SELECT COLUMN_NAME FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='machines'")).all()
         fields={row[0] for row in columns}
-        records=build_inventory(api['load_canonical_machine_master'](),[dict(row) for row in rows],
+        available=api['load_available_machine_master']()
+        codes={m['machineCode'] for m in available.values()}
+        rows=[row for row in rows if row['machine_code'] in codes]
+        records=build_inventory(available,[dict(row) for row in rows],
             api['get_simulator_fleet_latest_readings'](user=user),api['_utcnow'](),
             max(2,int(os.getenv('TELEMETRY_STALE_SECONDS','30'))))
-        return {'records':records,'sql_registered':len(rows),'catalog_stations':len(api['load_canonical_machine_master']()),
+        return {'records':records,'sql_registered':len(rows),'catalog_stations':len(available),'archived_catalog_stations':len(api['load_canonical_machine_master']())-len(available),
             'receiving':sum(row['connection_status']=='RECEIVING' for row in records),
             'stale':sum(row['connection_status']=='STALE' for row in records),
             'schema_ready':{'machine_id','operating_limits','sensor_configuration'}.issubset(fields),
