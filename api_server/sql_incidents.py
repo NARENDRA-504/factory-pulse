@@ -116,14 +116,38 @@ def register(app,api):
             return [dict(row) for row in rows]
 
     @app.patch('/api/v1/work-orders/{order_id}')
-    def change_order(order_id:int,payload:OrderStatus,request:Request,user=Depends(api['require_roles'](['Maintenance']))):
-        if payload.status not in ('In_Progress','Completed'):raise HTTPException(422,'Choose In_Progress or Completed')
+    def change_order(order_id:int,payload:OrderStatus,request:Request,user=Depends(api['require_roles'](['Maintenance', 'Supervisor', 'Admin']))):
+        if payload.status not in ('Pending', 'In_Progress','Completed'):raise HTTPException(422,'Choose Pending, In_Progress, or Completed')
         with api['get_telemetry_engine']().begin() as c:
             row=c.execute(sql('SELECT * FROM maintenance_work_orders WHERE id=:id FOR UPDATE'),{'id':order_id}).mappings().first()
             if not row:raise HTTPException(404,'Work order not found')
-            if row['technician_id']!=user['id']:raise HTTPException(403,'Only the assigned technician may update this order')
-            if row['status']=='Completed':raise HTTPException(409,'Work order already completed')
-            if payload.status=='Completed' and not (row['action_taken'] or '').strip():raise HTTPException(409,'Log investigation and repair notes on the incident before completing work')
+            if user['role']=='Maintenance' and row['technician_id']!=user['id']:raise HTTPException(403,'Only the assigned technician may update this order')
+            if row['status']=='Completed' and payload.status=='Completed':raise HTTPException(409,'Work order already completed')
             c.execute(sql("UPDATE maintenance_work_orders SET status=:status,completed_at=IF(:status='Completed',UTC_TIMESTAMP(),NULL) WHERE id=:id"),{'status':payload.status,'id':order_id})
             audit(c,user,request,'work_order_updated',row['incident_id'])
         return {'saved':True}
+
+    @app.post('/api/v1/work-orders', status_code=201)
+    def create_work_order(payload: dict, request: Request, user=Depends(api['require_roles'](['Supervisor', 'Maintenance', 'Admin']))):
+        machine_code = payload.get('machine_code')
+        tech_name = payload.get('technician_name')
+        priority = payload.get('priority', 'Medium')
+        notes = payload.get('action_notes', '')
+        if not machine_code: raise HTTPException(422, 'machine_code is required')
+        with api['get_telemetry_engine']().begin() as c:
+            tech = c.execute(sql("SELECT id FROM users WHERE (full_name=:name OR work_id=:name) AND is_active=1 LIMIT 1"), {'name': tech_name or user['full_name']}).scalar()
+            if not tech: tech = user['id']
+            # Find open incident or create maintenance placeholder incident
+            inc_id = c.execute(sql("SELECT id FROM incidents WHERE machine_code=:m AND status<>'Closed' ORDER BY id DESC LIMIT 1"), {'m': machine_code}).scalar()
+            if not inc_id:
+                code = 'INC-' + uuid.uuid4().hex[:16].upper()
+                res = c.execute(sql("""INSERT INTO incidents (incident_code, machine_code, reporter_id, severity, symptom_description, component_area, data_provenance, status)
+                                       VALUES (:c, :m, :r, :s, :desc, 'General Maintenance', 'SIMULATED', 'In_Investigation')"""),
+                                {'c': code, 'm': machine_code, 'r': user['id'], 's': 'Medium', 'desc': notes or 'Scheduled maintenance dispatch'})
+                inc_id = res.lastrowid
+            wo_code = 'WO-' + uuid.uuid4().hex[:16].upper()
+            c.execute(sql("""INSERT INTO maintenance_work_orders (order_code, incident_id, machine_code, technician_id, priority, action_taken, status)
+                             VALUES (:wo, :inc, :m, :t, :p, :notes, 'Pending')"""),
+                      {'wo': wo_code, 'inc': inc_id, 'm': machine_code, 't': tech, 'p': priority, 'notes': notes})
+            audit(c, user, request, 'work_order_created', inc_id)
+        return {'order_code': wo_code, 'machine_code': machine_code, 'status': 'Pending'}

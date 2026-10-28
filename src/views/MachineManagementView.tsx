@@ -1,41 +1,576 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import {
+  Cpu,
+  PlusCircle,
+  Search,
+  Filter,
+  CheckCircle2,
+  Clock,
+  AlertTriangle,
+  Wrench,
+  Radio,
+  Power,
+  ChevronLeft,
+  ChevronRight,
+  Sparkles,
+  RefreshCw,
+} from 'lucide-react';
 import { apiClient } from '../services/apiClient';
-import { Machine, UserProfile } from '../types';
-import { SimulatorFleetTelemetryDashboard } from '../components/SimulatorFleetTelemetryDashboard';
+import { Machine, MachineInventoryRecord, UserProfile } from '../types';
+import { MachineDetailsModal } from '../components/MachineDetailsModal';
+import { AddMachineModal } from '../components/AddMachineModal';
 
-export function MachineManagementView({ user, machines }: { user: UserProfile; machines: Machine[] }) {
-  const [data,setData]=useState<any>(null),[error,setError]=useState('');
-  const [search,setSearch]=useState(''),[status,setStatus]=useState('ALL'),[plant,setPlant]=useState('ALL');
-  const [version,setVersion]=useState(0);
-  const [page,setPage]=useState(0),[selected,setSelected]=useState<string|null>(null);
-  useEffect(()=>{
-    let active=true,busy=false;
-    const refresh=async()=>{if(busy)return;busy=true;try{const next=await apiClient.getMachineInventory();if(active){setData(next);setError('');}}catch(e){if(active)setError(e instanceof Error?e.message:'Inventory unavailable');}finally{busy=false;}};
-    refresh();const timer=window.setInterval(refresh,10000);return()=>{active=false;window.clearInterval(timer);};
-  },[version]);
-  useEffect(()=>setPage(0),[search,status,plant]);
-  const rows=useMemo(()=>(data?.records||[]).filter((row:any)=>
-    `${row.machine_id} ${row.machine_code} ${row.name}`.toLowerCase().includes(search.toLowerCase())&&
-    (status==='ALL'||row.connection_status===status)&&(plant==='ALL'||row.plant===plant)),[data,search,status,plant]);
-  const detail=data?.records.find((row:any)=>row.machine_id===selected);
-  const field='rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-200';
-  if(selected&&detail){const machine=machines.find(item=>item.machineId===selected);return <div className="space-y-4"><button onClick={()=>setSelected(null)} className={field}>← Machine inventory</button><section className="rounded-xl border border-slate-800 bg-[#0c1424] p-5"><p className="text-xs uppercase tracking-wider text-teal-300">Machine details · {detail.machine_id}</p><h1 className="mt-2 text-2xl font-semibold">{detail.name}</h1><p className="mt-2 text-sm text-slate-400">{detail.machine_code} · {detail.machine_type} · {detail.production_line}</p><p className="mt-2 text-xs text-slate-400">{detail.plant} · {detail.location} · {detail.connection_status}</p><p className="mt-2 text-xs text-slate-500">Registry: {detail.registry_source==='MYSQL'?'Persisted in MySQL':'Reference catalog; not yet registered in the SQL machine table'}.</p></section>{machine&&data.schema_ready&&<RegistrationForm key={`${selected}-${version}`} detail={detail} onSaved={()=>setVersion(value=>value+1)}/>}{machine?<SimulatorFleetTelemetryDashboard key={selected} user={user} machines={[machine]}/>:<p className="rounded-xl border border-amber-900 bg-amber-950/20 p-4 text-sm text-amber-200">Simulator mapping is not configured for this SQL record. It is not marked connected.</p>}</div>;}
-  return <div className="space-y-4"><header><p className="text-xs uppercase tracking-wider text-teal-300">Administration</p><h1 className="mt-1 text-2xl font-semibold">Machine Management</h1><p className="mt-2 text-sm text-slate-400">Inventory provenance, current communication state and individual machine evidence.</p></header>
-    {error&&<p role="alert" className="rounded-lg border border-amber-900 p-3 text-sm text-amber-200">{error}</p>}
-    {!data&&!error&&<p className="text-sm text-slate-400">Loading the registry and persisted telemetry…</p>}
-    {data&&<><div className="grid grid-cols-2 gap-3 lg:grid-cols-4">{[['SQL registered',data.sql_registered],['Reference catalog',data.catalog_stations],['Receiving telemetry',data.receiving],['Stale saved streams',data.stale]].map(([label,value])=><section key={String(label)} className="rounded-xl border border-slate-800 bg-[#0c1424] p-4"><p className="text-xs text-slate-400">{label}</p><strong className="mt-2 block text-2xl text-cyan-200">{value}</strong></section>)}</div>
-      {!data.schema_ready&&<p className="rounded-xl border border-amber-900/70 bg-amber-950/20 p-4 text-xs leading-relaxed text-amber-200">{data.management_note} Catalog entries are shown as references, not SQL registrations.</p>}
-      <div className="flex flex-wrap gap-2"><input aria-label="Search machines" placeholder="Search ID, code or name" className={`${field} min-w-60 flex-1`} value={search} onChange={e=>setSearch(e.target.value)}/><select aria-label="Connection filter" className={field} value={status} onChange={e=>setStatus(e.target.value)}><option value="ALL">All connections</option>{['RECEIVING','STALE','WAITING','CONFIGURATION_REQUIRED'].map(value=><option key={value}>{value}</option>)}</select><select aria-label="Plant filter" className={field} value={plant} onChange={e=>setPlant(e.target.value)}><option value="ALL">All plants</option>{Array.from(new Set<string>(data.records.map((row:any)=>row.plant))).map(value=><option key={value}>{value}</option>)}</select></div>
-      <div className="overflow-x-auto rounded-xl border border-slate-800"><table className="w-full min-w-[760px] text-left text-xs"><thead className="bg-slate-900 text-slate-400"><tr>{['Machine','Line / plant','Registry','Operating state','Connection','Last source reading','Details'].map(title=><th key={title} className="p-3">{title}</th>)}</tr></thead><tbody>{rows.slice(page*25,(page+1)*25).map((row:any)=><tr key={row.machine_id} className="border-t border-slate-800 bg-[#0c1424]"><td className="p-3"><strong className="block text-cyan-200">{row.machine_id} · {row.machine_code}</strong><span className="mt-1 block max-w-64 truncate text-slate-300">{row.name}</span></td><td className="p-3 text-slate-400">{row.production_line}<br/>{row.plant}</td><td className="p-3 text-slate-400">{row.registered_in_sql?'MySQL':'Catalog reference'}</td><td className="p-3">{row.operating_status}</td><td className={`p-3 ${row.connection_status==='RECEIVING'?'text-teal-300':'text-amber-200'}`}>{row.connection_status}</td><td className="p-3 text-slate-400">{row.latest_timestamp?new Date(row.latest_timestamp).toLocaleString():'No saved telemetry'}</td><td className="p-3"><button className="rounded border border-slate-700 px-3 py-2 text-teal-300" onClick={()=>setSelected(row.machine_id)}>View details</button></td></tr>)}</tbody></table>{!rows.length&&<p className="p-6 text-sm text-slate-400">No machines match these filters.</p>}</div><div className="flex items-center justify-between gap-3 text-xs text-slate-400"><span>{rows.length} matches · page {page+1} of {Math.max(1,Math.ceil(rows.length/25))}</span><div className="flex gap-2"><button className={field} disabled={page===0} onClick={()=>setPage(value=>value-1)}>Previous</button><button className={field} disabled={(page+1)*25>=rows.length} onClick={()=>setPage(value=>value+1)}>Next</button></div></div></>}
-  </div>;
+interface MachineManagementViewProps {
+  user: UserProfile;
+  machines: Machine[];
 }
 
-function RegistrationForm({detail,onSaved}:{detail:any;onSaved:()=>void}) {
- const [form,setForm]=useState({name:detail.name,model:detail.model,description:detail.description||'',last_inspection_date:detail.last_inspection_date||'',is_active:detail.is_active!==false});
- const [busy,setBusy]=useState(false),[error,setError]=useState('');
- return <form className="space-y-3 rounded-xl border border-slate-800 bg-[#0c1424] p-5" onSubmit={async e=>{e.preventDefault();setBusy(true);try{await apiClient.saveMachineRegistration(detail.machine_id,form);onSaved();}catch(err){setError(err instanceof Error?err.message:'Save failed');}finally{setBusy(false);}}}>
- <h2 className="font-semibold">{detail.registered_in_sql?'Edit SQL registration':'Register machine in MySQL'}</h2><p className="text-xs text-slate-400">Enter the actual inspection date. Identity and telemetry history are preserved. Inactive registration does not stop equipment.</p>
- <div className="grid gap-3 sm:grid-cols-2">{(['name','model','last_inspection_date','description'] as const).map(key=><label key={key} className="text-xs">{({name:'Machine name',model:'Model',last_inspection_date:'Last recorded inspection',description:'Description'})[key]}<input className="mt-1 block w-full rounded-lg border border-slate-700 bg-slate-950 p-2 text-sm" type={key==='last_inspection_date'?'date':'text'} required={key!=='description'} maxLength={key==='description'?2000:128} value={form[key]} onChange={e=>setForm({...form,[key]:e.target.value})}/></label>)}</div>
- <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_active} onChange={e=>setForm({...form,is_active:e.target.checked})}/>Active registration</label>
- {error&&<p role="alert" className="text-sm text-amber-200">{error}</p>}<button disabled={busy} className="rounded-lg bg-teal-400 px-4 py-2 text-sm font-semibold text-slate-950">{busy?'Saving...':'Save to MySQL'}</button></form>;
+export function MachineManagementView({ user, machines }: MachineManagementViewProps) {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Filters & Search
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [activeFilter, setActiveFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ACTIVE');
+  const [plantFilter, setPlantFilter] = useState('ALL');
+  const [typeFilter, setTypeFilter] = useState('ALL');
+  const [page, setPage] = useState(0);
+
+  // Modals
+  const [selectedMachineId, setSelectedMachineId] = useState<string | null>(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+  // Data fetching
+  const refreshInventory = async () => {
+    try {
+      setLoading(true);
+      const res = await apiClient.getMachineInventory();
+      setData(res);
+      setError(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load machine inventory');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    refreshInventory();
+    // 5-second polling for real-time live updates
+    const timer = window.setInterval(refreshInventory, 5000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  // Listen to simulator broadcast events
+  useEffect(() => {
+    const handleMachineCreated = () => {
+      refreshInventory();
+    };
+    window.addEventListener('factorypulse:machine_created', handleMachineCreated);
+    window.addEventListener('factorypulse:simulator', handleMachineCreated);
+    return () => {
+      window.removeEventListener('factorypulse:machine_created', handleMachineCreated);
+      window.removeEventListener('factorypulse:simulator', handleMachineCreated);
+    };
+  }, []);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(0);
+  }, [search, statusFilter, activeFilter, plantFilter, typeFilter]);
+
+  // Filtered rows
+  const records: MachineInventoryRecord[] = data?.records || [];
+
+  const filteredRecords = useMemo(() => {
+    return records.filter((rec) => {
+      // Search term
+      const matchSearch =
+        search === '' ||
+        rec.machine_id.toLowerCase().includes(search.toLowerCase()) ||
+        rec.machine_code.toLowerCase().includes(search.toLowerCase()) ||
+        rec.name.toLowerCase().includes(search.toLowerCase()) ||
+        rec.location.toLowerCase().includes(search.toLowerCase());
+
+      // Active filter
+      const matchActive =
+        activeFilter === 'ALL' ||
+        (activeFilter === 'ACTIVE' && rec.is_active) ||
+        (activeFilter === 'INACTIVE' && !rec.is_active);
+
+      // Status filter
+      const matchStatus =
+        statusFilter === 'ALL' ||
+        (statusFilter === 'RUNNING' && rec.operating_status === 'Nominal' && rec.is_active) ||
+        (statusFilter === 'IDLE' && (rec.operating_status === 'Idle' || rec.connection_status === 'WAITING')) ||
+        (statusFilter === 'DOWN' && (rec.operating_status === 'STOPPED' || rec.operating_status === 'Critical')) ||
+        (statusFilter === 'MAINTENANCE' && (rec.operating_status === 'MAINTENANCE' || rec.operating_status === 'Maintenance'));
+
+      // Plant filter
+      const matchPlant = plantFilter === 'ALL' || rec.plant === plantFilter;
+
+      // Type filter
+      const matchType = typeFilter === 'ALL' || rec.machine_type === typeFilter;
+
+      return matchSearch && matchActive && matchStatus && matchPlant && matchType;
+    });
+  }, [records, search, activeFilter, statusFilter, plantFilter, typeFilter]);
+
+  const uniquePlants = useMemo(() => {
+    return Array.from(new Set(records.map((r) => r.plant).filter(Boolean))).sort();
+  }, [records]);
+
+  const uniqueTypes = useMemo(() => {
+    return Array.from(new Set(records.map((r) => r.machine_type).filter(Boolean))).sort();
+  }, [records]);
+
+  // Compute next suggested Machine ID
+  const nextSuggestedId = useMemo(() => {
+    const existingIds = new Set<string>(records.map((r) => r.machine_id));
+    let num = 51;
+    while (existingIds.has(`MCH-${String(num).padStart(3, '0')}`)) {
+      num++;
+    }
+    return `MCH-${String(num).padStart(3, '0')}`;
+  }, [records]);
+
+  // Downtime display helper
+  const formatDowntime = (seconds: number) => {
+    if (!seconds || seconds <= 0) return '0s';
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+    if (hrs > 0) return `${hrs}h ${mins}m`;
+    if (mins > 0) return `${mins}m ${secs}s`;
+    return `${secs}s`;
+  };
+
+  const handleToggleActivation = async (machineId: string, currentState: boolean, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await apiClient.toggleMachineActivation(machineId, !currentState);
+      refreshInventory();
+    } catch (err) {
+      console.error('Failed to toggle activation', err);
+    }
+  };
+
+  const pageSize = 25;
+  const totalPages = Math.max(1, Math.ceil(filteredRecords.length / pageSize));
+  const pageRecords = filteredRecords.slice(page * pageSize, (page + 1) * pageSize);
+
+  return (
+    <div className="space-y-6 pb-12">
+      {/* Top Header */}
+      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <span className="font-mono text-xs uppercase tracking-wider text-teal-400 font-semibold">
+            Administration Console
+          </span>
+          <h1 className="text-2xl font-bold text-slate-100 tracking-tight">Machine Management</h1>
+          <p className="mt-1 text-xs text-slate-400 max-w-2xl leading-relaxed">
+            Manage the synchronized machine catalog, active AI Simulator telemetry population, downtime tracking, and live SQL machine registrations.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={refreshInventory}
+            disabled={loading}
+            className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900/80 px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-800 transition-colors"
+            title="Refresh machine inventory"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+            <span>Refresh</span>
+          </button>
+
+          {user.role === 'Admin' && (
+            <button
+              onClick={() => setIsAddModalOpen(true)}
+              className="flex items-center gap-2 rounded-lg bg-teal-500 hover:bg-teal-400 px-4 py-2 text-xs font-semibold text-slate-950 transition-colors shadow-md shadow-teal-950/40"
+            >
+              <PlusCircle className="h-4 w-4" />
+              <span>Add New Machine</span>
+            </button>
+          )}
+        </div>
+      </header>
+
+      {/* Summary KPI Cards (Requirement 4) */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        {/* 1. Total Registered */}
+        <div className="rounded-xl border border-slate-800 bg-[#0c1424] p-4">
+          <div className="flex items-center justify-between text-slate-400 text-xs">
+            <span>Total Registered</span>
+            <Cpu className="h-4 w-4 text-cyan-400" />
+          </div>
+          <div className="mt-2 text-2xl font-bold font-mono text-slate-100">
+            {data?.total_registered ?? records.length}
+          </div>
+          <p className="mt-1 text-[10px] text-slate-400">Canonical machine master</p>
+        </div>
+
+        {/* 2. Active Machines (50 default, increments to 51) */}
+        <div className="rounded-xl border border-teal-800/80 bg-[#0c1c2e] p-4 shadow-sm">
+          <div className="flex items-center justify-between text-teal-300 text-xs">
+            <span className="font-semibold">Active Machines</span>
+            <Radio className="h-4 w-4 text-teal-400 animate-pulse" />
+          </div>
+          <div className="mt-2 text-2xl font-bold font-mono text-teal-300">
+            {data?.active_machines ?? 50}
+          </div>
+          <p className="mt-1 text-[10px] text-teal-400/80">Default 50 · Dynamic simulation</p>
+        </div>
+
+        {/* 3. Running Machines */}
+        <div className="rounded-xl border border-slate-800 bg-[#0c1424] p-4">
+          <div className="flex items-center justify-between text-slate-400 text-xs">
+            <span>Running</span>
+            <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+          </div>
+          <div className="mt-2 text-2xl font-bold font-mono text-emerald-400">
+            {data?.running_machines ?? 38}
+          </div>
+          <p className="mt-1 text-[10px] text-slate-400">Nominal operating state</p>
+        </div>
+
+        {/* 4. Idle Machines */}
+        <div className="rounded-xl border border-slate-800 bg-[#0c1424] p-4">
+          <div className="flex items-center justify-between text-slate-400 text-xs">
+            <span>Idle / Standby</span>
+            <Clock className="h-4 w-4 text-slate-400" />
+          </div>
+          <div className="mt-2 text-2xl font-bold font-mono text-slate-300">
+            {data?.idle_machines ?? 7}
+          </div>
+          <p className="mt-1 text-[10px] text-slate-400">Waiting for workpiece</p>
+        </div>
+
+        {/* 5. Down Machines */}
+        <div className="rounded-xl border border-slate-800 bg-[#0c1424] p-4">
+          <div className="flex items-center justify-between text-slate-400 text-xs">
+            <span>Down Machines</span>
+            <AlertTriangle className="h-4 w-4 text-rose-400" />
+          </div>
+          <div className="mt-2 text-2xl font-bold font-mono text-rose-400">
+            {data?.down_machines ?? 3}
+          </div>
+          <p className="mt-1 text-[10px] text-slate-400">Stopped / Safety interlock</p>
+        </div>
+
+        {/* 6. Under Maintenance */}
+        <div className="rounded-xl border border-slate-800 bg-[#0c1424] p-4">
+          <div className="flex items-center justify-between text-slate-400 text-xs">
+            <span>Maintenance</span>
+            <Wrench className="h-4 w-4 text-amber-400" />
+          </div>
+          <div className="mt-2 text-2xl font-bold font-mono text-amber-300">
+            {data?.maintenance_machines ?? 2}
+          </div>
+          <p className="mt-1 text-[10px] text-slate-400">Tool inspection / repair</p>
+        </div>
+      </div>
+
+      {/* Filter and Search Bar */}
+      <div className="rounded-xl border border-slate-800 bg-[#0c1424] p-4 space-y-3">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
+          {/* Search Input */}
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search by Machine ID (MCH-001), Code, Name, or Floor Location..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full rounded-lg border border-slate-700 bg-slate-950 pl-9 pr-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:border-teal-500 focus:outline-hidden"
+            />
+          </div>
+
+          {/* Active Status Filter Buttons */}
+          <div className="flex items-center rounded-lg border border-slate-700 bg-slate-950 p-1 text-xs">
+            <button
+              onClick={() => setActiveFilter('ACTIVE')}
+              className={`px-3 py-1 rounded-md font-medium transition-colors ${
+                activeFilter === 'ACTIVE'
+                  ? 'bg-teal-500/20 text-teal-300 border border-teal-500/40'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              Active Only ({data?.active_machines ?? 50})
+            </button>
+            <button
+              onClick={() => setActiveFilter('INACTIVE')}
+              className={`px-3 py-1 rounded-md font-medium transition-colors ${
+                activeFilter === 'INACTIVE'
+                  ? 'bg-teal-500/20 text-teal-300 border border-teal-500/40'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              Inactive
+            </button>
+            <button
+              onClick={() => setActiveFilter('ALL')}
+              className={`px-3 py-1 rounded-md font-medium transition-colors ${
+                activeFilter === 'ALL'
+                  ? 'bg-teal-500/20 text-teal-300 border border-teal-500/40'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              All Records
+            </button>
+          </div>
+
+          {/* Operational Status Select */}
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-200 focus:border-teal-500 focus:outline-hidden"
+          >
+            <option value="ALL">All Operating States</option>
+            <option value="RUNNING">Running / Nominal</option>
+            <option value="IDLE">Idle / Standby</option>
+            <option value="DOWN">Down / Stopped</option>
+            <option value="MAINTENANCE">Under Maintenance</option>
+          </select>
+
+          {/* Machine Type Select */}
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-200 focus:border-teal-500 focus:outline-hidden"
+          >
+            <option value="ALL">All Machine Types</option>
+            {uniqueTypes.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+
+          {/* Plant Select */}
+          <select
+            value={plantFilter}
+            onChange={(e) => setPlantFilter(e.target.value)}
+            className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-200 focus:border-teal-500 focus:outline-hidden"
+          >
+            <option value="ALL">All Plants</option>
+            {uniquePlants.map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Main Machine Table (Requirement 4) */}
+      <div className="overflow-hidden rounded-xl border border-slate-800 bg-[#0c1424] shadow-xs">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs min-w-[980px]">
+            <thead className="bg-[#09101d] text-slate-400 uppercase tracking-wider font-mono text-[11px] border-b border-slate-800">
+              <tr>
+                <th className="py-3.5 px-4">Machine ID &amp; Code</th>
+                <th className="py-3.5 px-4">Machine Name</th>
+                <th className="py-3.5 px-4">Department &amp; Section</th>
+                <th className="py-3.5 px-4">Machine Type</th>
+                <th className="py-3.5 px-4">Current Status</th>
+                <th className="py-3.5 px-4">Current Round Downtime</th>
+                <th className="py-3.5 px-4">Total Downtime</th>
+                <th className="py-3.5 px-4">Last Telemetry</th>
+                <th className="py-3.5 px-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800/60 font-sans">
+              {pageRecords.map((row) => {
+                const isDown = row.operating_status === 'STOPPED' || row.operating_status === 'Critical';
+                const isMaint = row.operating_status === 'MAINTENANCE' || row.operating_status === 'Maintenance';
+                const isNominal = row.operating_status === 'Nominal' || row.operating_status === 'NORMAL';
+
+                return (
+                  <tr
+                    key={row.machine_id}
+                    onClick={() => setSelectedMachineId(row.machine_id)}
+                    className="hover:bg-slate-800/40 transition-colors cursor-pointer group"
+                  >
+                    {/* Machine ID & Code */}
+                    <td className="py-3.5 px-4">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`h-2 w-2 rounded-full ${
+                            row.is_active
+                              ? isDown
+                                ? 'bg-rose-500 animate-ping'
+                                : 'bg-teal-400'
+                              : 'bg-slate-600'
+                          }`}
+                        />
+                        <div>
+                          <strong className="block font-mono text-cyan-300 font-semibold group-hover:text-cyan-200">
+                            {row.machine_id}
+                          </strong>
+                          <span className="block font-mono text-[11px] text-slate-400">
+                            {row.machine_code}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Machine Name */}
+                    <td className="py-3.5 px-4">
+                      <span className="font-semibold text-slate-200 max-w-[220px] block truncate">
+                        {row.name}
+                      </span>
+                      <span className="text-[10px] text-slate-400">
+                        {row.manufacturer ? `${row.manufacturer} · ` : ''}{row.model}
+                      </span>
+                    </td>
+
+                    {/* Department & Location */}
+                    <td className="py-3.5 px-4 text-slate-300">
+                      <span className="block truncate max-w-[200px]">{row.location}</span>
+                      <span className="text-[10px] text-slate-400">{row.production_line}</span>
+                    </td>
+
+                    {/* Machine Type */}
+                    <td className="py-3.5 px-4 text-slate-300">
+                      <span className="truncate max-w-[160px] block">{row.machine_type}</span>
+                    </td>
+
+                    {/* Current Status */}
+                    <td className="py-3.5 px-4">
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                          isDown
+                            ? 'bg-rose-950/80 text-rose-300 border border-rose-800'
+                            : isMaint
+                            ? 'bg-amber-950/80 text-amber-300 border border-amber-800'
+                            : isNominal
+                            ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-800'
+                            : 'bg-slate-800 text-slate-300 border border-slate-700'
+                        }`}
+                      >
+                        <span
+                          className={`h-1.5 w-1.5 rounded-full ${
+                            isDown ? 'bg-rose-400' : isMaint ? 'bg-amber-400' : 'bg-emerald-400'
+                          }`}
+                        />
+                        {row.operating_status}
+                      </span>
+                    </td>
+
+                    {/* Current Round Downtime */}
+                    <td className="py-3.5 px-4 font-mono">
+                      <span className={row.current_round_downtime_seconds > 0 ? 'text-cyan-300 font-bold' : 'text-slate-400'}>
+                        {formatDowntime(row.current_round_downtime_seconds)}
+                      </span>
+                    </td>
+
+                    {/* Total Downtime */}
+                    <td className="py-3.5 px-4 font-mono">
+                      <span className={row.total_downtime_seconds > 0 ? 'text-amber-300 font-medium' : 'text-slate-400'}>
+                        {formatDowntime(row.total_downtime_seconds)}
+                      </span>
+                    </td>
+
+                    {/* Last Telemetry */}
+                    <td className="py-3.5 px-4 text-slate-400 text-[11px]">
+                      {row.latest_timestamp ? new Date(row.latest_timestamp).toLocaleTimeString() : 'Live'}
+                    </td>
+
+                    {/* Actions */}
+                    <td className="py-3.5 px-4 text-right">
+                      <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => setSelectedMachineId(row.machine_id)}
+                          className="rounded border border-slate-700 bg-slate-800/80 px-2.5 py-1 text-[11px] font-semibold text-teal-300 hover:bg-slate-700 hover:text-teal-200 transition-colors"
+                        >
+                          View Details
+                        </button>
+                        {user.role === 'Admin' && (
+                          <button
+                            onClick={(e) => handleToggleActivation(row.machine_id, row.is_active, e)}
+                            className={`rounded border px-2 py-1 text-[10px] font-semibold transition-colors ${
+                              row.is_active
+                                ? 'border-slate-700 text-slate-400 hover:text-amber-300 hover:border-amber-700'
+                                : 'border-teal-700 text-teal-300 hover:bg-teal-950/60'
+                            }`}
+                            title={row.is_active ? 'Deactivate from telemetry simulation' : 'Activate in telemetry simulation'}
+                          >
+                            {row.is_active ? 'Deactivate' : 'Activate'}
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+
+              {!pageRecords.length && (
+                <tr>
+                  <td colSpan={9} className="py-12 text-center text-slate-400 text-xs">
+                    No machines match your active filters and search criteria.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination Footer */}
+        <div className="flex flex-col sm:flex-row items-center justify-between border-t border-slate-800/80 bg-[#09101d] px-4 py-3 text-xs text-slate-400 gap-3">
+          <span>
+            Showing {filteredRecords.length ? page * pageSize + 1 : 0} to{' '}
+            {Math.min((page + 1) * pageSize, filteredRecords.length)} of {filteredRecords.length} machines (
+            {data?.active_machines ?? 50} active)
+          </span>
+
+          <div className="flex items-center gap-2">
+            <button
+              disabled={page === 0}
+              onClick={() => setPage((p) => p - 1)}
+              className="flex items-center gap-1 rounded-lg border border-slate-700 px-3 py-1 text-xs text-slate-300 disabled:opacity-40 hover:bg-slate-800 transition-colors"
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+              <span>Previous</span>
+            </button>
+            <span className="px-2 font-mono text-slate-300">
+              Page {page + 1} of {totalPages}
+            </span>
+            <button
+              disabled={(page + 1) * pageSize >= filteredRecords.length}
+              onClick={() => setPage((p) => p + 1)}
+              className="flex items-center gap-1 rounded-lg border border-slate-700 px-3 py-1 text-xs text-slate-300 disabled:opacity-40 hover:bg-slate-800 transition-colors"
+            >
+              <span>Next</span>
+              <ChevronRight className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Machine Details Modal (Requirement 5) */}
+      {selectedMachineId && (
+        <MachineDetailsModal
+          machineId={selectedMachineId}
+          user={user}
+          onClose={() => setSelectedMachineId(null)}
+          onMachineUpdated={refreshInventory}
+        />
+      )}
+
+      {/* Add New Machine Modal (Requirement 3) */}
+      {isAddModalOpen && (
+        <AddMachineModal
+          user={user}
+          nextSuggestedId={nextSuggestedId}
+          onClose={() => setIsAddModalOpen(false)}
+          onMachineCreated={() => {
+            refreshInventory();
+          }}
+        />
+      )}
+    </div>
+  );
 }

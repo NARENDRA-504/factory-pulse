@@ -36,6 +36,8 @@ TEST_MODULES = [
     ("Live In-Process HTTP Wire Server", "tests.test_live_http_server"),
     ("Dashboard Control Room Upgrade", "tests.test_dashboard_upgrade"),
     ("Operator Dashboard Functional Audit", "tests.test_operator_dashboard_audit"),
+    ("Python Telemetry Cleaner & Stats", "tests.test_telemetry_cleaner_and_stats"),
+    ("Simulator Machine Management (Tests A-F)", "tests.test_factorypulse_simulator_management"),
 ]
 
 def run_test_suite():

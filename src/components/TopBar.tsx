@@ -13,7 +13,7 @@ import {
 
 interface TopBarProps {
   currentUser: UserProfile;
-  currentScreen: 'dashboard' | 'machines' | 'incidents' | 'analytics' | 'users' | 'activity' | 'inventory';
+  currentScreen: 'dashboard' | 'machines' | 'incidents' | 'analytics' | 'users' | 'activity' | 'inventory' | 'maintenance';
   onOpenMobileSidebar: () => void;
   onRefreshData?: () => void;
   onRaiseAlert?: () => void;
@@ -79,6 +79,8 @@ export const TopBar: React.FC<TopBarProps> = ({
       };
     case 'inventory':
       return { parent: 'Governance', current: 'Machine Management', subtitle: 'Registry provenance, live connections and selected machine evidence' };
+    case 'maintenance':
+      return { parent: 'Operations', current: 'Maintenance Management', subtitle: 'Work orders, technician dispatch & MTTR repair metrics' };
     }
   };
 

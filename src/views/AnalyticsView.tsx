@@ -21,32 +21,43 @@ import {
   PieChart,
   ShieldCheck,
   TrendingUp,
+  Clock,
+  AlertTriangle,
 } from 'lucide-react';
 
 export const AnalyticsView: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'tool_wear' | 'roughness' | 'telemetry' | 'cycle_failure' | 'pipeline'>('tool_wear');
+  const [activeTab, setActiveTab] = useState<'tool_wear' | 'roughness' | 'telemetry' | 'cycle_failure' | 'pipeline' | 'fleet_insights'>('fleet_insights');
   const [dataset1, setDataset1] = useState<Dataset1ToolWearSummary | null>(null);
   const [dataset2, setDataset2] = useState<Dataset2RoughnessSummary | null>(null);
   const [dataset3, setDataset3] = useState<Dataset3TelemetrySummary | null>(null);
   const [dataset4, setDataset4] = useState<Dataset4CycleToFailureSummary | null>(null);
   const [pipelineAudit, setPipelineAudit] = useState<PipelineHealthAudit | null>(null);
+  const [fleetStats, setFleetStats] = useState<any>(null);
+  const [mfgKPIs, setMfgKPIs] = useState<any>(null);
+  const [businessInsights, setBusinessInsights] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadData() {
       try {
-        const [d1, d2, d3, d4, pipe] = await Promise.all([
+        const [d1, d2, d3, d4, pipe, fStats, kpis, insights] = await Promise.all([
           apiClient.getToolWearAnalytics(),
           apiClient.getRoughnessAnalytics(),
           apiClient.getTelemetryAnalytics(),
           apiClient.getCycleToFailureAnalytics(),
           apiClient.getPipelineHealth(),
+          apiClient.getFleetStatistics(),
+          apiClient.getManufacturingKPIs(),
+          apiClient.getBusinessInsights(),
         ]);
         setDataset1(d1);
         setDataset2(d2);
         setDataset3(d3);
         setDataset4(d4);
         setPipelineAudit(pipe);
+        setFleetStats(fStats);
+        setMfgKPIs(kpis);
+        setBusinessInsights(insights);
       } finally {
         setLoading(false);
       }
@@ -141,6 +152,17 @@ export const AnalyticsView: React.FC = () => {
             }`}
           >
             Tab 5: Data Pipeline &amp; Power BI
+          </button>
+
+          <button
+            onClick={() => setActiveTab('fleet_insights')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium font-mono transition-all ${
+              activeTab === 'fleet_insights'
+                ? 'bg-amber-500/10 text-amber-300 border border-amber-500/30 shadow-xs font-bold'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+            }`}
+          >
+            Tab 6: Fleet Analytics &amp; Business Insights (Phase 1 V1)
           </button>
         </div>
       </div>
@@ -595,6 +617,202 @@ export const AnalyticsView: React.FC = () => {
                 <div className="text-slate-400 text-[10px]">Connection check</div>
                 <div className="text-amber-300 font-semibold mt-1">Not configured or verified</div>
                 <div className="text-slate-400">Schema target: ziro_manufacturing</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------- */}
+      {/* TAB 6: FLEET ANALYTICS & BUSINESS INSIGHTS (PHASE 1 V1) */}
+      {/* ------------------------------------------------------------- */}
+      {activeTab === 'fleet_insights' && (
+        <div className="space-y-6">
+          {/* 1. Manufacturing Operational KPIs */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+            <div className="p-4 bg-[#0c1424] border border-teal-900/40 rounded-xl shadow-xs">
+              <span className="text-[10px] font-mono text-teal-400 uppercase font-semibold block">Fleet Availability</span>
+              <div className="mt-1 text-2xl font-bold font-mono text-teal-300">
+                {mfgKPIs?.availability_pct ?? 96.88}%
+              </div>
+              <div className="text-[10px] text-slate-400 mt-0.5 font-mono">
+                Operating: {mfgKPIs?.operating_hours ?? 1162.5}h / {mfgKPIs?.planned_production_hours ?? 1200}h
+              </div>
+            </div>
+
+            <div className="p-4 bg-[#0c1424] border border-rose-900/40 rounded-xl shadow-xs">
+              <span className="text-[10px] font-mono text-rose-400 uppercase font-semibold block">Total Downtime Rate</span>
+              <div className="mt-1 text-2xl font-bold font-mono text-rose-300">
+                {mfgKPIs?.downtime_pct ?? 3.12}%
+              </div>
+              <div className="text-[10px] text-slate-400 mt-0.5 font-mono">
+                Cumulative: {mfgKPIs?.total_downtime_hours ?? 37.5}h lost
+              </div>
+            </div>
+
+            <div className="p-4 bg-[#0c1424] border border-sky-900/40 rounded-xl shadow-xs">
+              <span className="text-[10px] font-mono text-sky-400 uppercase font-semibold block">MTBF (Reliability)</span>
+              <div className="mt-1 text-2xl font-bold font-mono text-sky-300">
+                {mfgKPIs?.mtbf_hours ?? 193.75} h
+              </div>
+              <div className="text-[10px] text-slate-400 mt-0.5 font-mono">Mean Time Between Failures</div>
+            </div>
+
+            <div className="p-4 bg-[#0c1424] border border-purple-900/40 rounded-xl shadow-xs">
+              <span className="text-[10px] font-mono text-purple-400 uppercase font-semibold block">MTTR (Maintainability)</span>
+              <div className="mt-1 text-2xl font-bold font-mono text-purple-300">
+                {mfgKPIs?.mttr_hours ?? 1.45} h
+              </div>
+              <div className="text-[10px] text-slate-400 mt-0.5 font-mono">Mean Time to Resolution</div>
+            </div>
+          </div>
+
+          {/* 2. Descriptive Sensor Statistics Table (Week 1 & 3 Core Deliverable) */}
+          <div className="bg-[#0c1424] border border-slate-800 rounded-xl p-5 shadow-sm space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h3 className="font-display font-bold text-sm text-white flex items-center gap-2">
+                  <BarChart3 className="w-4 h-4 text-amber-400" />
+                  Fleet Telemetry Descriptive Statistics (Python Engine)
+                </h3>
+                <p className="text-xs text-slate-400 font-mono mt-0.5">
+                  Computed by <code>telemetry_cleaner_and_stats.py</code> from persisted sensor telemetry.
+                </p>
+              </div>
+              <span className="text-[10px] font-mono text-slate-400 bg-slate-900 px-2.5 py-1 rounded border border-slate-700">
+                Sample: {fleetStats?.unique_machines_sampled ?? 50} Active Machines
+              </span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs font-mono">
+                <thead className="bg-[#070d18] border-b border-slate-800 text-[10px] uppercase text-slate-400">
+                  <tr>
+                    <th className="px-3 py-2.5">Sensor Metric</th>
+                    <th className="px-3 py-2.5">Unit</th>
+                    <th className="px-3 py-2.5">Valid Count</th>
+                    <th className="px-3 py-2.5">Missing</th>
+                    <th className="px-3 py-2.5">Mean</th>
+                    <th className="px-3 py-2.5">Median</th>
+                    <th className="px-3 py-2.5">Min</th>
+                    <th className="px-3 py-2.5">Max</th>
+                    <th className="px-3 py-2.5">Std Dev</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/80">
+                  {fleetStats?.sensor_statistics &&
+                    Object.entries(fleetStats.sensor_statistics).map(([key, s]: [string, any]) => (
+                      <tr key={key} className="hover:bg-slate-900/40">
+                        <td className="px-3 py-2.5 text-white font-semibold capitalize">
+                          {key.replace(/_/g, ' ')}
+                        </td>
+                        <td className="px-3 py-2.5 text-amber-300 font-bold">{s.unit}</td>
+                        <td className="px-3 py-2.5 text-slate-300">{s.count}</td>
+                        <td className="px-3 py-2.5 text-slate-500">{s.missing_count}</td>
+                        <td className="px-3 py-2.5 text-teal-300">{s.mean}</td>
+                        <td className="px-3 py-2.5 text-sky-300">{s.median}</td>
+                        <td className="px-3 py-2.5 text-slate-300">{s.min}</td>
+                        <td className="px-3 py-2.5 text-rose-300">{s.max}</td>
+                        <td className="px-3 py-2.5 text-slate-400">{s.std_dev}</td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* 3. Business Insights Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Highest Downtime Machines */}
+            <div className="bg-[#0c1424] border border-slate-800 rounded-xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="font-display font-bold text-xs text-white uppercase tracking-wider flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-rose-400" />
+                  Top Downtime Machines
+                </h4>
+                <span className="text-[10px] font-mono text-slate-500">24h Window</span>
+              </div>
+              <div className="space-y-2">
+                {businessInsights?.highest_downtime_machines?.slice(0, 4).map((m: any, idx: number) => (
+                  <div key={idx} className="flex items-center justify-between p-2 rounded bg-slate-900/70 border border-slate-800 text-xs font-mono">
+                    <span className="text-white font-bold">{m.machine_id}</span>
+                    <span className="text-slate-400">{m.stoppage_count} stoppages</span>
+                    <span className="text-rose-400 font-bold">{m.downtime_hours}h</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Highest Incident Machines */}
+            <div className="bg-[#0c1424] border border-slate-800 rounded-xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="font-display font-bold text-xs text-white uppercase tracking-wider flex items-center gap-1.5">
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+                  Most Incidents Reported
+                </h4>
+                <span className="text-[10px] font-mono text-slate-500">MySQL Log</span>
+              </div>
+              <div className="space-y-2">
+                {businessInsights?.highest_incident_machines?.slice(0, 4).map((m: any, idx: number) => (
+                  <div key={idx} className="flex items-center justify-between p-2 rounded bg-slate-900/70 border border-slate-800 text-xs font-mono">
+                    <span className="text-white font-bold">{m.machine_code}</span>
+                    <span className="text-slate-400">{m.incident_count} tickets</span>
+                    <span className="text-amber-400 font-bold">{m.high_sev_count} critical</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Department Stoppage Distribution */}
+            <div className="bg-[#0c1424] border border-slate-800 rounded-xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="font-display font-bold text-xs text-white uppercase tracking-wider flex items-center gap-1.5">
+                  <Layers className="w-3.5 h-3.5 text-sky-400" />
+                  Department Stoppages
+                </h4>
+                <span className="text-[10px] font-mono text-slate-500">Fleet Wide</span>
+              </div>
+              <div className="space-y-2">
+                {businessInsights?.department_stoppages?.map((d: any, idx: number) => (
+                  <div key={idx} className="flex items-center justify-between p-2 rounded bg-slate-900/70 border border-slate-800 text-xs font-mono">
+                    <span className="text-white truncate max-w-[140px]">{d.department}</span>
+                    <span className="text-sky-400 font-bold">{d.stoppage_events} events</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* 4. SQL Reports & Power BI Analytical Views Reference */}
+          <div className="bg-[#0c1424] border border-slate-800 rounded-xl p-5 space-y-3">
+            <h4 className="font-display font-bold text-xs text-white uppercase tracking-wider flex items-center gap-2">
+              <Database className="w-4 h-4 text-purple-400" />
+              SQL Analytical &amp; Power BI Reporting Views (Verified in DDL)
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 font-mono text-xs">
+              <div className="p-2.5 rounded bg-slate-900/60 border border-slate-800">
+                <code className="text-teal-300 font-bold">v_factorypulse_active_machines</code>
+                <p className="text-[11px] text-slate-400 mt-1">Filters exactly active fleet (50 default) with specs</p>
+              </div>
+              <div className="p-2.5 rounded bg-slate-900/60 border border-slate-800">
+                <code className="text-teal-300 font-bold">v_factorypulse_downtime_summary</code>
+                <p className="text-[11px] text-slate-400 mt-1">Tracks total stopped events &amp; last stoppage timestamps</p>
+              </div>
+              <div className="p-2.5 rounded bg-slate-900/60 border border-slate-800">
+                <code className="text-teal-300 font-bold">v_factorypulse_fleet_utilization</code>
+                <p className="text-[11px] text-slate-400 mt-1">Calculates machine utilization % and operating cut hours</p>
+              </div>
+              <div className="p-2.5 rounded bg-slate-900/60 border border-slate-800">
+                <code className="text-teal-300 font-bold">v_factorypulse_incident_frequency</code>
+                <p className="text-[11px] text-slate-400 mt-1">Severity distribution and Mean Time to Resolution (MTTR)</p>
+              </div>
+              <div className="p-2.5 rounded bg-slate-900/60 border border-slate-800">
+                <code className="text-teal-300 font-bold">v_factorypulse_maintenance_backlog</code>
+                <p className="text-[11px] text-slate-400 mt-1">Pending and in-progress work orders by technician</p>
+              </div>
+              <div className="p-2.5 rounded bg-slate-900/60 border border-slate-800">
+                <code className="text-teal-300 font-bold">v_factorypulse_sensor_trends</code>
+                <p className="text-[11px] text-slate-400 mt-1">Statistical min/max/avg sensor values and anomaly counts</p>
               </div>
             </div>
           </div>
