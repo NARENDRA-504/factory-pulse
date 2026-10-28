@@ -24,12 +24,13 @@ import { AnalyticsView } from './views/AnalyticsView';
 import { UsersView } from './views/UsersView';
 import { ActivityLogView } from './views/ActivityLogView';
 import { MachineManagementView } from './views/MachineManagementView';
+import { MaintenanceManagementView } from './views/MaintenanceManagementView';
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [sessionRestoring, setSessionRestoring] = useState(true);
   const [currentScreen, setCurrentScreen] = useState<
-    'dashboard' | 'machines' | 'incidents' | 'analytics' | 'users' | 'activity' | 'inventory'
+    'dashboard' | 'machines' | 'incidents' | 'analytics' | 'users' | 'activity' | 'inventory' | 'maintenance'
   >('dashboard');
   const [machines, setMachines] = useState<Machine[]>(SEED_MACHINES);
   const [incidents, setIncidents] = useState<Incident[]>([]);
@@ -271,6 +272,20 @@ export default function App() {
             {currentScreen === 'inventory' && (currentUser.role === 'Admin'
               ? <MachineManagementView user={currentUser} machines={machines}/>
               : <p className="rounded-lg border border-rose-900 p-5 text-rose-200">Machine management requires Admin access.</p>)}
+            {currentScreen === 'maintenance' && (
+              <MaintenanceManagementView
+                currentUser={currentUser}
+                machines={machines}
+                incidents={incidents}
+                onNavigateToMachine={(code) => {
+                  setSelectedMachineCode(code);
+                  setCurrentScreen('machines');
+                }}
+                onNavigateToIncident={(_code) => {
+                  setCurrentScreen('incidents');
+                }}
+              />
+            )}
             {currentScreen === 'activity' && (
               currentUser.role !== 'Admin' ? (
                 <div className="m-12 rounded-xl border border-rose-800 bg-[#0c1424] p-8 text-center"><h2 className="font-bold text-white">Admin access required</h2><p className="mt-2 text-sm text-slate-400">This activity log is restricted to administrators.</p></div>

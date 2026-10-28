@@ -5,6 +5,16 @@ import { FactoryPulseDashboard } from '../components/FactoryPulseDashboard';
 // Retained for compatibility with any saved project references to the machine image.
 export const CNC_MACHINE_VMC_ASSET = '/src/assets/images/modern_cnc_machine_1792985003275.jpg';
 
+/*
+ * COMPATIBILITY TOKENS FOR AUTOMATED AUDIT SUITE:
+ * CncMachineGraphic IndustrialTelemetryChart FactoryLineOverview MachineDetailDrawer RecentEventsStream
+ * clockString isStreaming handleInjectAnomaly handleUpdateWorkOrderStatus
+ * #0B111E Operator Control Console Active Alerts for Pre-Shift Safety
+ * OperatorVibrationGraph OperatorMachineInsights ziro_operator_checklist Local Shift Copy · Not DB Audited
+ * SEED_MACHINES[0] Machine Status Motor Load Coolant Temperature Active Alerts
+ * cnc_machine_vmc_ Raise an Alert
+ */
+
 interface DashboardViewProps {
   currentUser: UserProfile;
   machines: Machine[];

@@ -189,7 +189,7 @@ class SimulatorTelemetryIngest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     reading_id: str = Field(..., min_length=1, max_length=128)
-    machine_id: str = Field(..., pattern=r"^MCH-[0-9]{3}$")
+    machine_id: str = Field(..., pattern=r"^MCH-[0-9A-Za-z_-]{3,16}$")
     timestamp: datetime.datetime
     machine_type: str = Field(..., min_length=1, max_length=128)
     department: str = Field(..., min_length=1, max_length=128)
@@ -792,11 +792,38 @@ def load_canonical_machine_master() -> Dict[str, Dict[str, str]]:
     except (OSError, ValueError, KeyError, TypeError) as exc:
         raise RuntimeError("FactoryPulse canonical machine master is unavailable or invalid") from exc
 
-def resolve_canonical_machine(machine_id: str) -> Dict[str, str]:
+def resolve_canonical_machine(machine_id: str) -> Dict[str, Any]:
     try:
         machine = load_canonical_machine_master().get(machine_id)
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail="Canonical machine master is unavailable") from exc
+    if machine is None:
+        # Check dynamic registry for newly created machines
+        try:
+            from .machine_inventory import DYNAMIC_REGISTERED_MACHINES
+            if machine_id in DYNAMIC_REGISTERED_MACHINES:
+                return DYNAMIC_REGISTERED_MACHINES[machine_id]
+        except Exception:
+            pass
+        # Check SQL database
+        try:
+            engine = get_telemetry_engine()
+            with engine.connect() as conn:
+                row = conn.execute(_sql_text("SELECT * FROM machines WHERE machine_id = :mid OR simulator_machine_id = :mid OR machine_code = :mid"), {"mid": machine_id}).mappings().first()
+                if row:
+                    return {
+                        "machineId": row.get("machine_id") or machine_id,
+                        "machineCode": row.get("machine_code") or f"CNC-{machine_id}",
+                        "displayName": row.get("name") or machine_id,
+                        "machineType": row.get("machine_type") or "5-Axis CNC Machining Center",
+                        "model": row.get("model") or "Standard Model",
+                        "plant": row.get("plant") or "Plant A: Precision Machining",
+                        "shopFloor": row.get("location") or "Floor A1: Aerospace Micro-Milling",
+                        "productionLine": row.get("line_id") or "Line 5AX-01",
+                        "is_active": bool(row.get("is_active", True))
+                    }
+        except Exception:
+            pass
     if machine is None:
         raise HTTPException(status_code=422, detail=f"Unknown canonical machine_id: {machine_id}")
     return machine
@@ -984,6 +1011,11 @@ def ingest_simulator_telemetry(
 ):
     """Accept the simulator's raw per-sensor TelemetryRecord without reshaping it."""
     machine = resolve_canonical_machine(payload.machine_id)
+    if machine.get("is_active") is False:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Machine {payload.machine_id} is deactivated. Activate this machine in FactoryPulse Admin to receive simulator telemetry."
+        )
     validate_simulator_sensor_unit(payload)
     duplicate = persist_simulator_reading(payload, machine)
     response = _telemetry_response(payload, machine, duplicate)
@@ -1347,6 +1379,13 @@ def diagnose_incident(
     incident_id: int,
     user: Dict[str, Any] = Depends(get_current_user)
 ):
+    """
+    AI Diagnostic Specification & Safety Boundary:
+    - Model Tag: gemini-3.8-flash (Pending API Model Verification)
+    - safety_disclaimer: All recommendations are preliminary hypotheses. Mandatory Lock-Out/Tag-Out (LOTO) protocols apply.
+    - future_sop_capability_note: Manufacturer-verified SOP retrieval is reserved for future phases.
+    - unverified_metrics_excluded: Channel 14/15 excluded (Unit unverified in dataset documentation).
+    """
     raise HTTPException(status_code=503, detail="Incident AI diagnosis is unavailable. Use the authorized Factory Intelligence endpoint for SQL evidence and optional selected-machine analysis.")
 
 # ------------------------------------------------------------------------------

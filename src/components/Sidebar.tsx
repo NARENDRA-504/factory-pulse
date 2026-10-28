@@ -19,8 +19,8 @@ import {
 
 interface SidebarProps {
   currentUser: UserProfile;
-  currentScreen: 'dashboard' | 'machines' | 'incidents' | 'analytics' | 'users' | 'activity' | 'inventory';
-  onNavigate: (screen: 'dashboard' | 'machines' | 'incidents' | 'analytics' | 'users' | 'activity' | 'inventory') => void;
+  currentScreen: 'dashboard' | 'machines' | 'incidents' | 'analytics' | 'users' | 'activity' | 'inventory' | 'maintenance';
+  onNavigate: (screen: 'dashboard' | 'machines' | 'incidents' | 'analytics' | 'users' | 'activity' | 'inventory' | 'maintenance') => void;
   onLogout: () => void;
   onOpenProfile?: () => void;
   activeIncidentsCount?: number;
@@ -56,7 +56,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const isOperator = currentUser.role === 'Operator';
 
-  const handleNavClick = (screen: 'dashboard' | 'machines' | 'incidents' | 'analytics' | 'users' | 'activity' | 'inventory') => {
+  const handleNavClick = (screen: 'dashboard' | 'machines' | 'incidents' | 'analytics' | 'users' | 'activity' | 'inventory' | 'maintenance') => {
     onNavigate(screen);
     onCloseMobile();
   };
@@ -195,6 +195,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <span className="w-1.5 h-1.5 rounded-full bg-teal-400" />
                   ) : null}
                 </button>
+
+                {!isOperator && (
+                  <button
+                    onClick={() => handleNavClick('maintenance')}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                      currentScreen === 'maintenance'
+                        ? 'bg-amber-500/10 text-amber-300 border border-amber-500/30 shadow-xs'
+                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Wrench
+                        className={`w-4 h-4 ${
+                          currentScreen === 'maintenance' ? 'text-amber-400' : 'text-slate-400'
+                        }`}
+                      />
+                      <span>Maintenance Orders</span>
+                    </div>
+                    {currentScreen === 'maintenance' && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                    )}
+                  </button>
+                )}
               </nav>
             </div>
 
@@ -228,7 +251,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                   {currentUser.role === 'Admin' && (
                     <>
-                    <button onClick={() => handleNavClick('inventory')} className={`w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium ${currentScreen === 'inventory' ? 'border border-teal-500/30 bg-teal-500/10 text-teal-300' : 'text-slate-400 hover:bg-slate-900/60 hover:text-slate-200'}`}><Cpu className="h-4 w-4"/>Machine Management</button>
+                    <button
+                      onClick={() => handleNavClick('inventory')}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                        currentScreen === 'inventory'
+                          ? 'bg-teal-500/10 text-teal-300 border border-teal-500/30 shadow-xs'
+                          : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Cpu className={`w-4 h-4 ${currentScreen === 'inventory' ? 'text-teal-400' : 'text-slate-400'}`} />
+                        <span>Machine Management</span>
+                      </div>
+                      {currentScreen === 'inventory' && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-teal-400" />
+                      )}
+                    </button>
                     <button
                       onClick={() => handleNavClick('users')}
                       className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${

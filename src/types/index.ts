@@ -343,3 +343,92 @@ export interface PipelineHealthAudit {
   mysqlHost: string;
   databaseName: string;
 }
+
+export interface MachineInventoryRecord {
+  machine_id: string;
+  machine_code: string;
+  name: string;
+  model: string;
+  machine_type: string;
+  production_line: string;
+  plant: string;
+  location: string;
+  manufacturer?: string;
+  registry_source: 'MYSQL' | 'REFERENCE_CATALOG';
+  registered_in_sql: boolean;
+  description?: string;
+  last_inspection_date?: string;
+  installation_date?: string;
+  is_active: boolean;
+  operating_status: string;
+  connection_status: 'RECEIVING' | 'STALE' | 'WAITING' | 'CONFIGURATION_REQUIRED';
+  current_round_downtime_seconds: number;
+  total_downtime_seconds: number;
+  latest_timestamp?: string | null;
+  sensors?: any[];
+}
+
+export interface NewMachineInput {
+  name: string;
+  machine_type: string;
+  department: string;
+  location: string;
+  status: 'Nominal' | 'Warning' | 'Critical' | 'Offline' | 'Down' | 'Idle' | 'Maintenance';
+  installation_date: string;
+  manufacturer?: string;
+  description?: string;
+  is_active: boolean;
+}
+
+export interface AIMachineHealthAnalysis {
+  machine_id: string;
+  machine_code: string;
+  overall_health: 'NOMINAL' | 'WARNING' | 'CRITICAL';
+  machine_health_summary: string;
+  abnormal_temperature_warning: {
+    severity: string;
+    observed_value: string;
+    threshold: string;
+    message: string;
+  } | null;
+  excessive_vibration_warning: {
+    severity: string;
+    observed_value: string;
+    threshold: string;
+    message: string;
+  } | null;
+  potential_failure_indicators: string[];
+  downtime_explanation: string;
+  maintenance_recommendations: string[];
+  natural_language_explanation: string;
+  evidence_used: {
+    temperature?: number | null;
+    vibration?: number | null;
+    rpm?: number | null;
+    fault_mode?: string | null;
+    current_round_downtime_seconds: number;
+    total_downtime_seconds: number;
+  };
+  ai_engine: string;
+  generated_at: string;
+}
+
+export interface MachineDowntimeSummary {
+  machine_id: string;
+  current_downtime_seconds: number;
+  total_seconds: number;
+  intervals: Array<{
+    start: string;
+    end: string;
+    seconds: number;
+    ongoing: boolean;
+  }>;
+  rounds: Array<{
+    round_id: string;
+    start: string;
+    end: string;
+    downtime_seconds: number;
+  }>;
+  round_definition: string;
+  basis: string;
+}
