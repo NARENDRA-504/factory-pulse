@@ -468,7 +468,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
                   <span>Plant Fleet Operational Readiness</span>
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Machine status across all four plants (100 machines per plant).
+                  Machine status across the available roster.
                 </p>
               </div>
               <span className="text-xs font-semibold text-teal-800 bg-teal-50 border border-teal-200 px-2.5 py-0.5 rounded-full">
@@ -602,7 +602,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
 
         {openIncidents.length === 0 ? (
           <div className="py-8 text-center text-xs text-slate-500">
-            No active incidents on shift. All 400 machines operating normally.
+            No active incidents in this selection.
           </div>
         ) : (
           <div className="mt-4 overflow-x-auto border border-slate-200 rounded-xl">
@@ -671,7 +671,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
           <div>
             <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2">
               <Layers className="w-4 h-4 text-teal-600" />
-              <span>Fleet Inventory &amp; Live Machine Status (400 Machines)</span>
+              <span>Fleet Inventory &amp; Live Machine Status ({machines.length} Machines)</span>
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
               Filter by plant, machine category, or current operational status. Showing {filteredMachines.length} matching units.
@@ -698,11 +698,11 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
               onChange={(e) => setPlantFilter(e.target.value)}
               className="w-full bg-white border border-slate-300 text-xs text-slate-900 rounded-xl p-2.5 focus:border-teal-500 focus:outline-none shadow-xs"
             >
-              <option value="ALL">All Plants (400 Machines)</option>
-              <option value="Plant A: Precision Machining">Plant A: Precision Machining (100)</option>
-              <option value="Plant B: Powertrain Components">Plant B: Powertrain Components (100)</option>
-              <option value="Plant C: Heavy Machining">Plant C: Heavy Machining (100)</option>
-              <option value="Plant D: Finishing and Grinding">Plant D: Finishing and Grinding (100)</option>
+              <option value="ALL">All Plants ({machines.length} Machines)</option>
+              <option value="Plant A: Precision Machining">Plant A: Precision Machining ({machines.filter(machine => machine.plant === 'Plant A: Precision Machining').length})</option>
+              <option value="Plant B: Powertrain Components">Plant B: Powertrain Components ({machines.filter(machine => machine.plant === 'Plant B: Powertrain Components').length})</option>
+              <option value="Plant C: Heavy Machining">Plant C: Heavy Machining ({machines.filter(machine => machine.plant === 'Plant C: Heavy Machining').length})</option>
+              <option value="Plant D: Finishing and Grinding">Plant D: Finishing and Grinding ({machines.filter(machine => machine.plant === 'Plant D: Finishing and Grinding').length})</option>
             </select>
           </div>
 

@@ -13,6 +13,13 @@ from dotenv import dotenv_values
 
 ROOT = Path(__file__).resolve().parents[1]
 SIM = ROOT.parent / 'AI Simulator'
+# Fail clearly before launching if separate apps disagree on available identities.
+main_roster=json.loads((ROOT/'public/available-machine-ids.json').read_text(encoding='utf-8'))['machine_ids']
+sim_roster=json.loads((SIM/'available-machine-ids.json').read_text(encoding='utf-8'))['machine_ids']
+main_catalog={m['machineId']:m['machineCode'] for m in json.loads((ROOT/'public/machine-name.json').read_text(encoding='utf-8'))}
+sim_catalog={m['machineId']:m['machineCode'] for m in json.loads((SIM/'machine-name.json').read_text(encoding='utf-8'))}
+if not main_roster or len(main_roster)!=len(set(main_roster)) or set(main_roster)!=set(sim_roster) or any(main_catalog.get(id)!=sim_catalog.get(id) or id not in main_catalog for id in main_roster):
+    raise SystemExit('Available machine IDs/codes differ between FactoryPulse and AI Simulator. Restore matching roster configuration before starting.')
 STATE = ROOT / '.local' / 'stack'
 STATE.mkdir(parents=True, exist_ok=True)
 if os.name == 'nt':
@@ -67,6 +74,8 @@ def listening(url):
 
 def start_streams():
     catalog = json.loads((ROOT/'public/machine-name.json').read_text())
+    available=set(json.loads((ROOT/'public/available-machine-ids.json').read_text())['machine_ids'])
+    catalog=[machine for machine in catalog if machine['machineId'] in available]
     plants = {}
     for machine in catalog:
         plants.setdefault(machine['plant'], machine['machineId'])

@@ -70,6 +70,7 @@ export const SEED_USERS: UserProfile[] = [
 ];
 
 import { ALL_400_MACHINES } from './machinesData';
+import availableRoster from '../../public/available-machine-ids.json';
 
 export const MACHINE_DISPLAY_NAMES: Record<string, string> = {
   'CNC-MILL-01': 'VMC-01 – Haas VF-4SS (Alpha-01)',
@@ -89,7 +90,7 @@ export const getMachineDisplayName = (code: string, fallbackName?: string): stri
   return MACHINE_DISPLAY_NAMES[code] || fallbackName || code;
 };
 
-export const SEED_MACHINES: Machine[] = ALL_400_MACHINES;
+export const SEED_MACHINES: Machine[] = ALL_400_MACHINES.filter(machine => availableRoster.machine_ids.includes(machine.machineId));
 
 export const SEED_INCIDENTS: Incident[] = [
   {

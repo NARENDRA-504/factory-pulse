@@ -745,14 +745,11 @@ def deactivate_admin_user(employee_id: int, request: Request, user: Dict[str, An
 
 @app.get("/api/v1/machines")
 def list_machines(user: Dict[str, Any] = Depends(get_current_user)):
-    machines = [
-        {"code": "CNC-MILL-01", "name": "5-Axis Precision Vertical Mill Alpha", "line_id": "Line 1 - Aerospace Rotor Cell", "status": "Nominal", "cut_hours": 1420.5},
-        {"code": "CNC-MILL-02", "name": "High-Speed CNC Milling Center Beta", "line_id": "Line 1 - Aerospace Rotor Cell", "status": "Warning", "cut_hours": 2190.0},
-        {"code": "CNC-LATHE-03", "name": "Heavy Duty CNC Turning Center Gamma", "line_id": "Line 2 - Drivetrain Shafts", "status": "Nominal", "cut_hours": 3410.2},
-        {"code": "CNC-HEAVY-04", "name": "Multi-Spindle Heavy Gantry Station", "line_id": "Line 3 - Structural Housings", "status": "Critical", "cut_hours": 4890.8},
-    ]
-    if user["role"] == "Operator":
-        return [machine for machine in machines if machine["code"] == user.get("assigned_machine")]
+    machines=[{'machine_id':m['machineId'],'machine_code':m['machineCode'],
+        'code':m['machineCode'],'name':m['displayName'],'line_id':m['productionLine'],
+        'status':'UNKNOWN','plant':m['plant']} for m in load_available_machine_master().values()]
+    if user['role']=='Operator':
+        return [m for m in machines if m['code']==user.get('assigned_machine')]
     return machines
 
 @app.get("/api/v1/machines/{code}/telemetry", response_model=TelemetryReadingSchema)
@@ -791,6 +788,14 @@ def load_canonical_machine_master() -> Dict[str, Dict[str, str]]:
         return by_id
     except (OSError, ValueError, KeyError, TypeError) as exc:
         raise RuntimeError("FactoryPulse canonical machine master is unavailable or invalid") from exc
+
+def load_available_machine_master():
+    from .machine_roster import available_master
+    return available_master(load_canonical_machine_master())
+
+@app.get('/api/v1/machines/available')
+def available_machine_catalog(user=Depends(get_current_user)):
+    return list(load_available_machine_master().values())
 
 def resolve_canonical_machine(machine_id: str) -> Dict[str, str]:
     try:
@@ -1079,7 +1084,7 @@ def get_simulator_fleet_latest_readings(
     Fleet roles can compare the records across plants. Operators are restricted
     to their assigned machine, matching the per-machine history endpoint.
     """
-    master = load_canonical_machine_master()
+    master = load_available_machine_master()
     assigned_machine_id = None
     if user.get("role") == "Operator":
         assigned_code = user.get("assigned_machine")
