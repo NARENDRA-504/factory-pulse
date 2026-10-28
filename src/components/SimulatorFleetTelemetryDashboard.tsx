@@ -78,7 +78,7 @@ export const SimulatorFleetTelemetryDashboard: React.FC<SimulatorFleetTelemetryD
     };
     setFleetLoading(true);
     refresh();
-    const timer = window.setInterval(refresh, 3000);
+    const timer = window.setInterval(refresh, 1000);
     return () => { cancelled = true; window.clearInterval(timer); };
   }, [user.workId, user.role, user.assignedMachine]);
 
@@ -111,7 +111,7 @@ export const SimulatorFleetTelemetryDashboard: React.FC<SimulatorFleetTelemetryD
     };
     setHistoryLoading(true);
     refresh();
-    const timer = window.setInterval(refresh, 3000);
+    const timer = window.setInterval(refresh, 2000);
     return () => { cancelled = true; window.clearInterval(timer); };
   }, [selectedMachine?.machineId, user.workId]);
 
@@ -178,7 +178,7 @@ export const SimulatorFleetTelemetryDashboard: React.FC<SimulatorFleetTelemetryD
   const sourceState = error ? 'UNAVAILABLE' : fleetLoading && fleetReadings.length === 0 ? 'CONNECTING' : fleetReadings.length ? isFresh ? 'LIVE · MYSQL' : 'SAVED DATA · STREAM IDLE' : 'WAITING FOR READINGS';
 
   return <div className="space-y-4">
-    <Card title="Live machine telemetry" hint="Simulator readings saved in FactoryPulse MySQL · refreshes every 3 seconds." className="border-cyan-900/70">
+    <Card title="Live machine telemetry" hint="Simulator readings saved in FactoryPulse MySQL · current values refresh every second; history every 2 seconds." className="border-cyan-900/70">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-semibold ${fleetReadings.length && !error ? 'border-emerald-800 bg-emerald-950/40 text-emerald-300' : 'border-amber-800 bg-amber-950/30 text-amber-200'}`}><Radio className="h-3.5 w-3.5"/>{sourceState}</span>

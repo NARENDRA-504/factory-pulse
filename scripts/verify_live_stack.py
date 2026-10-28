@@ -50,8 +50,8 @@ def main():
         duplicate=api.post('/api/v1/telemetry',json={k:v for k,v in source.items() if k in allowed},headers={'X-Simulator-API-Key':settings['SIMULATOR_API_KEY']})
         assert duplicate.status_code==200 and duplicate.json()['duplicate'] is True
         report['checks']['duplicate_delivery']='PASS'
-    report['checks']['external_ai']='BLOCKED: approved optional selected-machine delivery; provider configuration missing'
-    report['checks']['power_bi']='BLOCKED: no report, connection or refresh evidence'
+    report['checks']['external_ai']='NOT CHECKED: this local pipeline test does not call an external AI provider'
+    report['checks']['power_bi']='NOT CHECKED: SQL verification does not establish a Power BI report refresh'
     with engine.connect() as connection:
         columns=set(connection.execute(text("SELECT COLUMN_NAME FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='machines'")).scalars())
     report['checks']['machine_management_migration']='APPLIED: required columns present' if {'machine_id','operating_limits','sensor_configuration'}.issubset(columns) else 'BLOCKED: schema-owner execution required'
