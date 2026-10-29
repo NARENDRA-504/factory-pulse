@@ -60,7 +60,7 @@ export interface PersistedSimulatorReading {
   sensor_value: number | string | null;
   expected_min: number;
   expected_max: number;
-  machine_status: 'NORMAL' | 'WARNING' | 'CRITICAL' | 'MAINTENANCE' | 'STOPPED';
+  machine_status: 'NORMAL' | 'IDLE' | 'WARNING' | 'CRITICAL' | 'MAINTENANCE' | 'STOPPED';
   data_quality: 'GOOD' | 'NOISY';
   fault_mode?: string | null;
   data_provenance: 'SIMULATED';
@@ -103,6 +103,7 @@ function toUserProfile(user: any): UserProfile {
     email: user.email,
     department: user.department || undefined,
     shift: user.shift || undefined,
+    sessionStartedAt: user.session_started_at_utc || undefined,
     status: user.is_active === false ? 'Offline' : 'Active',
   };
 }

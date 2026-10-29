@@ -137,7 +137,9 @@ def register(app, api):
                 'vibration_rms_mms': r.sensor_value if 'vibration' in r.sensor_name.lower() else None,
                 'spindle_speed_rpm': r.sensor_value if 'rpm' in r.sensor_name.lower() or 'spindle' in r.sensor_name.lower() else None,
                 'motor_load_pct': r.sensor_value if 'load' in r.sensor_name.lower() else None,
-                'motor_power_kw': r.sensor_value if 'power' in r.sensor_name.lower() or 'current' in r.sensor_name.lower() else None,
+                # Current (A) is not power (kW); only explicitly named power
+                # channels may populate this field.
+                'motor_power_kw': r.sensor_value if 'power' in r.sensor_name.lower() else None,
             })
         stats = compute_fleet_sensor_statistics(dicts)
         return {

@@ -119,7 +119,7 @@ export const MaintenanceDashboard: React.FC<MaintenanceDashboardProps> = ({
           <div className="flex flex-wrap items-center gap-2.5">
             <button
               onClick={() => onNavigate('incidents')}
-              className="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
+              className="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-slate-900 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span>AI Root-Cause Assistant</span>
@@ -557,9 +557,9 @@ export const MaintenanceDashboard: React.FC<MaintenanceDashboardProps> = ({
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-bold text-slate-900">{inc.incidentCode}</span>
-                      <span className="text-slate-400">·</span>
+                      <span className="text-slate-600">·</span>
                       <span className="text-xs font-semibold text-slate-700">{inc.machineCode}</span>
-                      <span className="text-slate-400">·</span>
+                      <span className="text-slate-600">·</span>
                       <span className="text-xs text-slate-500 font-medium">{inc.componentArea}</span>
                     </div>
                     <span
@@ -798,7 +798,7 @@ export const MaintenanceDashboard: React.FC<MaintenanceDashboardProps> = ({
       {/* UPDATE PROGRESS MODAL */}
       {/* ------------------------------------------------------------- */}
       {activeTicketModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-slate-50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 shadow-2xl">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
@@ -807,7 +807,7 @@ export const MaintenanceDashboard: React.FC<MaintenanceDashboardProps> = ({
               </h3>
               <button
                 onClick={() => setActiveTicketModal(null)}
-                className="text-slate-400 hover:text-slate-600"
+                className="text-slate-600 hover:text-slate-600"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -846,7 +846,7 @@ export const MaintenanceDashboard: React.FC<MaintenanceDashboardProps> = ({
                 <button
                   type="submit"
                   disabled={isUpdatingProgress}
-                  className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-semibold shadow-xs disabled:opacity-50"
+                  className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-slate-900 font-semibold shadow-xs disabled:opacity-50"
                 >
                   {isUpdatingProgress ? 'Saving...' : 'Save Action Note'}
                 </button>

@@ -83,12 +83,12 @@ export const OperatorLiveChartsOverview: React.FC<OperatorLiveChartsOverviewProp
     : 'Normal';
 
   const overallStatusBadgeClass = !isStreaming
-    ? 'bg-slate-800 text-slate-300 border-slate-700'
+    ? 'bg-slate-100 text-slate-700 border-slate-200'
     : isCritical
-    ? 'bg-rose-950/80 text-rose-300 border-rose-800'
+    ? 'bg-rose-50 text-rose-800 border-rose-200'
     : isWarning
-    ? 'bg-amber-950/80 text-amber-300 border-amber-800'
-    : 'bg-emerald-950/80 text-emerald-300 border-emerald-800';
+    ? 'bg-amber-50 text-amber-800 border-amber-200'
+    : 'bg-emerald-50 text-emerald-800 border-emerald-200';
 
   // Format live timer
   const formatTimer = (totalSec: number) => {
@@ -178,16 +178,16 @@ export const OperatorLiveChartsOverview: React.FC<OperatorLiveChartsOverviewProp
       {/* ------------------------------------------------------------- */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         {/* Card 1: Spindle Speed */}
-        <div className="bg-[#0c1424] border border-slate-800/90 rounded-xl p-3.5 sm:p-4 flex flex-col justify-between shadow-xs">
+        <div className="bg-white border border-slate-200 rounded-xl p-3.5 sm:p-4 flex flex-col justify-between shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-medium">
+            <span className="text-[11px] font-mono uppercase tracking-wider text-slate-600 font-medium">
               Spindle Speed
             </span>
             <span
               className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase border ${
                 isRpmAbnormal
-                  ? 'bg-amber-950/80 text-amber-300 border-amber-800'
-                  : 'bg-emerald-950/80 text-emerald-300 border-emerald-800'
+                  ? 'bg-amber-50 text-amber-800 border-amber-200'
+                  : 'bg-emerald-50 text-emerald-800 border-emerald-200'
               }`}
             >
               {isRpmAbnormal ? 'Attention' : 'Normal'}
@@ -195,16 +195,16 @@ export const OperatorLiveChartsOverview: React.FC<OperatorLiveChartsOverviewProp
           </div>
           <div className="my-2">
             <div className="flex items-baseline gap-1.5">
-              <span className="text-2xl sm:text-3xl font-extrabold font-mono text-white tracking-tight">
+              <span className="text-2xl sm:text-3xl font-extrabold font-mono text-slate-900 tracking-tight">
                 {rpm.toLocaleString()}
               </span>
-              <span className="text-xs font-mono text-slate-400 font-semibold">RPM</span>
+              <span className="text-xs font-mono text-slate-600 font-semibold">RPM</span>
             </div>
-            <p className="text-[11px] font-mono text-slate-400 mt-0.5">
+            <p className="text-[11px] font-mono text-slate-600 mt-0.5">
               Target: {machine.code.includes('LATHE') ? '1,800' : '4,500'} RPM
             </p>
           </div>
-          <div className="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden">
+          <div className="w-full bg-slate-50 rounded-full h-1.5 overflow-hidden">
             <div
               className={`h-full transition-all duration-500 ${
                 isRpmAbnormal ? 'bg-amber-400' : 'bg-teal-400'
@@ -217,18 +217,18 @@ export const OperatorLiveChartsOverview: React.FC<OperatorLiveChartsOverviewProp
         </div>
 
         {/* Card 2: Coolant Temperature */}
-        <div className="bg-[#0c1424] border border-slate-800/90 rounded-xl p-3.5 sm:p-4 flex flex-col justify-between shadow-xs">
+        <div className="bg-white border border-slate-200 rounded-xl p-3.5 sm:p-4 flex flex-col justify-between shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-medium">
+            <span className="text-[11px] font-mono uppercase tracking-wider text-slate-600 font-medium">
               Coolant Temp
             </span>
             <span
               className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase border ${
                 isTempCritical
-                  ? 'bg-rose-950/80 text-rose-300 border-rose-800'
+                  ? 'bg-rose-50 text-rose-800 border-rose-200'
                   : isTempWarning
-                  ? 'bg-amber-950/80 text-amber-300 border-amber-800'
-                  : 'bg-emerald-950/80 text-emerald-300 border-emerald-800'
+                  ? 'bg-amber-50 text-amber-800 border-amber-200'
+                  : 'bg-emerald-50 text-emerald-800 border-emerald-200'
               }`}
             >
               {isTempCritical ? 'Critical' : isTempWarning ? 'High' : 'Normal'}
@@ -239,21 +239,21 @@ export const OperatorLiveChartsOverview: React.FC<OperatorLiveChartsOverviewProp
               <span
                 className={`text-2xl sm:text-3xl font-extrabold font-mono tracking-tight ${
                   isTempCritical
-                    ? 'text-rose-400'
+                    ? 'text-rose-700'
                     : isTempWarning
-                    ? 'text-amber-400'
-                    : 'text-white'
+                    ? 'text-amber-700'
+                    : 'text-slate-900'
                 }`}
               >
                 {coolantTemp.toFixed(1)}
               </span>
-              <span className="text-xs font-mono text-slate-400 font-semibold">°C</span>
+              <span className="text-xs font-mono text-slate-600 font-semibold">°C</span>
             </div>
-            <p className="text-[11px] font-mono text-slate-400 mt-0.5">
+            <p className="text-[11px] font-mono text-slate-600 mt-0.5">
               Safe Operating: &lt; 35.0 °C
             </p>
           </div>
-          <div className="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden">
+          <div className="w-full bg-slate-50 rounded-full h-1.5 overflow-hidden">
             <div
               className={`h-full transition-all duration-500 ${
                 isTempCritical ? 'bg-rose-500' : isTempWarning ? 'bg-amber-400' : 'bg-emerald-400'
@@ -264,18 +264,18 @@ export const OperatorLiveChartsOverview: React.FC<OperatorLiveChartsOverviewProp
         </div>
 
         {/* Card 3: Motor Load */}
-        <div className="bg-[#0c1424] border border-slate-800/90 rounded-xl p-3.5 sm:p-4 flex flex-col justify-between shadow-xs">
+        <div className="bg-white border border-slate-200 rounded-xl p-3.5 sm:p-4 flex flex-col justify-between shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-medium">
+            <span className="text-[11px] font-mono uppercase tracking-wider text-slate-600 font-medium">
               Motor Load
             </span>
             <span
               className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase border ${
                 isLoadCritical
-                  ? 'bg-rose-950/80 text-rose-300 border-rose-800'
+                  ? 'bg-rose-50 text-rose-800 border-rose-200'
                   : isLoadWarning
-                  ? 'bg-amber-950/80 text-amber-300 border-amber-800'
-                  : 'bg-emerald-950/80 text-emerald-300 border-emerald-800'
+                  ? 'bg-amber-50 text-amber-800 border-amber-200'
+                  : 'bg-emerald-50 text-emerald-800 border-emerald-200'
               }`}
             >
               {isLoadCritical ? 'Overload' : isLoadWarning ? 'Attention' : 'Normal'}
@@ -286,21 +286,21 @@ export const OperatorLiveChartsOverview: React.FC<OperatorLiveChartsOverviewProp
               <span
                 className={`text-2xl sm:text-3xl font-extrabold font-mono tracking-tight ${
                   isLoadCritical
-                    ? 'text-rose-400'
+                    ? 'text-rose-700'
                     : isLoadWarning
-                    ? 'text-amber-400'
-                    : 'text-white'
+                    ? 'text-amber-700'
+                    : 'text-slate-900'
                 }`}
               >
                 {motorLoad.toFixed(1)}
               </span>
-              <span className="text-xs font-mono text-slate-400 font-semibold">%</span>
+              <span className="text-xs font-mono text-slate-600 font-semibold">%</span>
             </div>
-            <p className="text-[11px] font-mono text-slate-400 mt-0.5">
+            <p className="text-[11px] font-mono text-slate-600 mt-0.5">
               Limit: 85% · Power: {latestTelemetry.motorPowerKw ?? 11.2} kW
             </p>
           </div>
-          <div className="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden">
+          <div className="w-full bg-slate-50 rounded-full h-1.5 overflow-hidden">
             <div
               className={`h-full transition-all duration-500 ${
                 isLoadCritical ? 'bg-rose-500' : isLoadWarning ? 'bg-amber-400' : 'bg-teal-400'
@@ -311,28 +311,28 @@ export const OperatorLiveChartsOverview: React.FC<OperatorLiveChartsOverviewProp
         </div>
 
         {/* Card 4: Jobs Produced */}
-        <div className="bg-[#0c1424] border border-slate-800/90 rounded-xl p-3.5 sm:p-4 flex flex-col justify-between shadow-xs">
+        <div className="bg-white border border-slate-200 rounded-xl p-3.5 sm:p-4 flex flex-col justify-between shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-medium">
+            <span className="text-[11px] font-mono uppercase tracking-wider text-slate-600 font-medium">
               Jobs Produced
             </span>
-            <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase border bg-teal-950/80 text-teal-300 border-teal-800">
+            <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase border bg-teal-50 text-teal-800 border-teal-200">
               Shift A
             </span>
           </div>
           <div className="my-2">
             <div className="flex items-baseline gap-1.5">
-              <span className="text-2xl sm:text-3xl font-extrabold font-mono text-white tracking-tight">
+              <span className="text-2xl sm:text-3xl font-extrabold font-mono text-slate-900 tracking-tight">
                 {jobsProduced}
               </span>
-              <span className="text-xs font-mono text-slate-400 font-semibold">/ {shiftTarget} pcs</span>
+              <span className="text-xs font-mono text-slate-600 font-semibold">/ {shiftTarget} pcs</span>
             </div>
-            <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 mt-0.5">
+            <div className="flex items-center justify-between text-[11px] font-mono text-slate-600 mt-0.5">
               <span>Progress: {targetPct}%</span>
-              <span className="text-teal-400">Tank: {coolantLevel}%</span>
+              <span className="text-teal-700">Tank: {coolantLevel}%</span>
             </div>
           </div>
-          <div className="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden">
+          <div className="w-full bg-slate-50 rounded-full h-1.5 overflow-hidden">
             <div
               className="h-full bg-teal-400 transition-all duration-500"
               style={{ width: `${targetPct}%` }}
@@ -341,20 +341,20 @@ export const OperatorLiveChartsOverview: React.FC<OperatorLiveChartsOverviewProp
         </div>
 
         {/* Card 5: Working Time (LIVE TIMER NOT GRAPH) */}
-        <div className="col-span-2 lg:col-span-1 bg-[#0c1424] border border-slate-800/90 rounded-xl p-3.5 sm:p-4 flex flex-col justify-between shadow-xs">
+        <div className="col-span-2 lg:col-span-1 bg-white border border-slate-200 rounded-xl p-3.5 sm:p-4 flex flex-col justify-between shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-medium">
+            <span className="text-[11px] font-mono uppercase tracking-wider text-slate-600 font-medium">
               Working Time
             </span>
             <div className="flex items-center gap-1.5">
               {isStreaming ? (
-                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-emerald-950/80 text-emerald-300 border border-emerald-800 flex items-center gap-1">
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
                   <span>Live</span>
                 </span>
               ) : (
-                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-amber-950/80 text-amber-300 border border-amber-800 flex items-center gap-1">
-                  <Pause className="w-2.5 h-2.5 text-amber-400" />
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1">
+                  <Pause className="w-2.5 h-2.5 text-amber-700" />
                   <span>Paused</span>
                 </span>
               )}
@@ -362,16 +362,16 @@ export const OperatorLiveChartsOverview: React.FC<OperatorLiveChartsOverviewProp
           </div>
           <div className="my-2">
             <div className="flex items-baseline gap-1.5">
-              <span className="text-2xl sm:text-3xl font-extrabold font-mono text-white tracking-tight">
+              <span className="text-2xl sm:text-3xl font-extrabold font-mono text-slate-900 tracking-tight">
                 {formatTimer(workingTimeSeconds)}
               </span>
             </div>
-            <p className="text-[11px] font-mono text-slate-400 mt-0.5 flex items-center justify-between">
+            <p className="text-[11px] font-mono text-slate-600 mt-0.5 flex items-center justify-between">
               <span>{isStreaming ? 'Updating live every second' : 'Telemetry Paused'}</span>
-              <span className="text-slate-400">Shift Run</span>
+              <span className="text-slate-600">Shift Run</span>
             </p>
           </div>
-          <div className="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden">
+          <div className="w-full bg-slate-50 rounded-full h-1.5 overflow-hidden">
             <div
               className={`h-full transition-all duration-500 ${
                 isStreaming ? 'bg-emerald-400' : 'bg-slate-500'
@@ -388,28 +388,28 @@ export const OperatorLiveChartsOverview: React.FC<OperatorLiveChartsOverviewProp
       <div
         className={`p-3.5 sm:p-4 rounded-xl border shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3 ${
           isCritical
-            ? 'bg-rose-950/30 border-rose-800/80 text-rose-200'
+            ? 'bg-rose-50 border-rose-200 text-slate-700'
             : isWarning
-            ? 'bg-amber-950/30 border-amber-800/80 text-amber-200'
-            : 'bg-emerald-950/20 border-emerald-800/60 text-emerald-200'
+            ? 'bg-amber-50 border-amber-200 text-slate-700'
+            : 'bg-emerald-50 border-emerald-200 text-slate-700'
         }`}
       >
         <div className="flex items-start sm:items-center gap-3">
           <div
             className={`p-2 rounded-lg shrink-0 ${
               isCritical
-                ? 'bg-rose-900/50 text-rose-300'
+                ? 'bg-rose-50 text-rose-800'
                 : isWarning
-                ? 'bg-amber-900/50 text-amber-300'
-                : 'bg-emerald-900/50 text-emerald-300'
+                ? 'bg-amber-50 text-amber-800'
+                : 'bg-emerald-50 text-emerald-800'
             }`}
           >
             {isCritical ? (
-              <ShieldAlert className="w-5 h-5 text-rose-400" />
+              <ShieldAlert className="w-5 h-5 text-rose-700" />
             ) : isWarning ? (
-              <AlertTriangle className="w-5 h-5 text-amber-400" />
+              <AlertTriangle className="w-5 h-5 text-amber-700" />
             ) : (
-              <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+              <CheckCircle2 className="w-5 h-5 text-emerald-700" />
             )}
           </div>
           <div>
@@ -421,11 +421,11 @@ export const OperatorLiveChartsOverview: React.FC<OperatorLiveChartsOverviewProp
                   ? 'ATTENTION NOTICE'
                   : 'NORMAL CONDITION'}
               </span>
-              <span className="text-[11px] font-mono text-slate-400">
+              <span className="text-[11px] font-mono text-slate-600">
                 · {displayName} ({machine.code})
               </span>
             </div>
-            <p className="text-xs font-sans text-slate-200 mt-0.5">
+            <p className="text-xs font-sans text-slate-800 mt-0.5">
               {activeAnomaly === 'HIGH_CHATTER'
                 ? 'Elevated chatter resonance on spindle toolholder. Limit: Spindle vibration exceeds 4.5 m/s².'
                 : activeAnomaly === 'THERMAL_OVERLOAD'
@@ -443,9 +443,9 @@ export const OperatorLiveChartsOverview: React.FC<OperatorLiveChartsOverviewProp
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={onRaiseAlert}
-            className="w-full sm:w-auto px-4 py-2 rounded-lg text-xs font-mono font-bold bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white flex items-center justify-center gap-1.5 shadow-md transition-all"
+            className="w-full sm:w-auto px-4 py-2 rounded-lg text-xs font-mono font-bold bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-slate-900 flex items-center justify-center gap-1.5 shadow-md transition-all"
           >
-            <AlertTriangle className="w-4 h-4 text-white" />
+            <AlertTriangle className="w-4 h-4 text-slate-900" />
             <span>Raise an Alert</span>
           </button>
         </div>
@@ -456,16 +456,16 @@ export const OperatorLiveChartsOverview: React.FC<OperatorLiveChartsOverviewProp
       {/* ------------------------------------------------------------- */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* GRAPH 1: Spindle Speed */}
-        <div className="bg-[#0c1424] border border-slate-800/90 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-800/70">
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-200/70">
             <div className="flex items-center gap-2">
-              <Gauge className="w-4 h-4 text-teal-400" />
-              <h3 className="text-sm font-bold text-white font-mono tracking-tight">
+              <Gauge className="w-4 h-4 text-teal-700" />
+              <h3 className="text-sm font-bold text-slate-900 font-mono tracking-tight">
                 Spindle Speed Over Time
               </h3>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-mono font-bold text-white">
+              <span className="text-xs font-mono font-bold text-slate-900">
                 {rpm.toLocaleString()} RPM
               </span>
               <span
@@ -480,9 +480,9 @@ export const OperatorLiveChartsOverview: React.FC<OperatorLiveChartsOverviewProp
           <div className="my-2">
             <svg viewBox={`0 0 ${chartW} ${chartH}`} className="w-full h-44 sm:h-48 overflow-visible">
               {/* Grid Lines */}
-              <line x1={padL} y1={padT} x2={chartW - padR} y2={padT} stroke="#1e293b" strokeDasharray="3 3" />
-              <line x1={padL} y1={padT + innerH / 2} x2={chartW - padR} y2={padT + innerH / 2} stroke="#1e293b" strokeDasharray="3 3" />
-              <line x1={padL} y1={padT + innerH} x2={chartW - padR} y2={padT + innerH} stroke="#334155" />
+              <line x1={padL} y1={padT} x2={chartW - padR} y2={padT} stroke="#cbd5e1" strokeDasharray="3 3" />
+              <line x1={padL} y1={padT + innerH / 2} x2={chartW - padR} y2={padT + innerH / 2} stroke="#cbd5e1" strokeDasharray="3 3" />
+              <line x1={padL} y1={padT + innerH} x2={chartW - padR} y2={padT + innerH} stroke="#94a3b8" />
 
               {/* Y Axis Labels */}
               <text x={padL - 6} y={padT + 4} textAnchor="end" fill="#64748b" fontSize="10" fontFamily="monospace">
@@ -527,34 +527,34 @@ export const OperatorLiveChartsOverview: React.FC<OperatorLiveChartsOverviewProp
                   cy={padT + innerH - ((rpmData[rpmData.length - 1] - minRpm) / rpmRange) * innerH}
                   r="4.5"
                   fill={isRpmAbnormal ? '#f59e0b' : '#2dd4bf'}
-                  stroke="#0c1424"
+                  stroke="#ffffff"
                   strokeWidth="2"
                 />
               )}
             </svg>
           </div>
 
-          <div className="flex items-center justify-between pt-2 border-t border-slate-800/60 text-[11px] font-mono text-slate-400">
+          <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 text-[11px] font-mono text-slate-600">
             <span>Historical window: Last 20 live ticks</span>
-            <span className="text-slate-300">
-              Condition: <strong className="text-teal-300">RPM Stable</strong>
+            <span className="text-slate-700">
+              Condition: <strong className="text-teal-800">RPM Stable</strong>
             </span>
           </div>
         </div>
 
         {/* GRAPH 2: Coolant Temperature */}
-        <div className="bg-[#0c1424] border border-slate-800/90 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-800/70">
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-200/70">
             <div className="flex items-center gap-2">
-              <Flame className="w-4 h-4 text-amber-400" />
-              <h3 className="text-sm font-bold text-white font-mono tracking-tight">
+              <Flame className="w-4 h-4 text-amber-700" />
+              <h3 className="text-sm font-bold text-slate-900 font-mono tracking-tight">
                 Coolant Temperature Over Time
               </h3>
             </div>
             <div className="flex items-center gap-2">
               <span
                 className={`text-xs font-mono font-bold ${
-                  isTempCritical ? 'text-rose-400' : isTempWarning ? 'text-amber-400' : 'text-white'
+                  isTempCritical ? 'text-rose-700' : isTempWarning ? 'text-amber-700' : 'text-slate-900'
                 }`}
               >
                 {coolantTemp.toFixed(1)} °C
@@ -575,9 +575,9 @@ export const OperatorLiveChartsOverview: React.FC<OperatorLiveChartsOverviewProp
           <div className="my-2">
             <svg viewBox={`0 0 ${chartW} ${chartH}`} className="w-full h-44 sm:h-48 overflow-visible">
               {/* Grid Lines */}
-              <line x1={padL} y1={padT} x2={chartW - padR} y2={padT} stroke="#1e293b" strokeDasharray="3 3" />
-              <line x1={padL} y1={padT + innerH / 2} x2={chartW - padR} y2={padT + innerH / 2} stroke="#1e293b" strokeDasharray="3 3" />
-              <line x1={padL} y1={padT + innerH} x2={chartW - padR} y2={padT + innerH} stroke="#334155" />
+              <line x1={padL} y1={padT} x2={chartW - padR} y2={padT} stroke="#cbd5e1" strokeDasharray="3 3" />
+              <line x1={padL} y1={padT + innerH / 2} x2={chartW - padR} y2={padT + innerH / 2} stroke="#cbd5e1" strokeDasharray="3 3" />
+              <line x1={padL} y1={padT + innerH} x2={chartW - padR} y2={padT + innerH} stroke="#94a3b8" />
 
               {/* Y Axis Labels */}
               <text x={padL - 6} y={padT + 4} textAnchor="end" fill="#64748b" fontSize="10" fontFamily="monospace">
@@ -629,34 +629,34 @@ export const OperatorLiveChartsOverview: React.FC<OperatorLiveChartsOverviewProp
                   cy={padT + innerH - ((tempData[tempData.length - 1] - minTemp) / tempRange) * innerH}
                   r="4.5"
                   fill={isTempCritical ? '#f43f5e' : isTempWarning ? '#f59e0b' : '#10b981'}
-                  stroke="#0c1424"
+                  stroke="#ffffff"
                   strokeWidth="2"
                 />
               )}
             </svg>
           </div>
 
-          <div className="flex items-center justify-between pt-2 border-t border-slate-800/60 text-[11px] font-mono text-slate-400">
+          <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 text-[11px] font-mono text-slate-600">
             <span>Optimal range: 20°C - 30°C</span>
-            <span className={isTempWarning ? 'text-amber-400 font-semibold' : 'text-emerald-400'}>
+            <span className={isTempWarning ? 'text-amber-700 font-semibold' : 'text-emerald-700'}>
               {isTempCritical ? 'Critical Thermal Spike' : isTempWarning ? 'Elevated Heat' : 'Thermal Nominal'}
             </span>
           </div>
         </div>
 
         {/* GRAPH 3: Motor Load */}
-        <div className="bg-[#0c1424] border border-slate-800/90 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-800/70">
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-200/70">
             <div className="flex items-center gap-2">
-              <Zap className="w-4 h-4 text-cyan-400" />
-              <h3 className="text-sm font-bold text-white font-mono tracking-tight">
+              <Zap className="w-4 h-4 text-cyan-700" />
+              <h3 className="text-sm font-bold text-slate-900 font-mono tracking-tight">
                 Motor Load (%)
               </h3>
             </div>
             <div className="flex items-center gap-2">
               <span
                 className={`text-xs font-mono font-bold ${
-                  isLoadCritical ? 'text-rose-400' : isLoadWarning ? 'text-amber-400' : 'text-white'
+                  isLoadCritical ? 'text-rose-700' : isLoadWarning ? 'text-amber-700' : 'text-slate-900'
                 }`}
               >
                 {motorLoad.toFixed(1)} %
@@ -677,9 +677,9 @@ export const OperatorLiveChartsOverview: React.FC<OperatorLiveChartsOverviewProp
           <div className="my-2">
             <svg viewBox={`0 0 ${chartW} ${chartH}`} className="w-full h-44 sm:h-48 overflow-visible">
               {/* Grid Lines */}
-              <line x1={padL} y1={padT} x2={chartW - padR} y2={padT} stroke="#1e293b" strokeDasharray="3 3" />
-              <line x1={padL} y1={padT + innerH / 2} x2={chartW - padR} y2={padT + innerH / 2} stroke="#1e293b" strokeDasharray="3 3" />
-              <line x1={padL} y1={padT + innerH} x2={chartW - padR} y2={padT + innerH} stroke="#334155" />
+              <line x1={padL} y1={padT} x2={chartW - padR} y2={padT} stroke="#cbd5e1" strokeDasharray="3 3" />
+              <line x1={padL} y1={padT + innerH / 2} x2={chartW - padR} y2={padT + innerH / 2} stroke="#cbd5e1" strokeDasharray="3 3" />
+              <line x1={padL} y1={padT + innerH} x2={chartW - padR} y2={padT + innerH} stroke="#94a3b8" />
 
               {/* Y Axis Labels */}
               <text x={padL - 6} y={padT + 4} textAnchor="end" fill="#64748b" fontSize="10" fontFamily="monospace">
@@ -731,35 +731,35 @@ export const OperatorLiveChartsOverview: React.FC<OperatorLiveChartsOverviewProp
                   cy={padT + innerH - (loadData[loadData.length - 1] / loadRange) * innerH}
                   r="4.5"
                   fill={isLoadCritical ? '#f43f5e' : isLoadWarning ? '#f59e0b' : '#38bdf8'}
-                  stroke="#0c1424"
+                  stroke="#ffffff"
                   strokeWidth="2"
                 />
               )}
             </svg>
           </div>
 
-          <div className="flex items-center justify-between pt-2 border-t border-slate-800/60 text-[11px] font-mono text-slate-400">
+          <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 text-[11px] font-mono text-slate-600">
             <span>Operating Envelope: 45% - 75%</span>
-            <span className={isLoadWarning ? 'text-amber-400 font-semibold' : 'text-cyan-300'}>
+            <span className={isLoadWarning ? 'text-amber-700 font-semibold' : 'text-cyan-800'}>
               {isLoadCritical ? 'Overload Interlock' : isLoadWarning ? 'High Cut Load' : 'Load Balanced'}
             </span>
           </div>
         </div>
 
         {/* GRAPH 4: Jobs Produced During Shift */}
-        <div className="bg-[#0c1424] border border-slate-800/90 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-800/70">
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-200/70">
             <div className="flex items-center gap-2">
-              <Layers className="w-4 h-4 text-purple-400" />
-              <h3 className="text-sm font-bold text-white font-mono tracking-tight">
+              <Layers className="w-4 h-4 text-purple-700" />
+              <h3 className="text-sm font-bold text-slate-900 font-mono tracking-tight">
                 Jobs Produced During Shift
               </h3>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-mono font-bold text-teal-300">
+              <span className="text-xs font-mono font-bold text-teal-800">
                 {jobsProduced} / {shiftTarget} pcs
               </span>
-              <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-teal-950 text-teal-300 border border-teal-800">
+              <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-teal-50 text-teal-800 border border-teal-200">
                 {targetPct}% Target
               </span>
             </div>
@@ -780,16 +780,16 @@ export const OperatorLiveChartsOverview: React.FC<OperatorLiveChartsOverviewProp
                   <div key={hr} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end">
                     {/* Value Pill on Top */}
                     {actual > 0 && (
-                      <span className="text-[10px] font-mono font-bold text-slate-300">
+                      <span className="text-[10px] font-mono font-bold text-slate-700">
                         {actual}
                       </span>
                     )}
 
                     {/* Bar Container */}
-                    <div className="w-full relative flex items-end justify-center h-32 bg-slate-900/60 rounded-lg overflow-hidden border border-slate-800/80">
+                    <div className="w-full relative flex items-end justify-center h-32 bg-slate-50 rounded-lg overflow-hidden border border-slate-200">
                       {/* Target marker line */}
                       <div
-                        className="absolute w-full border-t border-slate-700/80 border-dashed"
+                        className="absolute w-full border-t border-slate-200/80 border-dashed"
                         style={{ bottom: `${targetH}%` }}
                       />
 
@@ -800,7 +800,7 @@ export const OperatorLiveChartsOverview: React.FC<OperatorLiveChartsOverviewProp
                             ? 'bg-teal-500'
                             : actual > 0
                             ? 'bg-teal-600/80'
-                            : 'bg-slate-800'
+                            : 'bg-slate-100'
                         } ${isCurrent ? 'ring-2 ring-teal-400 shadow-md shadow-teal-500/20' : ''}`}
                         style={{ height: `${actualH}%` }}
                       />
@@ -809,7 +809,7 @@ export const OperatorLiveChartsOverview: React.FC<OperatorLiveChartsOverviewProp
                     {/* X-axis hour label */}
                     <span
                       className={`text-[10px] font-mono ${
-                        isCurrent ? 'text-teal-300 font-bold' : 'text-slate-400'
+                        isCurrent ? 'text-teal-800 font-bold' : 'text-slate-600'
                       }`}
                     >
                       {hr}
@@ -820,9 +820,9 @@ export const OperatorLiveChartsOverview: React.FC<OperatorLiveChartsOverviewProp
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-2 border-t border-slate-800/60 text-[11px] font-mono text-slate-400">
+          <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 text-[11px] font-mono text-slate-600">
             <span>Shift Target: 180 pcs total (22.5 pcs/hr)</span>
-            <span className="text-teal-300 font-semibold">
+            <span className="text-teal-800 font-semibold">
               Production Pace: {targetPct >= 70 ? 'On Target' : 'Pace Tracking'}
             </span>
           </div>

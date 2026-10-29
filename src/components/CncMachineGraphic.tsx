@@ -39,7 +39,7 @@ export const CncMachineGraphic: React.FC<CncMachineGraphicProps> = ({
   const statusGlow = isCritical ? 'rgba(239, 68, 68, 0.4)' : isWarning ? 'rgba(245, 158, 11, 0.4)' : 'rgba(16, 185, 129, 0.3)';
 
   return (
-    <div className="relative w-full rounded-xl bg-[#090e17] border border-slate-800/90 p-3 sm:p-3.5 overflow-hidden shadow-sm">
+    <div className="relative w-full rounded-xl bg-white border border-slate-200 p-3 sm:p-3.5 overflow-hidden shadow-sm">
       {/* Background Subtle Grid */}
       <div
         className="absolute inset-0 pointer-events-none opacity-10"
@@ -50,7 +50,7 @@ export const CncMachineGraphic: React.FC<CncMachineGraphicProps> = ({
       />
 
       {/* Header Info Strip */}
-      <div className="relative z-10 flex flex-wrap items-center justify-between gap-2 mb-2 pb-2 border-b border-slate-800/70">
+      <div className="relative z-10 flex flex-wrap items-center justify-between gap-2 mb-2 pb-2 border-b border-slate-200/70">
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5">
             <span
@@ -59,12 +59,12 @@ export const CncMachineGraphic: React.FC<CncMachineGraphicProps> = ({
                 backgroundColor: statusColor,
               }}
             />
-            <span className="font-mono text-xs uppercase tracking-wider font-semibold text-slate-100">
+            <span className="font-mono text-xs uppercase tracking-wider font-semibold text-slate-900">
               {machineCode}
             </span>
           </div>
           <span className="text-slate-600 font-mono text-xs">/</span>
-          <span className="text-xs text-slate-400 font-medium truncate max-w-[180px] sm:max-w-xs">
+          <span className="text-xs text-slate-600 font-medium truncate max-w-[180px] sm:max-w-xs">
             {machineName}
           </span>
         </div>
@@ -72,7 +72,7 @@ export const CncMachineGraphic: React.FC<CncMachineGraphicProps> = ({
         {/* Live Status Chip */}
         <div className="flex items-center gap-2">
           {activeAnomaly && (
-            <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-950/80 border border-amber-500 text-amber-300 animate-pulse">
+            <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-50 border border-amber-500 text-amber-800 animate-pulse">
               ANOMALY: {activeAnomaly}
             </span>
           )}
@@ -99,9 +99,9 @@ export const CncMachineGraphic: React.FC<CncMachineGraphicProps> = ({
           <defs>
             {/* Gradients */}
             <linearGradient id="gantryGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#1e293b" />
-              <stop offset="50%" stopColor="#0f172a" />
-              <stop offset="100%" stopColor="#090d16" />
+              <stop offset="0%" stopColor="#cbd5e1" />
+              <stop offset="50%" stopColor="#e2e8f0" />
+              <stop offset="100%" stopColor="#f1f5f9" />
             </linearGradient>
             <linearGradient id="spindleBodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
               <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.8" />
@@ -110,12 +110,12 @@ export const CncMachineGraphic: React.FC<CncMachineGraphicProps> = ({
             </linearGradient>
             <linearGradient id="toolSteelGrad" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stopColor="#94a3b8" />
-              <stop offset="50%" stopColor="#f8fafc" />
+              <stop offset="50%" stopColor="#cbd5e1" />
               <stop offset="100%" stopColor="#64748b" />
             </linearGradient>
             <linearGradient id="viseGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#334155" />
-              <stop offset="100%" stopColor="#1e293b" />
+              <stop offset="0%" stopColor="#cbd5e1" />
+              <stop offset="100%" stopColor="#cbd5e1" />
             </linearGradient>
             <linearGradient id="workpieceGrad" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="#a855f7" />
@@ -144,7 +144,7 @@ export const CncMachineGraphic: React.FC<CncMachineGraphicProps> = ({
             height="320"
             rx="16"
             fill="url(#gantryGrad)"
-            stroke="#334155"
+            stroke="#cbd5e1"
             strokeWidth="2"
           />
 
@@ -177,22 +177,22 @@ export const CncMachineGraphic: React.FC<CncMachineGraphicProps> = ({
             width="620"
             height="244"
             rx="10"
-            fill="#060911"
-            stroke="#1e293b"
+            fill="#f1f5f9"
+            stroke="#cbd5e1"
             strokeWidth="1.5"
           />
 
           {/* Chamber Depth Shadow */}
-          <rect x="72" y="90" width="616" height="20" fill="#000000" opacity="0.4" />
+          <rect x="72" y="90" width="616" height="20" fill="#64748b" opacity="0.4" />
 
           {/* Rear Ball Screw & Guide Columns (Dual Z-Axis Wayguides) */}
-          <rect x="230" y="98" width="16" height="210" fill="#1e293b" stroke="#334155" strokeWidth="1" />
-          <line x1="238" y1="102" x2="238" y2="304" stroke="#475569" strokeWidth="2" strokeDasharray="6 3" />
-          <rect x="514" y="98" width="16" height="210" fill="#1e293b" stroke="#334155" strokeWidth="1" />
-          <line x1="522" y1="102" x2="522" y2="304" stroke="#475569" strokeWidth="2" strokeDasharray="6 3" />
+          <rect x="230" y="98" width="16" height="210" fill="#cbd5e1" stroke="#cbd5e1" strokeWidth="1" />
+          <line x1="238" y1="102" x2="238" y2="304" stroke="#94a3b8" strokeWidth="2" strokeDasharray="6 3" />
+          <rect x="514" y="98" width="16" height="210" fill="#cbd5e1" stroke="#cbd5e1" strokeWidth="1" />
+          <line x1="522" y1="102" x2="522" y2="304" stroke="#94a3b8" strokeWidth="2" strokeDasharray="6 3" />
 
           {/* Horizontal X/Y Bridge Axis */}
-          <rect x="180" y="112" width="400" height="28" rx="4" fill="#1e293b" stroke="#475569" strokeWidth="1.5" />
+          <rect x="180" y="112" width="400" height="28" rx="4" fill="#cbd5e1" stroke="#94a3b8" strokeWidth="1.5" />
           <line x1="190" y1="126" x2="570" y2="126" stroke="#0ea5e9" strokeWidth="1.5" strokeDasharray="4 4" opacity="0.7" />
 
           {/* 3. Spindle Carriage & Motor Head */}
@@ -229,23 +229,23 @@ export const CncMachineGraphic: React.FC<CncMachineGraphicProps> = ({
             <line x1="416" y1="126" x2="416" y2="174" stroke="#0284c7" strokeWidth="2" />
 
             {/* Spindle Bearing Core */}
-            <rect x="355" y="182" width="50" height="24" rx="3" fill="#334155" stroke="#64748b" strokeWidth="1.5" />
+            <rect x="355" y="182" width="50" height="24" rx="3" fill="#cbd5e1" stroke="#64748b" strokeWidth="1.5" />
             <text x="380" y="198" textAnchor="middle" fill="#38bdf8" fontSize="9" fontFamily="ui-monospace, monospace" fontWeight="bold">
               {spindleRpm} RPM
             </text>
 
             {/* Toolholder Taper (HSK-63A) */}
-            <polygon points="364,206 396,206 390,224 370,224" fill="url(#toolSteelGrad)" stroke="#475569" strokeWidth="1" />
+            <polygon points="364,206 396,206 390,224 370,224" fill="url(#toolSteelGrad)" stroke="#94a3b8" strokeWidth="1" />
 
             {/* Clamping Collet Nut */}
-            <rect x="370" y="224" width="20" height="10" rx="1.5" fill="#1e293b" stroke="#94a3b8" strokeWidth="1" />
+            <rect x="370" y="224" width="20" height="10" rx="1.5" fill="#cbd5e1" stroke="#94a3b8" strokeWidth="1" />
 
             {/* Carbide Milling Cutter Shank & Flutes */}
-            <rect x="377" y="234" width="6" height="34" fill="url(#toolSteelGrad)" stroke="#334155" strokeWidth="0.8" />
+            <rect x="377" y="234" width="6" height="34" fill="url(#toolSteelGrad)" stroke="#cbd5e1" strokeWidth="0.8" />
             {/* Flute spiral cuts */}
-            <line x1="377" y1="242" x2="383" y2="246" stroke="#475569" strokeWidth="1.2" />
-            <line x1="377" y1="250" x2="383" y2="254" stroke="#475569" strokeWidth="1.2" />
-            <line x1="377" y1="258" x2="383" y2="262" stroke="#475569" strokeWidth="1.2" />
+            <line x1="377" y1="242" x2="383" y2="246" stroke="#94a3b8" strokeWidth="1.2" />
+            <line x1="377" y1="250" x2="383" y2="254" stroke="#94a3b8" strokeWidth="1.2" />
+            <line x1="377" y1="258" x2="383" y2="262" stroke="#94a3b8" strokeWidth="1.2" />
 
             {/* Rotating Cutter Tip Vibration & Spark Effects */}
             {isOperating && !reducedMotion && (
@@ -294,20 +294,20 @@ export const CncMachineGraphic: React.FC<CncMachineGraphicProps> = ({
 
           {/* 4. Machine Work Table, Rotary Platter & Workpiece Vise */}
           {/* Machine Cast Iron Table Base */}
-          <rect x="190" y="292" width="380" height="28" rx="4" fill="#1e293b" stroke="#475569" strokeWidth="1.5" />
+          <rect x="190" y="292" width="380" height="28" rx="4" fill="#cbd5e1" stroke="#94a3b8" strokeWidth="1.5" />
           {/* T-Slots */}
-          <line x1="205" y1="300" x2="555" y2="300" stroke="#0f172a" strokeWidth="2.5" />
-          <line x1="205" y1="308" x2="555" y2="308" stroke="#0f172a" strokeWidth="2.5" />
-          <line x1="205" y1="316" x2="555" y2="316" stroke="#0f172a" strokeWidth="2.5" />
+          <line x1="205" y1="300" x2="555" y2="300" stroke="#e2e8f0" strokeWidth="2.5" />
+          <line x1="205" y1="308" x2="555" y2="308" stroke="#e2e8f0" strokeWidth="2.5" />
+          <line x1="205" y1="316" x2="555" y2="316" stroke="#e2e8f0" strokeWidth="2.5" />
 
           {/* Rotary 5-Axis Table (A/C Trunnion Cradle) */}
-          <ellipse cx="380" cy="292" rx="95" ry="14" fill="#334155" stroke="#64748b" strokeWidth="1.5" />
-          <ellipse cx="380" cy="292" rx="75" ry="9" fill="#0f172a" stroke="#0284c7" strokeWidth="1" strokeDasharray="5 3" />
+          <ellipse cx="380" cy="292" rx="95" ry="14" fill="#cbd5e1" stroke="#64748b" strokeWidth="1.5" />
+          <ellipse cx="380" cy="292" rx="75" ry="9" fill="#e2e8f0" stroke="#0284c7" strokeWidth="1" strokeDasharray="5 3" />
 
           {/* Precision Clamping Vise */}
           <rect x="330" y="274" width="100" height="18" rx="3" fill="url(#viseGrad)" stroke="#64748b" strokeWidth="1" />
-          <rect x="324" y="270" width="12" height="22" rx="2" fill="#475569" stroke="#94a3b8" strokeWidth="1" />
-          <rect x="424" y="270" width="12" height="22" rx="2" fill="#475569" stroke="#94a3b8" strokeWidth="1" />
+          <rect x="324" y="270" width="12" height="22" rx="2" fill="#94a3b8" stroke="#94a3b8" strokeWidth="1" />
+          <rect x="424" y="270" width="12" height="22" rx="2" fill="#94a3b8" stroke="#94a3b8" strokeWidth="1" />
 
           {/* Active Workpiece (Aerospace Impeller Blisk) */}
           <rect
@@ -336,23 +336,23 @@ export const CncMachineGraphic: React.FC<CncMachineGraphicProps> = ({
           )}
 
           {/* 5. Tool Contact Point Spark Coordinates */}
-          <circle cx="380" cy="266" r="2.5" fill="#f8fafc" />
+          <circle cx="380" cy="266" r="2.5" fill="#475569" />
 
           {/* 6. Enclosure Safety Window Panels with Industrial Glare */}
           <rect x="74" y="92" width="298" height="236" fill="url(#glassReflection)" pointerEvents="none" />
           <rect x="388" y="92" width="298" height="236" fill="url(#glassReflection)" pointerEvents="none" />
-          <line x1="372" y1="88" x2="372" y2="332" stroke="#334155" strokeWidth="4" />
+          <line x1="372" y1="88" x2="372" y2="332" stroke="#cbd5e1" strokeWidth="4" />
 
           {/* Coordinate Readout HUD Overlay on Lower Right */}
           <g>
-            <rect x="520" y="248" width="160" height="74" rx="6" fill="#090e17" fillOpacity="0.88" stroke="#334155" strokeWidth="1" />
+            <rect x="520" y="248" width="160" height="74" rx="6" fill="#ffffff" fillOpacity="0.94" stroke="#cbd5e1" strokeWidth="1" />
             <text x="530" y="266" fill="#38bdf8" fontSize="10" fontFamily="ui-monospace, monospace" fontWeight="bold">
               AXIS TELEMETRY HUD
             </text>
-            <text x="530" y="282" fill="#94a3b8" fontSize="9" fontFamily="ui-monospace, monospace">
+            <text x="530" y="282" fill="#475569" fontSize="9" fontFamily="ui-monospace, monospace">
               X: +142.50 mm · Y: -84.20
             </text>
-            <text x="530" y="296" fill="#94a3b8" fontSize="9" fontFamily="ui-monospace, monospace">
+            <text x="530" y="296" fill="#475569" fontSize="9" fontFamily="ui-monospace, monospace">
               Z: -022.15 mm · FEED: {feedRateMmpm ?? 1200}
             </text>
             <text x="530" y="310" fill={(vibRms ?? 1.85) > 4.2 ? '#f59e0b' : '#10b981'} fontSize="9" fontFamily="ui-monospace, monospace" fontWeight="bold">
@@ -362,7 +362,7 @@ export const CncMachineGraphic: React.FC<CncMachineGraphicProps> = ({
 
           {/* Coolant & Power Gauge Overlay on Lower Left */}
           <g>
-            <rect x="80" y="248" width="150" height="74" rx="6" fill="#090e17" fillOpacity="0.88" stroke="#334155" strokeWidth="1" />
+            <rect x="80" y="248" width="150" height="74" rx="6" fill="#ffffff" fillOpacity="0.94" stroke="#cbd5e1" strokeWidth="1" />
             <text x="90" y="266" fill="#38bdf8" fontSize="10" fontFamily="ui-monospace, monospace" fontWeight="bold">
               VFD DRIVE TELEMETRY
             </text>
@@ -372,7 +372,7 @@ export const CncMachineGraphic: React.FC<CncMachineGraphicProps> = ({
             <text x="90" y="296" fill={(motorLoadPct ?? 62.4) > 90 ? '#ef4444' : '#f59e0b'} fontSize="9" fontFamily="ui-monospace, monospace">
               LOAD: {(motorLoadPct ?? 62.4).toFixed(1)}%
             </text>
-            <text x="90" y="310" fill="#94a3b8" fontSize="9" fontFamily="ui-monospace, monospace">
+            <text x="90" y="310" fill="#475569" fontSize="9" fontFamily="ui-monospace, monospace">
               COOLANT: {(coolantTempC ?? 24.5).toFixed(1)}°C
             </text>
           </g>

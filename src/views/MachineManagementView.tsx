@@ -104,7 +104,7 @@ export function MachineManagementView({ user, machines }: MachineManagementViewP
       const matchStatus =
         statusFilter === 'ALL' ||
         (statusFilter === 'RUNNING' && rec.operating_status === 'Nominal' && rec.is_active) ||
-        (statusFilter === 'IDLE' && (rec.operating_status === 'Idle' || rec.connection_status === 'WAITING')) ||
+        (statusFilter === 'IDLE' && (rec.operating_status === 'IDLE' || rec.operating_status === 'Idle' || rec.connection_status === 'WAITING')) ||
         (statusFilter === 'DOWN' && (rec.operating_status === 'STOPPED' || rec.operating_status === 'Critical')) ||
         (statusFilter === 'MAINTENANCE' && (rec.operating_status === 'MAINTENANCE' || rec.operating_status === 'Maintenance'));
 
@@ -166,11 +166,11 @@ export function MachineManagementView({ user, machines }: MachineManagementViewP
       {/* Top Header */}
       <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <span className="font-mono text-xs uppercase tracking-wider text-teal-400 font-semibold">
+          <span className="font-mono text-xs uppercase tracking-wider text-teal-700 font-semibold">
             Administration Console
           </span>
-          <h1 className="text-2xl font-bold text-slate-100 tracking-tight">Machine Management</h1>
-          <p className="mt-1 text-xs text-slate-400 max-w-2xl leading-relaxed">
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Machine Management</h1>
+          <p className="mt-1 text-xs text-slate-600 max-w-2xl leading-relaxed">
             Manage the synchronized machine catalog, active AI Simulator telemetry population, downtime tracking, and live SQL machine registrations.
           </p>
         </div>
@@ -179,7 +179,7 @@ export function MachineManagementView({ user, machines }: MachineManagementViewP
           <button
             onClick={refreshInventory}
             disabled={loading}
-            className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900/80 px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-800 transition-colors"
+            className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
             title="Refresh machine inventory"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
@@ -201,101 +201,101 @@ export function MachineManagementView({ user, machines }: MachineManagementViewP
       {/* Summary KPI Cards (Requirement 4) */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {/* 1. Total Registered */}
-        <div className="rounded-xl border border-slate-800 bg-[#0c1424] p-4">
-          <div className="flex items-center justify-between text-slate-400 text-xs">
+        <div className="rounded-xl border border-slate-200 bg-white p-4">
+          <div className="flex items-center justify-between text-slate-600 text-xs">
             <span>Total Registered</span>
-            <Cpu className="h-4 w-4 text-cyan-400" />
+            <Cpu className="h-4 w-4 text-cyan-700" />
           </div>
-          <div className="mt-2 text-2xl font-bold font-mono text-slate-100">
+          <div className="mt-2 text-2xl font-bold font-mono text-slate-900">
             {data?.total_registered ?? records.length}
           </div>
-          <p className="mt-1 text-[10px] text-slate-400">Canonical machine master</p>
+          <p className="mt-1 text-[10px] text-slate-600">Canonical machine master</p>
         </div>
 
         {/* 2. Active Machines (50 default, increments to 51) */}
-        <div className="rounded-xl border border-teal-800/80 bg-[#0c1c2e] p-4 shadow-sm">
-          <div className="flex items-center justify-between text-teal-300 text-xs">
+        <div className="rounded-xl border border-teal-200 bg-white p-4 shadow-sm">
+          <div className="flex items-center justify-between text-teal-800 text-xs">
             <span className="font-semibold">Active Machines</span>
-            <Radio className="h-4 w-4 text-teal-400 animate-pulse" />
+            <Radio className="h-4 w-4 text-teal-700 animate-pulse" />
           </div>
-          <div className="mt-2 text-2xl font-bold font-mono text-teal-300">
+          <div className="mt-2 text-2xl font-bold font-mono text-teal-800">
             {data?.active_machines ?? 50}
           </div>
-          <p className="mt-1 text-[10px] text-teal-400/80">Default 50 · Dynamic simulation</p>
+          <p className="mt-1 text-[10px] text-teal-700/80">Default 50 · Dynamic simulation</p>
         </div>
 
         {/* 3. Running Machines */}
-        <div className="rounded-xl border border-slate-800 bg-[#0c1424] p-4">
-          <div className="flex items-center justify-between text-slate-400 text-xs">
+        <div className="rounded-xl border border-slate-200 bg-white p-4">
+          <div className="flex items-center justify-between text-slate-600 text-xs">
             <span>Running</span>
-            <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+            <CheckCircle2 className="h-4 w-4 text-emerald-700" />
           </div>
-          <div className="mt-2 text-2xl font-bold font-mono text-emerald-400">
+          <div className="mt-2 text-2xl font-bold font-mono text-emerald-700">
             {data?.running_machines ?? 38}
           </div>
-          <p className="mt-1 text-[10px] text-slate-400">Nominal operating state</p>
+          <p className="mt-1 text-[10px] text-slate-600">Nominal operating state</p>
         </div>
 
         {/* 4. Idle Machines */}
-        <div className="rounded-xl border border-slate-800 bg-[#0c1424] p-4">
-          <div className="flex items-center justify-between text-slate-400 text-xs">
+        <div className="rounded-xl border border-slate-200 bg-white p-4">
+          <div className="flex items-center justify-between text-slate-600 text-xs">
             <span>Idle / Standby</span>
-            <Clock className="h-4 w-4 text-slate-400" />
+            <Clock className="h-4 w-4 text-slate-600" />
           </div>
-          <div className="mt-2 text-2xl font-bold font-mono text-slate-300">
+          <div className="mt-2 text-2xl font-bold font-mono text-slate-700">
             {data?.idle_machines ?? 7}
           </div>
-          <p className="mt-1 text-[10px] text-slate-400">Waiting for workpiece</p>
+          <p className="mt-1 text-[10px] text-slate-600">Waiting for workpiece</p>
         </div>
 
         {/* 5. Down Machines */}
-        <div className="rounded-xl border border-slate-800 bg-[#0c1424] p-4">
-          <div className="flex items-center justify-between text-slate-400 text-xs">
+        <div className="rounded-xl border border-slate-200 bg-white p-4">
+          <div className="flex items-center justify-between text-slate-600 text-xs">
             <span>Down Machines</span>
-            <AlertTriangle className="h-4 w-4 text-rose-400" />
+            <AlertTriangle className="h-4 w-4 text-rose-700" />
           </div>
-          <div className="mt-2 text-2xl font-bold font-mono text-rose-400">
+          <div className="mt-2 text-2xl font-bold font-mono text-rose-700">
             {data?.down_machines ?? 3}
           </div>
-          <p className="mt-1 text-[10px] text-slate-400">Stopped / Safety interlock</p>
+          <p className="mt-1 text-[10px] text-slate-600">Stopped / Safety interlock</p>
         </div>
 
         {/* 6. Under Maintenance */}
-        <div className="rounded-xl border border-slate-800 bg-[#0c1424] p-4">
-          <div className="flex items-center justify-between text-slate-400 text-xs">
+        <div className="rounded-xl border border-slate-200 bg-white p-4">
+          <div className="flex items-center justify-between text-slate-600 text-xs">
             <span>Maintenance</span>
-            <Wrench className="h-4 w-4 text-amber-400" />
+            <Wrench className="h-4 w-4 text-amber-700" />
           </div>
-          <div className="mt-2 text-2xl font-bold font-mono text-amber-300">
+          <div className="mt-2 text-2xl font-bold font-mono text-amber-800">
             {data?.maintenance_machines ?? 2}
           </div>
-          <p className="mt-1 text-[10px] text-slate-400">Tool inspection / repair</p>
+          <p className="mt-1 text-[10px] text-slate-600">Tool inspection / repair</p>
         </div>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="rounded-xl border border-slate-800 bg-[#0c1424] p-4 space-y-3">
+      <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
         <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
           {/* Search Input */}
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-600" />
             <input
               type="text"
               placeholder="Search by Machine ID (MCH-001), Code, Name, or Floor Location..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-lg border border-slate-700 bg-slate-950 pl-9 pr-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:border-teal-500 focus:outline-hidden"
+              className="w-full rounded-lg border border-slate-200 bg-slate-100 pl-9 pr-3 py-2 text-xs text-slate-900 placeholder-slate-500 focus:border-teal-500 focus:outline-hidden"
             />
           </div>
 
           {/* Active Status Filter Buttons */}
-          <div className="flex items-center rounded-lg border border-slate-700 bg-slate-950 p-1 text-xs">
+          <div className="flex items-center rounded-lg border border-slate-200 bg-slate-100 p-1 text-xs">
             <button
               onClick={() => setActiveFilter('ACTIVE')}
               className={`px-3 py-1 rounded-md font-medium transition-colors ${
                 activeFilter === 'ACTIVE'
-                  ? 'bg-teal-500/20 text-teal-300 border border-teal-500/40'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-teal-500/20 text-teal-800 border border-teal-500/40'
+                  : 'text-slate-600 hover:text-slate-800'
               }`}
             >
               Active Only ({data?.active_machines ?? 50})
@@ -304,8 +304,8 @@ export function MachineManagementView({ user, machines }: MachineManagementViewP
               onClick={() => setActiveFilter('INACTIVE')}
               className={`px-3 py-1 rounded-md font-medium transition-colors ${
                 activeFilter === 'INACTIVE'
-                  ? 'bg-teal-500/20 text-teal-300 border border-teal-500/40'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-teal-500/20 text-teal-800 border border-teal-500/40'
+                  : 'text-slate-600 hover:text-slate-800'
               }`}
             >
               Inactive
@@ -314,8 +314,8 @@ export function MachineManagementView({ user, machines }: MachineManagementViewP
               onClick={() => setActiveFilter('ALL')}
               className={`px-3 py-1 rounded-md font-medium transition-colors ${
                 activeFilter === 'ALL'
-                  ? 'bg-teal-500/20 text-teal-300 border border-teal-500/40'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-teal-500/20 text-teal-800 border border-teal-500/40'
+                  : 'text-slate-600 hover:text-slate-800'
               }`}
             >
               All Records
@@ -326,7 +326,7 @@ export function MachineManagementView({ user, machines }: MachineManagementViewP
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-200 focus:border-teal-500 focus:outline-hidden"
+            className="rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-xs text-slate-800 focus:border-teal-500 focus:outline-hidden"
           >
             <option value="ALL">All Operating States</option>
             <option value="RUNNING">Running / Nominal</option>
@@ -339,7 +339,7 @@ export function MachineManagementView({ user, machines }: MachineManagementViewP
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-200 focus:border-teal-500 focus:outline-hidden"
+            className="rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-xs text-slate-800 focus:border-teal-500 focus:outline-hidden"
           >
             <option value="ALL">All Machine Types</option>
             {uniqueTypes.map((t) => (
@@ -353,7 +353,7 @@ export function MachineManagementView({ user, machines }: MachineManagementViewP
           <select
             value={plantFilter}
             onChange={(e) => setPlantFilter(e.target.value)}
-            className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-200 focus:border-teal-500 focus:outline-hidden"
+            className="rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-xs text-slate-800 focus:border-teal-500 focus:outline-hidden"
           >
             <option value="ALL">All Plants</option>
             {uniquePlants.map((p) => (
@@ -366,10 +366,10 @@ export function MachineManagementView({ user, machines }: MachineManagementViewP
       </div>
 
       {/* Main Machine Table (Requirement 4) */}
-      <div className="overflow-hidden rounded-xl border border-slate-800 bg-[#0c1424] shadow-xs">
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs min-w-[980px]">
-            <thead className="bg-[#09101d] text-slate-400 uppercase tracking-wider font-mono text-[11px] border-b border-slate-800">
+            <thead className="bg-white text-slate-600 uppercase tracking-wider font-mono text-[11px] border-b border-slate-200">
               <tr>
                 <th className="py-3.5 px-4">Machine ID &amp; Code</th>
                 <th className="py-3.5 px-4">Machine Name</th>
@@ -386,13 +386,14 @@ export function MachineManagementView({ user, machines }: MachineManagementViewP
               {pageRecords.map((row) => {
                 const isDown = row.operating_status === 'STOPPED' || row.operating_status === 'Critical';
                 const isMaint = row.operating_status === 'MAINTENANCE' || row.operating_status === 'Maintenance';
+                const isIdle = row.operating_status === 'IDLE' || row.operating_status === 'Idle';
                 const isNominal = row.operating_status === 'Nominal' || row.operating_status === 'NORMAL';
 
                 return (
                   <tr
                     key={row.machine_id}
                     onClick={() => setSelectedMachineId(row.machine_id)}
-                    className="hover:bg-slate-800/40 transition-colors cursor-pointer group"
+                    className="hover:bg-slate-100/40 transition-colors cursor-pointer group"
                   >
                     {/* Machine ID & Code */}
                     <td className="py-3.5 px-4">
@@ -407,10 +408,10 @@ export function MachineManagementView({ user, machines }: MachineManagementViewP
                           }`}
                         />
                         <div>
-                          <strong className="block font-mono text-cyan-300 font-semibold group-hover:text-cyan-200">
+                          <strong className="block font-mono text-cyan-800 font-semibold group-hover:text-slate-700">
                             {row.machine_id}
                           </strong>
-                          <span className="block font-mono text-[11px] text-slate-400">
+                          <span className="block font-mono text-[11px] text-slate-600">
                             {row.machine_code}
                           </span>
                         </div>
@@ -419,22 +420,22 @@ export function MachineManagementView({ user, machines }: MachineManagementViewP
 
                     {/* Machine Name */}
                     <td className="py-3.5 px-4">
-                      <span className="font-semibold text-slate-200 max-w-[220px] block truncate">
+                      <span className="font-semibold text-slate-800 max-w-[220px] block truncate">
                         {row.name}
                       </span>
-                      <span className="text-[10px] text-slate-400">
+                      <span className="text-[10px] text-slate-600">
                         {row.manufacturer ? `${row.manufacturer} · ` : ''}{row.model}
                       </span>
                     </td>
 
                     {/* Department & Location */}
-                    <td className="py-3.5 px-4 text-slate-300">
+                    <td className="py-3.5 px-4 text-slate-700">
                       <span className="block truncate max-w-[200px]">{row.location}</span>
-                      <span className="text-[10px] text-slate-400">{row.production_line}</span>
+                      <span className="text-[10px] text-slate-600">{row.production_line}</span>
                     </td>
 
                     {/* Machine Type */}
-                    <td className="py-3.5 px-4 text-slate-300">
+                    <td className="py-3.5 px-4 text-slate-700">
                       <span className="truncate max-w-[160px] block">{row.machine_type}</span>
                     </td>
 
@@ -443,17 +444,19 @@ export function MachineManagementView({ user, machines }: MachineManagementViewP
                       <span
                         className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
                           isDown
-                            ? 'bg-rose-950/80 text-rose-300 border border-rose-800'
+                            ? 'bg-rose-50 text-rose-800 border border-rose-200'
                             : isMaint
-                            ? 'bg-amber-950/80 text-amber-300 border border-amber-800'
+                            ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                            : isIdle
+                            ? 'bg-slate-100 text-slate-700 border border-slate-200'
                             : isNominal
-                            ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-800'
-                            : 'bg-slate-800 text-slate-300 border border-slate-700'
+                            ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                            : 'bg-slate-100 text-slate-700 border border-slate-200'
                         }`}
                       >
                         <span
                           className={`h-1.5 w-1.5 rounded-full ${
-                            isDown ? 'bg-rose-400' : isMaint ? 'bg-amber-400' : 'bg-emerald-400'
+                            isDown ? 'bg-rose-400' : isMaint ? 'bg-amber-400' : isIdle ? 'bg-slate-400' : 'bg-emerald-400'
                           }`}
                         />
                         {row.operating_status}
@@ -462,20 +465,20 @@ export function MachineManagementView({ user, machines }: MachineManagementViewP
 
                     {/* Current Round Downtime */}
                     <td className="py-3.5 px-4 font-mono">
-                      <span className={row.current_round_downtime_seconds > 0 ? 'text-cyan-300 font-bold' : 'text-slate-400'}>
+                      <span className={row.current_round_downtime_seconds > 0 ? 'text-cyan-800 font-bold' : 'text-slate-600'}>
                         {formatDowntime(row.current_round_downtime_seconds)}
                       </span>
                     </td>
 
                     {/* Total Downtime */}
                     <td className="py-3.5 px-4 font-mono">
-                      <span className={row.total_downtime_seconds > 0 ? 'text-amber-300 font-medium' : 'text-slate-400'}>
+                      <span className={row.total_downtime_seconds > 0 ? 'text-amber-800 font-medium' : 'text-slate-600'}>
                         {formatDowntime(row.total_downtime_seconds)}
                       </span>
                     </td>
 
                     {/* Last Telemetry */}
-                    <td className="py-3.5 px-4 text-slate-400 text-[11px]">
+                    <td className="py-3.5 px-4 text-slate-600 text-[11px]">
                       {row.latest_timestamp ? new Date(row.latest_timestamp).toLocaleTimeString() : 'Live'}
                     </td>
 
@@ -484,7 +487,7 @@ export function MachineManagementView({ user, machines }: MachineManagementViewP
                       <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                         <button
                           onClick={() => setSelectedMachineId(row.machine_id)}
-                          className="rounded border border-slate-700 bg-slate-800/80 px-2.5 py-1 text-[11px] font-semibold text-teal-300 hover:bg-slate-700 hover:text-teal-200 transition-colors"
+                          className="rounded border border-slate-200 bg-slate-100/80 px-2.5 py-1 text-[11px] font-semibold text-teal-800 hover:bg-slate-200 hover:text-slate-700 transition-colors"
                         >
                           View Details
                         </button>
@@ -493,8 +496,8 @@ export function MachineManagementView({ user, machines }: MachineManagementViewP
                             onClick={(e) => handleToggleActivation(row.machine_id, row.is_active, e)}
                             className={`rounded border px-2 py-1 text-[10px] font-semibold transition-colors ${
                               row.is_active
-                                ? 'border-slate-700 text-slate-400 hover:text-amber-300 hover:border-amber-700'
-                                : 'border-teal-700 text-teal-300 hover:bg-teal-950/60'
+                                ? 'border-slate-200 text-slate-600 hover:text-amber-800 hover:border-slate-200'
+                                : 'border-slate-200 text-teal-800 hover:bg-teal-50'
                             }`}
                             title={row.is_active ? 'Deactivate from telemetry simulation' : 'Activate in telemetry simulation'}
                           >
@@ -509,7 +512,7 @@ export function MachineManagementView({ user, machines }: MachineManagementViewP
 
               {!pageRecords.length && (
                 <tr>
-                  <td colSpan={9} className="py-12 text-center text-slate-400 text-xs">
+                  <td colSpan={9} className="py-12 text-center text-slate-600 text-xs">
                     No machines match your active filters and search criteria.
                   </td>
                 </tr>
@@ -519,7 +522,7 @@ export function MachineManagementView({ user, machines }: MachineManagementViewP
         </div>
 
         {/* Pagination Footer */}
-        <div className="flex flex-col sm:flex-row items-center justify-between border-t border-slate-800/80 bg-[#09101d] px-4 py-3 text-xs text-slate-400 gap-3">
+        <div className="flex flex-col sm:flex-row items-center justify-between border-t border-slate-200 bg-white px-4 py-3 text-xs text-slate-600 gap-3">
           <span>
             Showing {filteredRecords.length ? page * pageSize + 1 : 0} to{' '}
             {Math.min((page + 1) * pageSize, filteredRecords.length)} of {filteredRecords.length} machines (
@@ -530,18 +533,18 @@ export function MachineManagementView({ user, machines }: MachineManagementViewP
             <button
               disabled={page === 0}
               onClick={() => setPage((p) => p - 1)}
-              className="flex items-center gap-1 rounded-lg border border-slate-700 px-3 py-1 text-xs text-slate-300 disabled:opacity-40 hover:bg-slate-800 transition-colors"
+              className="flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1 text-xs text-slate-700 disabled:opacity-40 hover:bg-slate-100 transition-colors"
             >
               <ChevronLeft className="h-3.5 w-3.5" />
               <span>Previous</span>
             </button>
-            <span className="px-2 font-mono text-slate-300">
+            <span className="px-2 font-mono text-slate-700">
               Page {page + 1} of {totalPages}
             </span>
             <button
               disabled={(page + 1) * pageSize >= filteredRecords.length}
               onClick={() => setPage((p) => p + 1)}
-              className="flex items-center gap-1 rounded-lg border border-slate-700 px-3 py-1 text-xs text-slate-300 disabled:opacity-40 hover:bg-slate-800 transition-colors"
+              className="flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1 text-xs text-slate-700 disabled:opacity-40 hover:bg-slate-100 transition-colors"
             >
               <span>Next</span>
               <ChevronRight className="h-3.5 w-3.5" />

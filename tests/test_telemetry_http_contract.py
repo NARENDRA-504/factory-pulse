@@ -70,6 +70,33 @@ class TelemetryHttpContractTests(unittest.TestCase):
                 json={**self.payload, "machine_status": "BROKEN"}, headers=self.headers)
             self.assertEqual(bad_status.status_code, 422)
 
+    def test_derived_motor_power_uses_its_canonical_kw_unit(self):
+        payload = {**self.payload, "sensor_name": "Motor Power", "sensor_unit": "kW",
+                   "sensor_value": 18.5, "expected_min": 2.1, "expected_max": 78.6}
+        with patch.object(api, "persist_simulator_reading", return_value=False):
+            response = self.client.post("/api/v1/telemetry", json=payload, headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        bad_unit = self.client.post("/api/v1/telemetry",
+            json={**payload, "sensor_unit": "A"}, headers=self.headers)
+        self.assertEqual(bad_unit.status_code, 422)
+
+    def test_simulator_motor_load_proxy_uses_percent_unit(self):
+        payload = {**self.payload, "sensor_name": "Motor Load", "sensor_unit": "%",
+                   "sensor_value": 62.5, "expected_min": 0, "expected_max": 100}
+        with patch.object(api, "persist_simulator_reading", return_value=False):
+            response = self.client.post("/api/v1/telemetry", json=payload, headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        bad_unit = self.client.post("/api/v1/telemetry",
+            json={**payload, "sensor_unit": "kW"}, headers=self.headers)
+        self.assertEqual(bad_unit.status_code, 422)
+
+    def test_paused_simulator_status_is_accepted(self):
+        payload = {**self.payload, "machine_status": "IDLE"}
+        with patch.object(api, "persist_simulator_reading", return_value=False):
+            response = self.client.post("/api/v1/telemetry", json=payload, headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json()["machine_id"], "MCH-001")
+
     def test_idempotent_retry_returns_success_without_a_second_write(self):
         with patch.object(api, "persist_simulator_reading", return_value=True):
             response = self.client.post("/api/v1/telemetry", json=self.payload, headers=self.headers)

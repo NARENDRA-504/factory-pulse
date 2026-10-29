@@ -33,15 +33,15 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   const getRoleBadge = (role: UserRole) => {
     switch (role) {
       case 'Operator':
-        return 'text-emerald-400 bg-emerald-950/80 border-emerald-800/80';
+        return 'text-emerald-700 bg-emerald-50 border-emerald-200';
       case 'Supervisor':
-        return 'text-teal-400 bg-teal-950/80 border-teal-800/80';
+        return 'text-teal-700 bg-teal-50 border-teal-200';
       case 'Manager':
-        return 'text-purple-400 bg-purple-950/80 border-purple-800/80';
+        return 'text-purple-700 bg-purple-50 border-purple-200';
       case 'Maintenance':
-        return 'text-amber-400 bg-amber-950/80 border-amber-800/80';
+        return 'text-amber-700 bg-amber-50 border-amber-200';
       case 'Admin':
-        return 'text-rose-400 bg-rose-950/80 border-rose-800/80';
+        return 'text-rose-700 bg-rose-50 border-rose-200';
     }
   };
 
@@ -90,26 +90,26 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   const grantedPermissions = permissionsList.filter((permission) => permission.allowed);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs animate-fadeIn">
-      <div className="relative w-full max-w-xl bg-[#0c1424] border border-slate-800 rounded-2xl shadow-2xl overflow-hidden font-sans">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-100/80 backdrop-blur-xs animate-fadeIn">
+      <div className="relative w-full max-w-xl bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden font-sans">
         {/* Header */}
-        <div className="px-6 py-4 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between">
+        <div className="px-6 py-4 bg-slate-50/90 border-b border-slate-200 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-300">
+            <div className="w-8 h-8 rounded-lg bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-800">
               <User className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white tracking-tight">
+              <h3 className="text-base font-bold text-slate-900 tracking-tight">
                 Personnel Profile &amp; RBAC Clearance
               </h3>
-              <p className="text-xs text-slate-400 font-mono">
+              <p className="text-xs text-slate-600 font-mono">
                 Badge Code: {user.workId} · ID #{user.id}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-1 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -117,16 +117,16 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
         {/* User Card Overview */}
         <div className="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
-          <div className="flex items-start justify-between gap-4 p-4 rounded-xl bg-slate-900/60 border border-slate-800">
+          <div className="flex items-start justify-between gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
             <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-lg text-teal-300 shrink-0">
+              <div className="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-lg text-teal-800 shrink-0">
                 {user.fullName.charAt(0)}
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-base text-white">{user.fullName}</span>
+                  <span className="font-bold text-base text-slate-900">{user.fullName}</span>
                   {isSelf && (
-                    <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-teal-950 text-teal-400 border border-teal-800">
+                    <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-teal-50 text-teal-700 border border-teal-200">
                       You
                     </span>
                   )}
@@ -139,7 +139,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                   >
                     {user.role}
                   </span>
-                  <span className="text-xs text-slate-400">
+                  <span className="text-xs text-slate-600">
                     {user.department || 'Floor Operations'}
                   </span>
                 </div>
@@ -147,10 +147,10 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             </div>
 
             <div className="text-right text-xs font-mono">
-              <span className="px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-800/80 text-[10px] font-semibold">
+              <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-semibold">
                 {user.status || 'Active & Authorized'}
               </span>
-              <span className="block text-slate-400 text-[11px] mt-1">
+              <span className="block text-slate-600 text-[11px] mt-1">
                 {user.shift || 'Shift A'}
               </span>
             </div>
@@ -158,20 +158,20 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
           {/* Contact & Machine Assignment Details */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono">
-            <div className="p-3 rounded-lg bg-slate-900/40 border border-slate-800/80">
-              <div className="flex items-center gap-1.5 text-slate-400 mb-1">
-                <Mail className="w-3.5 h-3.5 text-slate-400" />
+            <div className="p-3 rounded-lg bg-slate-50/40 border border-slate-200">
+              <div className="flex items-center gap-1.5 text-slate-600 mb-1">
+                <Mail className="w-3.5 h-3.5 text-slate-600" />
                 <span className="text-[10px] uppercase">Internal Email</span>
               </div>
-              <span className="text-slate-200 truncate block">{user.email}</span>
+              <span className="text-slate-800 truncate block">{user.email}</span>
             </div>
 
-            <div className="p-3 rounded-lg bg-slate-900/40 border border-slate-800/80">
-              <div className="flex items-center gap-1.5 text-slate-400 mb-1">
-                <Cpu className="w-3.5 h-3.5 text-slate-400" />
+            <div className="p-3 rounded-lg bg-slate-50/40 border border-slate-200">
+              <div className="flex items-center gap-1.5 text-slate-600 mb-1">
+                <Cpu className="w-3.5 h-3.5 text-slate-600" />
                 <span className="text-[10px] uppercase">Assigned Station</span>
               </div>
-              <span className="text-teal-300 font-semibold block">
+              <span className="text-teal-800 font-semibold block">
                 {user.assignedMachine || 'Plant-Wide Roaming'}
               </span>
             </div>
@@ -180,35 +180,35 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           {/* RBAC Permissions Matrix for this user */}
           <div className="space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-mono uppercase tracking-wider text-slate-400 font-semibold flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-teal-400" />
+              <span className="text-xs font-mono uppercase tracking-wider text-slate-600 font-semibold flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-teal-700" />
                 Allowed Permissions ({user.role})
               </span>
-              <span className="text-[11px] font-mono text-slate-400">
+              <span className="text-[11px] font-mono text-slate-600">
                 {grantedPermissions.length} available
               </span>
             </div>
 
-            <div className="rounded-xl border border-slate-800 overflow-hidden divide-y divide-slate-800/60 bg-slate-900/30 text-xs">
+            <div className="rounded-xl border border-slate-200 overflow-hidden divide-y divide-slate-800/60 bg-slate-50/30 text-xs">
               {grantedPermissions.map((perm) => (
                 <div
                   key={perm.name}
-                  className="p-2.5 flex items-center justify-between bg-slate-900/20 transition-colors"
+                  className="p-2.5 flex items-center justify-between bg-slate-50/20 transition-colors"
                 >
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
                     <div>
-                      <span className="font-medium text-white">
+                      <span className="font-medium text-slate-900">
                         {perm.name}
                       </span>
-                      <span className="block text-[11px] text-slate-400 font-mono">
+                      <span className="block text-[11px] text-slate-600 font-mono">
                         {perm.desc}
                       </span>
                     </div>
                   </div>
 
                   <span
-                    className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded text-teal-300 bg-teal-950/60 border border-teal-800/60"
+                    className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded text-teal-800 bg-teal-50 border border-teal-200"
                   >
                     ALLOWED
                   </span>
@@ -219,9 +219,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
         </div>
 
         {/* Modal Actions Footer */}
-        <div className="px-6 py-3.5 bg-slate-900/90 border-t border-slate-800 flex items-center justify-between gap-3">
-          <div className="text-[11px] font-mono text-slate-400 flex items-center gap-1">
-            <Clock className="w-3.5 h-3.5 text-slate-400" />
+        <div className="px-6 py-3.5 bg-slate-50/90 border-t border-slate-200 flex items-center justify-between gap-3">
+          <div className="text-[11px] font-mono text-slate-600 flex items-center gap-1">
+            <Clock className="w-3.5 h-3.5 text-slate-600" />
             <span>Authenticated employee session</span>
           </div>
 
@@ -233,7 +233,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                   onLogout();
                   onClose();
                 }}
-                className="px-3 py-1.5 rounded-lg bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-800 text-xs font-medium transition-all flex items-center gap-1.5"
+                className="px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-50 text-rose-800 border border-rose-200 text-xs font-medium transition-all flex items-center gap-1.5"
               >
                 <LogOut className="w-3.5 h-3.5" />
                 <span>Log Out</span>
@@ -243,7 +243,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition-colors"
+              className="px-3.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-medium transition-colors"
             >
               Close
             </button>

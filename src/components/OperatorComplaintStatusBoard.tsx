@@ -42,18 +42,18 @@ export const OperatorComplaintStatusBoard: React.FC<OperatorComplaintStatusBoard
   return (
     <div className="space-y-4">
       {/* 1. Quick Question & Answer Banner (Are there complaints in the past? What is the status?) */}
-      <div className="bg-[#0B111E] border border-slate-800/90 rounded-2xl p-4 sm:p-5 shadow-md">
+      <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-md">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-mono uppercase tracking-wider text-slate-400">
+              <span className="text-xs font-mono uppercase tracking-wider text-slate-600">
                 Machine Complaints History
               </span>
-              <span className="text-xs font-mono font-bold text-teal-300 px-2 py-0.5 rounded bg-teal-950/70 border border-teal-800/70">
+              <span className="text-xs font-mono font-bold text-teal-800 px-2 py-0.5 rounded bg-teal-50 border border-teal-200">
                 {machineCode}
               </span>
             </div>
-            <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight mt-1 flex items-center gap-2.5">
+            <h2 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight mt-1 flex items-center gap-2.5">
               <span>Past Machine Complaints &amp; Status</span>
             </h2>
           </div>
@@ -61,7 +61,7 @@ export const OperatorComplaintStatusBoard: React.FC<OperatorComplaintStatusBoard
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={onRaiseAlert}
-              className="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white font-bold font-mono text-xs flex items-center gap-2 shadow-md transition-colors"
+              className="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-slate-900 font-bold font-mono text-xs flex items-center gap-2 shadow-md transition-colors"
             >
               <PlusCircle className="w-4 h-4" />
               <span>Report New Machine Issue</span>
@@ -70,17 +70,17 @@ export const OperatorComplaintStatusBoard: React.FC<OperatorComplaintStatusBoard
         </div>
 
         {/* Big visual answer */}
-        <div className="mt-4 pt-4 border-t border-slate-800/80">
+        <div className="mt-4 pt-4 border-t border-slate-200">
           {!hasPastComplaints ? (
-            <div className="flex items-center gap-3.5 p-4 rounded-xl bg-emerald-950/40 border border-emerald-700/60 text-emerald-200">
-              <div className="p-2.5 rounded-lg bg-emerald-900/80 text-emerald-300">
+            <div className="flex items-center gap-3.5 p-4 rounded-xl bg-emerald-50 border border-slate-200 text-slate-700">
+              <div className="p-2.5 rounded-lg bg-emerald-50 text-emerald-800">
                 <CheckCircle2 className="w-6 h-6" />
               </div>
               <div>
-                <span className="text-base font-bold font-mono block text-white">
+                <span className="text-base font-bold font-mono block text-slate-900">
                   NO PAST COMPLAINTS RECORDED
                 </span>
-                <span className="text-xs font-mono text-emerald-300/90">
+                <span className="text-xs font-mono text-emerald-800/90">
                   This machine has zero complaints in system history. All components nominal.
                 </span>
               </div>
@@ -88,47 +88,47 @@ export const OperatorComplaintStatusBoard: React.FC<OperatorComplaintStatusBoard
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {/* Total Complaints in past */}
-              <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center justify-between">
+              <div className="p-3.5 rounded-xl bg-slate-50/90 border border-slate-200 flex items-center justify-between">
                 <div>
-                  <span className="text-[11px] font-mono text-slate-400 block uppercase">
+                  <span className="text-[11px] font-mono text-slate-600 block uppercase">
                     Past Complaints
                   </span>
-                  <span className="text-2xl font-bold font-mono text-white mt-0.5 block">
+                  <span className="text-2xl font-bold font-mono text-slate-900 mt-0.5 block">
                     {machineComplaints.length}
                   </span>
                 </div>
-                <div className="p-2.5 rounded-lg bg-slate-800 text-slate-300">
-                  <Wrench className="w-5 h-5 text-teal-400" />
+                <div className="p-2.5 rounded-lg bg-slate-100 text-slate-700">
+                  <Wrench className="w-5 h-5 text-teal-700" />
                 </div>
               </div>
 
               {/* Resolved / Fixed Status */}
-              <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center justify-between">
+              <div className="p-3.5 rounded-xl bg-slate-50/90 border border-slate-200 flex items-center justify-between">
                 <div>
-                  <span className="text-[11px] font-mono text-emerald-400 block uppercase font-medium">
+                  <span className="text-[11px] font-mono text-emerald-700 block uppercase font-medium">
                     Resolved / Closed
                   </span>
-                  <span className="text-2xl font-bold font-mono text-emerald-300 mt-0.5 block">
+                  <span className="text-2xl font-bold font-mono text-emerald-800 mt-0.5 block">
                     {resolvedComplaints.length}
                   </span>
                 </div>
-                <div className="p-2.5 rounded-lg bg-emerald-950 text-emerald-300 border border-emerald-800/80">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                <div className="p-2.5 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-700" />
                 </div>
               </div>
 
               {/* Open / Under Investigation Status */}
-              <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center justify-between">
+              <div className="p-3.5 rounded-xl bg-slate-50/90 border border-slate-200 flex items-center justify-between">
                 <div>
-                  <span className="text-[11px] font-mono text-amber-400 block uppercase font-medium">
+                  <span className="text-[11px] font-mono text-amber-700 block uppercase font-medium">
                     Still In Progress
                   </span>
-                  <span className="text-2xl font-bold font-mono text-amber-300 mt-0.5 block">
+                  <span className="text-2xl font-bold font-mono text-amber-800 mt-0.5 block">
                     {openComplaints.length}
                   </span>
                 </div>
-                <div className="p-2.5 rounded-lg bg-amber-950 text-amber-300 border border-amber-800/80">
-                  <Clock className="w-5 h-5 text-amber-400" />
+                <div className="p-2.5 rounded-lg bg-amber-50 text-amber-800 border border-amber-200">
+                  <Clock className="w-5 h-5 text-amber-700" />
                 </div>
               </div>
             </div>
@@ -137,25 +137,25 @@ export const OperatorComplaintStatusBoard: React.FC<OperatorComplaintStatusBoard
       </div>
 
       {/* 2. Simplified Complaints Cards (No long text, simple status cards) */}
-      <div className="bg-[#0c1424] border border-slate-800/80 rounded-2xl p-4 sm:p-5 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3.5 border-b border-slate-800/70 gap-2">
+      <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3.5 border-b border-slate-200/70 gap-2">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-bold text-white font-mono uppercase tracking-wider">
+            <h3 className="text-sm font-bold text-slate-900 font-mono uppercase tracking-wider">
               Complaints Status List
             </h3>
-            <span className="text-xs font-mono text-slate-400">
+            <span className="text-xs font-mono text-slate-600">
               ({filteredList.length} items)
             </span>
           </div>
 
           {/* Simple Filter Pills */}
-          <div className="flex items-center gap-1.5 bg-slate-900/90 border border-slate-800 p-1 rounded-xl text-xs font-mono">
+          <div className="flex items-center gap-1.5 bg-slate-50/90 border border-slate-200 p-1 rounded-xl text-xs font-mono">
             <button
               onClick={() => setFilterStatus('all')}
               className={`px-3 py-1 rounded-lg transition-colors font-medium ${
                 filterStatus === 'all'
-                  ? 'bg-teal-950 text-teal-300 border border-teal-800/80'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-teal-50 text-teal-800 border border-teal-200'
+                  : 'text-slate-600 hover:text-slate-800'
               }`}
             >
               All ({machineComplaints.length})
@@ -164,8 +164,8 @@ export const OperatorComplaintStatusBoard: React.FC<OperatorComplaintStatusBoard
               onClick={() => setFilterStatus('open')}
               className={`px-3 py-1 rounded-lg transition-colors font-medium ${
                 filterStatus === 'open'
-                  ? 'bg-amber-950 text-amber-300 border border-amber-800/80'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                  : 'text-slate-600 hover:text-slate-800'
               }`}
             >
               In Progress ({openComplaints.length})
@@ -174,8 +174,8 @@ export const OperatorComplaintStatusBoard: React.FC<OperatorComplaintStatusBoard
               onClick={() => setFilterStatus('resolved')}
               className={`px-3 py-1 rounded-lg transition-colors font-medium ${
                 filterStatus === 'resolved'
-                  ? 'bg-emerald-950 text-emerald-300 border border-emerald-800/80'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                  : 'text-slate-600 hover:text-slate-800'
               }`}
             >
               Resolved ({resolvedComplaints.length})
@@ -186,7 +186,7 @@ export const OperatorComplaintStatusBoard: React.FC<OperatorComplaintStatusBoard
         {/* Complaint Cards Grid */}
         <div className="mt-4">
           {filteredList.length === 0 ? (
-            <div className="py-8 text-center text-slate-400 font-mono text-xs">
+            <div className="py-8 text-center text-slate-600 font-mono text-xs">
               No complaints match the selected filter.
             </div>
           ) : (
@@ -205,22 +205,22 @@ export const OperatorComplaintStatusBoard: React.FC<OperatorComplaintStatusBoard
                   : 'OPEN';
 
                 const statusBadgeClass = isResolved
-                  ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
+                  ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                   : isInvestigating
-                  ? 'bg-teal-950 text-teal-300 border-teal-800'
+                  ? 'bg-teal-50 text-teal-800 border-teal-200'
                   : isActionRequired
-                  ? 'bg-amber-950 text-amber-300 border-amber-800'
-                  : 'bg-rose-950 text-rose-300 border-rose-800';
+                  ? 'bg-amber-50 text-amber-800 border-amber-200'
+                  : 'bg-rose-50 text-rose-800 border-rose-200';
 
                 return (
                   <div
                     key={inc.id}
                     onClick={() => onViewIncidentDetails?.(inc)}
-                    className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 hover:border-slate-700 transition-all cursor-pointer flex flex-col justify-between gap-2.5"
+                    className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 hover:border-slate-200 transition-all cursor-pointer flex flex-col justify-between gap-2.5"
                   >
                     {/* Top Row: Ticket Code & Big Status Pill */}
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-mono font-bold text-white tracking-wide">
+                      <span className="text-xs font-mono font-bold text-slate-900 tracking-wide">
                         {inc.incidentCode}
                       </span>
                       <span
@@ -232,16 +232,16 @@ export const OperatorComplaintStatusBoard: React.FC<OperatorComplaintStatusBoard
 
                     {/* Middle Row: Component Area & Severity */}
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-slate-200">
+                      <span className="text-xs font-semibold text-slate-800">
                         {inc.componentArea}
                       </span>
                       <span
                         className={`text-[10px] font-mono px-2 py-0.5 rounded ${
                           inc.severity === 'Critical'
-                            ? 'text-rose-400 bg-rose-950/60'
+                            ? 'text-rose-700 bg-rose-50'
                             : inc.severity === 'High'
-                            ? 'text-amber-400 bg-amber-950/60'
-                            : 'text-slate-400 bg-slate-800'
+                            ? 'text-amber-700 bg-amber-50'
+                            : 'text-slate-600 bg-slate-100'
                         }`}
                       >
                         {inc.severity} Priority
@@ -249,7 +249,7 @@ export const OperatorComplaintStatusBoard: React.FC<OperatorComplaintStatusBoard
                     </div>
 
                     {/* Bottom Row: Simple Assignee & Date (Concise, no paragraphs) */}
-                    <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 pt-2 border-t border-slate-800/60">
+                    <div className="flex items-center justify-between text-[11px] font-mono text-slate-600 pt-2 border-t border-slate-200/60">
                       <span>
                         {inc.assignedToName ? `Handled by: ${inc.assignedToName}` : 'Queue: Unassigned'}
                       </span>

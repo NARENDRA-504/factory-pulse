@@ -37,8 +37,8 @@ def register(app,api):
             if data.get(field):data[field]=api['_iso_utc'](data[field])
         data['correlated_vb_mm']=data.get('correlated_vb');data['correlated_ra_um']=data.get('correlated_ra')
         return data
-    def audit(c,user,request,event,incident_id):
-        api['_audit_insert'](c,employee_id=user['id'],employee_work_id=user['work_id'],employee_name=user['full_name'],role=user['role'],session_id=user.get('session_id'),request_id=getattr(request.state,'request_id',None),event_type=event,details=f'Incident {incident_id}')
+    def audit(c,user,request,event,resource_type,resource_id,changed_fields=None,details=None):
+        api['_audit_insert'](c,employee_id=user['id'],employee_work_id=user['work_id'],employee_name=user['full_name'],role=user['role'],session_id=user.get('session_id'),request_id=getattr(request.state,'request_id',None),request=request,event_type=event,resource_type=resource_type,resource_id=str(resource_id),changed_fields=changed_fields,details=details or f'{resource_type.replace("_", " ").title()} {resource_id}')
 
     @app.get('/api/v1/incidents')
     def listing(user=Depends(api['get_current_user'])):
@@ -74,7 +74,7 @@ def register(app,api):
             params=payload.model_dump();params.update(reporter=user['id'],code='INC-'+uuid.uuid4().hex[:20].upper(),snapshot=json.dumps([r.model_dump(mode='json') for r in snapshot]))
             result=c.execute(sql("""INSERT INTO incidents (incident_code,machine_code,reporter_id,severity,symptom_description,operator_notes,component_area,data_provenance,status,sensor_snapshot)
               VALUES (:code,:machine_code,:reporter,:severity,:symptom_description,:operator_notes,:component_area,'SIMULATED','Open',:snapshot)"""),params)
-            id=result.lastrowid;audit(c,user,request,'incident_created',id);return fetch(c,id,user)
+            id=result.lastrowid;audit(c,user,request,'incident_created','incident',id,['severity','symptom_description','component_area','operator_notes','sensor_snapshot']);return fetch(c,id,user)
 
     @app.patch('/api/v1/incidents/{incident_id}/assign')
     def assign(incident_id:int,payload:Assignment,request:Request,user=Depends(api['require_roles'](['Supervisor']))):
@@ -85,9 +85,13 @@ def register(app,api):
             if len(tech)!=1:raise HTTPException(422,'Choose one active maintenance employee')
             c.execute(sql("UPDATE incidents SET assigned_to_id=:tech,status='In_Investigation' WHERE id=:id"),{'tech':tech[0],'id':incident_id})
             c.execute(sql("UPDATE maintenance_work_orders SET technician_id=:tech WHERE incident_id=:id AND status<>'Completed'"),{'tech':tech[0],'id':incident_id})
-            if not c.execute(sql("SELECT id FROM maintenance_work_orders WHERE incident_id=:id AND status<>'Completed'"),{'id':incident_id}).first():
-                c.execute(sql("INSERT INTO maintenance_work_orders(order_code,incident_id,machine_code,technician_id,priority,status) VALUES(:code,:id,:machine,:tech,:priority,'Pending')"),{'code':'WO-'+uuid.uuid4().hex[:20].upper(),'id':incident_id,'machine':row['machine_code'],'tech':tech[0],'priority':'Urgent' if row['severity'] in ('High','Critical') else 'Medium'})
-            audit(c,user,request,'incident_assigned',incident_id);return fetch(c,incident_id,user)
+            orders=c.execute(sql("SELECT id FROM maintenance_work_orders WHERE incident_id=:id AND status<>'Completed'"),{'id':incident_id}).scalars().all()
+            if not orders:
+                created=c.execute(sql("INSERT INTO maintenance_work_orders(order_code,incident_id,machine_code,technician_id,priority,status) VALUES(:code,:id,:machine,:tech,:priority,'Pending')"),{'code':'WO-'+uuid.uuid4().hex[:20].upper(),'id':incident_id,'machine':row['machine_code'],'tech':tech[0],'priority':'Urgent' if row['severity'] in ('High','Critical') else 'Medium'})
+                orders=[created.lastrowid]
+            audit(c,user,request,'incident_assigned','incident',incident_id,['assigned_to_id','status'])
+            for order_id in orders:audit(c,user,request,'work_order_assigned','work_order',order_id,['technician_id'])
+            return fetch(c,incident_id,user)
 
     @app.patch('/api/v1/incidents/{incident_id}/progress')
     def progress(incident_id:int,payload:Progress,request:Request,user=Depends(api['require_roles'](['Maintenance']))):
@@ -95,8 +99,12 @@ def register(app,api):
             c.execute(sql('SELECT id FROM incidents WHERE id=:id FOR UPDATE'),{'id':incident_id});row=fetch(c,incident_id,user)
             if row['assigned_to_id']!=user['id']:raise HTTPException(403,'Only the assigned technician may log progress')
             if row['status']=='Closed':raise HTTPException(409,'Incident already closed')
+            orders=c.execute(sql("SELECT id FROM maintenance_work_orders WHERE incident_id=:id AND status<>'Completed'"),{'id':incident_id}).scalars().all()
             c.execute(sql("UPDATE maintenance_work_orders SET action_taken=CONCAT(COALESCE(action_taken,''),:note),status='In_Progress' WHERE incident_id=:id AND status<>'Completed'"),{'note':'\n'+payload.progress_notes,'id':incident_id})
-            c.execute(sql("UPDATE incidents SET status='Action_Required' WHERE id=:id"),{'id':incident_id});audit(c,user,request,'incident_progress_updated',incident_id);return fetch(c,incident_id,user)
+            c.execute(sql("UPDATE incidents SET status='Action_Required' WHERE id=:id"),{'id':incident_id})
+            audit(c,user,request,'incident_progress_updated','incident',incident_id,['status'])
+            for order_id in orders:audit(c,user,request,'work_order_progress_updated','work_order',order_id,['action_taken','status'])
+            return fetch(c,incident_id,user)
 
     @app.patch('/api/v1/incidents/{incident_id}/close')
     def close(incident_id:int,payload:Closure,request:Request,user=Depends(api['require_roles'](['Supervisor','Maintenance']))):
@@ -105,8 +113,11 @@ def register(app,api):
             if row['status']=='Closed':raise HTTPException(409,'Incident already closed')
             if user['role']=='Maintenance' and row['assigned_to_id']!=user['id']:raise HTTPException(403,'Only the assigned technician may close this incident')
             c.execute(sql("UPDATE incidents SET status='Closed',closed_at=UTC_TIMESTAMP(),closed_by_id=:user,closure_notes=:notes WHERE id=:id"),{'id':incident_id,'user':user['id'],'notes':payload.closure_notes})
+            orders=c.execute(sql("SELECT id FROM maintenance_work_orders WHERE incident_id=:id AND status<>'Completed'"),{'id':incident_id}).scalars().all()
             c.execute(sql("UPDATE maintenance_work_orders SET status='Completed',completed_at=UTC_TIMESTAMP() WHERE incident_id=:id AND status<>'Completed'"),{'id':incident_id})
-            audit(c,user,request,'incident_closed',incident_id);return fetch(c,incident_id,user)
+            audit(c,user,request,'incident_closed','incident',incident_id,['status','closed_at','closed_by_id','closure_notes'])
+            for order_id in orders:audit(c,user,request,'work_order_completed','work_order',order_id,['status','completed_at'])
+            return fetch(c,incident_id,user)
 
     @app.get('/api/v1/work-orders')
     def orders(user=Depends(api['require_roles'](['Admin','Supervisor','Maintenance','Manager']))):
@@ -124,7 +135,7 @@ def register(app,api):
             if user['role']=='Maintenance' and row['technician_id']!=user['id']:raise HTTPException(403,'Only the assigned technician may update this order')
             if row['status']=='Completed' and payload.status=='Completed':raise HTTPException(409,'Work order already completed')
             c.execute(sql("UPDATE maintenance_work_orders SET status=:status,completed_at=IF(:status='Completed',UTC_TIMESTAMP(),NULL) WHERE id=:id"),{'status':payload.status,'id':order_id})
-            audit(c,user,request,'work_order_updated',row['incident_id'])
+            audit(c,user,request,'work_order_updated','work_order',order_id,['status','completed_at'])
         return {'saved':True}
 
     @app.post('/api/v1/work-orders', status_code=201)
@@ -145,9 +156,11 @@ def register(app,api):
                                        VALUES (:c, :m, :r, :s, :desc, 'General Maintenance', 'SIMULATED', 'In_Investigation')"""),
                                 {'c': code, 'm': machine_code, 'r': user['id'], 's': 'Medium', 'desc': notes or 'Scheduled maintenance dispatch'})
                 inc_id = res.lastrowid
+                audit(c,user,request,'incident_created','incident',inc_id,['severity','symptom_description','component_area'],f'Created maintenance incident for {machine_code}')
             wo_code = 'WO-' + uuid.uuid4().hex[:16].upper()
-            c.execute(sql("""INSERT INTO maintenance_work_orders (order_code, incident_id, machine_code, technician_id, priority, action_taken, status)
+            result=c.execute(sql("""INSERT INTO maintenance_work_orders (order_code, incident_id, machine_code, technician_id, priority, action_taken, status)
                              VALUES (:wo, :inc, :m, :t, :p, :notes, 'Pending')"""),
                       {'wo': wo_code, 'inc': inc_id, 'm': machine_code, 't': tech, 'p': priority, 'notes': notes})
-            audit(c, user, request, 'work_order_created', inc_id)
-        return {'order_code': wo_code, 'machine_code': machine_code, 'status': 'Pending'}
+            order_id=result.lastrowid
+            audit(c, user, request, 'work_order_created','work_order',order_id,['incident_id','machine_code','technician_id','priority','action_taken','status'])
+        return {'id': order_id, 'order_code': wo_code, 'machine_code': machine_code, 'status': 'Pending'}

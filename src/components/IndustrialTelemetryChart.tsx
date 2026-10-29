@@ -40,7 +40,7 @@ export const IndustrialTelemetryChart: React.FC<IndustrialTelemetryChartProps> =
 
   if (!data || data.length === 0) {
     return (
-      <div className="w-full bg-[#0c1424] border border-slate-800/80 rounded-xl p-5 flex flex-col items-center justify-center min-h-[200px] text-slate-500 font-mono text-xs">
+      <div className="w-full bg-white border border-slate-200 rounded-xl p-5 flex flex-col items-center justify-center min-h-[200px] text-slate-500 font-mono text-xs">
         <span>No telemetry data available for active time window</span>
       </div>
     );
@@ -108,20 +108,20 @@ export const IndustrialTelemetryChart: React.FC<IndustrialTelemetryChartProps> =
   const safeGradientId = `grad-${(title || 'telemetry-chart').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
 
   return (
-    <div className="w-full bg-[#0c1424] border border-slate-800/80 rounded-xl p-3 sm:p-4 relative shadow-xs flex flex-col justify-between">
+    <div className="w-full bg-white border border-slate-200 rounded-xl p-3 sm:p-4 relative shadow-xs flex flex-col justify-between">
       {/* Chart Title Header */}
       <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
         <div>
           <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-xs sm:text-sm text-slate-100 tracking-tight">{title || 'Telemetry Stream'}</h3>
-            <span className="text-[10px] font-mono text-cyan-400 font-bold">[{unit || 'units'}]</span>
+            <h3 className="font-semibold text-xs sm:text-sm text-slate-900 tracking-tight">{title || 'Telemetry Stream'}</h3>
+            <span className="text-[10px] font-mono text-cyan-700 font-bold">[{unit || 'units'}]</span>
           </div>
-          {subtitle && <p className="text-[11px] text-slate-400 mt-0.5">{subtitle}</p>}
+          {subtitle && <p className="text-[11px] text-slate-600 mt-0.5">{subtitle}</p>}
         </div>
 
         <div className="flex items-center gap-2">
           {provisionalBaseline !== undefined && (
-            <span className="hidden sm:inline-flex text-[9px] font-mono text-amber-400/90 bg-amber-950/40 border border-amber-900 px-1.5 py-0.5 rounded">
+            <span className="hidden sm:inline-flex text-[9px] font-mono text-amber-700/90 bg-amber-50 border border-slate-200 px-1.5 py-0.5 rounded">
               P95 Baseline: {provisionalBaseline} {unit}
             </span>
           )}
@@ -149,7 +149,7 @@ export const IndustrialTelemetryChart: React.FC<IndustrialTelemetryChartProps> =
             const val = maxY - ratio * rangeY;
             return (
               <g key={ratio}>
-                <line x1={paddingLeft} y1={y} x2={svgWidth - paddingRight} y2={y} stroke="#1e293b" strokeWidth="1" strokeDasharray="3 3" />
+                <line x1={paddingLeft} y1={y} x2={svgWidth - paddingRight} y2={y} stroke="#cbd5e1" strokeWidth="1" strokeDasharray="3 3" />
                 <text x={paddingLeft - 6} y={y + 3.5} textAnchor="end" fill="#64748b" fontSize="9" fontFamily="ui-monospace, monospace">
                   {val >= 1000 ? (val / 1000).toFixed(1) + 'k' : val.toFixed(1)}
                 </text>
@@ -211,7 +211,7 @@ export const IndustrialTelemetryChart: React.FC<IndustrialTelemetryChartProps> =
                 cy={p.y}
                 r={hoverIndex === idx ? 5 : 2.5}
                 fill={hoverIndex === idx ? '#ffffff' : theme.stroke}
-                stroke="#0f172a"
+                stroke="#ffffff"
                 strokeWidth="1.5"
                 className="transition-all"
               />
@@ -250,7 +250,7 @@ export const IndustrialTelemetryChart: React.FC<IndustrialTelemetryChartProps> =
           )}
 
           {/* Bottom X-Axis line */}
-          <line x1={paddingLeft} y1={paddingTop + plotHeight} x2={svgWidth - paddingRight} y2={paddingTop + plotHeight} stroke="#334155" strokeWidth="1" />
+          <line x1={paddingLeft} y1={paddingTop + plotHeight} x2={svgWidth - paddingRight} y2={paddingTop + plotHeight} stroke="#94a3b8" strokeWidth="1" />
 
           {/* X-Axis labels (First, Middle, Last) */}
           {points.length > 0 && (
@@ -273,19 +273,19 @@ export const IndustrialTelemetryChart: React.FC<IndustrialTelemetryChartProps> =
         {/* Floating Tooltip Card */}
         {activePoint && (
           <div
-            className="absolute z-20 pointer-events-none bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded-lg shadow-xl text-left text-xs font-mono text-slate-200"
+            className="absolute z-20 pointer-events-none bg-slate-50 border border-slate-200 px-2.5 py-1.5 rounded-lg shadow-xl text-left text-xs font-mono text-slate-800"
             style={{
               left: `${(activePoint.x / svgWidth) * 100}%`,
               top: `${Math.max(10, (activePoint.y / svgHeight) * 100 - 30)}%`,
               transform: 'translate(-50%, -100%)',
             }}
           >
-            <div className="text-[10px] text-slate-400">{String(activePoint.raw.x)}</div>
-            <div className="font-bold text-white text-sm">
-              {activePoint.raw.y.toFixed(2)} <span className="text-cyan-400 text-xs font-normal">{unit}</span>
+            <div className="text-[10px] text-slate-600">{String(activePoint.raw.x)}</div>
+            <div className="font-bold text-slate-900 text-sm">
+              {activePoint.raw.y.toFixed(2)} <span className="text-cyan-700 text-xs font-normal">{unit}</span>
             </div>
             {activePoint.raw.label && (
-              <div className="text-[10px] text-slate-400 mt-0.5">{activePoint.raw.label}</div>
+              <div className="text-[10px] text-slate-600 mt-0.5">{activePoint.raw.label}</div>
             )}
           </div>
         )}

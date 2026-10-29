@@ -295,7 +295,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <div className="flex flex-wrap items-center gap-2.5">
             <button
               onClick={() => setIsAddUserModalOpen(true)}
-              className="px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors"
+              className="px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-slate-900 text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors"
             >
               <UserPlus className="w-4 h-4" />
               <span>Add Personnel</span>
@@ -824,7 +824,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           onClick={() => setSelectedUserFilter(isSelected ? 'ALL' : user.fullName)}
                           className={`flex-1 py-1 rounded-lg text-xs font-semibold transition-colors border text-center ${
                             isSelected
-                              ? 'bg-teal-600 text-white border-teal-600'
+                              ? 'bg-teal-600 text-slate-900 border-teal-600'
                               : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200'
                           }`}
                         >
@@ -869,13 +869,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <div className="flex flex-wrap items-center gap-2 text-xs">
                 {/* Search Input */}
                 <div className="relative min-w-[180px]">
-                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                  <Search className="w-3.5 h-3.5 text-slate-600 absolute left-2.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     placeholder="Search ticket, machine..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-3 py-1.5 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-hidden focus:border-teal-500 text-xs"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-3 py-1.5 text-slate-900 placeholder:text-slate-600 focus:bg-white focus:outline-hidden focus:border-teal-500 text-xs"
                   />
                 </div>
 
@@ -1124,7 +1124,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
             {/* Search Box */}
             <div className="relative">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+              <Search className="w-3.5 h-3.5 text-slate-600 absolute left-2.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 placeholder="Search ID, model, maker..."
@@ -1133,7 +1133,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   setFleetSearch(e.target.value);
                   setFleetLimit(30);
                 }}
-                className="bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-3 py-1.5 text-slate-900 placeholder:text-slate-400 text-xs focus:bg-white focus:outline-hidden focus:border-teal-500 w-48 sm:w-60"
+                className="bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-3 py-1.5 text-slate-900 placeholder:text-slate-600 text-xs focus:bg-white focus:outline-hidden focus:border-teal-500 w-48 sm:w-60"
               />
             </div>
           </div>
@@ -1234,7 +1234,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       {/* 4. Incident Detail Modal */}
       {selectedIncidentDetail && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-slate-50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl p-6 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
@@ -1245,7 +1245,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </div>
               <button
                 onClick={() => setSelectedIncidentDetail(null)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                className="p-1 rounded-lg text-slate-600 hover:text-slate-600 hover:bg-slate-100"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1332,7 +1332,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   setSelectedIncidentDetail(null);
                   onNavigate('incidents');
                 }}
-                className="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold transition-colors"
+                className="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-slate-900 text-xs font-semibold transition-colors"
               >
                 Open in Full Incidents Tracker &rarr;
               </button>
@@ -1343,7 +1343,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       {/* 5. Add Personnel Modal */}
       {isAddUserModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-slate-50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-lg shadow-2xl p-6 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
@@ -1354,7 +1354,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </div>
               <button
                 onClick={() => setIsAddUserModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                className="p-1 rounded-lg text-slate-600 hover:text-slate-600 hover:bg-slate-100"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1375,7 +1375,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   placeholder="e.g. Liam Zhang"
                   value={newUserName}
                   onChange={(e) => setNewUserName(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-hidden focus:border-teal-500"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 placeholder:text-slate-600 focus:bg-white focus:outline-hidden focus:border-teal-500"
                 />
               </div>
 
@@ -1388,7 +1388,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     placeholder="e.g. OP-109"
                     value={newUserWorkId}
                     onChange={(e) => setNewUserWorkId(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-hidden focus:border-teal-500"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 placeholder:text-slate-600 focus:bg-white focus:outline-hidden focus:border-teal-500"
                   />
                 </div>
                 <div>
@@ -1444,7 +1444,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   placeholder="e.g. CNC Precision Milling Cell"
                   value={newUserDepartment}
                   onChange={(e) => setNewUserDepartment(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-hidden focus:border-teal-500"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 placeholder:text-slate-600 focus:bg-white focus:outline-hidden focus:border-teal-500"
                 />
               </div>
 
@@ -1463,7 +1463,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold shadow-xs transition-colors"
+                  className="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-slate-900 font-semibold shadow-xs transition-colors"
                 >
                   Save &amp; Enroll
                 </button>

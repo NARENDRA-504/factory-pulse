@@ -87,13 +87,13 @@ export const TopBar: React.FC<TopBarProps> = ({
   const info = getBreadcrumb();
 
   return (
-    <header className="sticky top-0 z-30 bg-[#0c1424]/95 backdrop-blur-md border-b border-slate-800/90 shadow-sm px-4 sm:px-6 lg:px-8 py-3.5">
+    <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm px-4 sm:px-6 lg:px-8 py-3.5">
       <div className="flex items-center justify-between gap-4">
         {/* Left: Hamburger (mobile) + Breadcrumbs + Page Title */}
         <div className="flex items-center gap-3 min-w-0">
           <button
             onClick={onOpenMobileSidebar}
-            className="lg:hidden p-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800 transition-colors shrink-0"
+            className="lg:hidden p-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-colors shrink-0"
             aria-label="Open Navigation Menu"
           >
             <Menu className="w-5 h-5" />
@@ -101,19 +101,19 @@ export const TopBar: React.FC<TopBarProps> = ({
 
           <div className="flex flex-col min-w-0">
             {/* Breadcrumb Context */}
-            <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
+            <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium">
               <span>Factory Floor</span>
               <ChevronRight className="w-3.5 h-3.5 text-slate-600 shrink-0" />
               <span>{info.parent}</span>
               <ChevronRight className="w-3.5 h-3.5 text-slate-600 shrink-0" />
-              <span className="text-teal-300 font-semibold truncate">{info.current}</span>
+              <span className="text-teal-800 font-semibold truncate">{info.current}</span>
             </div>
 
             <div className="flex items-center gap-2 mt-0.5">
-              <h1 className="font-display font-bold text-base sm:text-lg text-slate-100 tracking-tight truncate">
+              <h1 className="font-display font-bold text-base sm:text-lg text-slate-900 tracking-tight truncate">
                 {info.current}
               </h1>
-              <span className="hidden md:inline-block text-xs text-slate-400 font-normal truncate">
+              <span className="hidden md:inline-block text-xs text-slate-600 font-normal truncate">
                 — {info.subtitle}
               </span>
             </div>
@@ -126,10 +126,10 @@ export const TopBar: React.FC<TopBarProps> = ({
           {onRefreshData && (
             <button
               onClick={onRefreshData}
-              className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-200 hover:text-white hover:bg-slate-800 shadow-xs text-xs font-medium flex items-center gap-1.5 transition-colors"
+              className="px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-800 hover:text-slate-900 hover:bg-slate-100 shadow-xs text-xs font-medium flex items-center gap-1.5 transition-colors"
               title="Refresh platform data"
             >
-              <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
+              <RotateCcw className="w-3.5 h-3.5 text-slate-600" />
               <span className="hidden sm:inline">Refresh</span>
             </button>
           )}
@@ -138,9 +138,9 @@ export const TopBar: React.FC<TopBarProps> = ({
           {onRaiseAlert && (
             <button
               onClick={onRaiseAlert}
-              className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white flex items-center gap-1.5 shadow-xs transition-all tracking-wide"
+              className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-slate-900 flex items-center gap-1.5 shadow-xs transition-all tracking-wide"
             >
-              <AlertTriangle className="w-3.5 h-3.5 text-white" />
+              <AlertTriangle className="w-3.5 h-3.5 text-slate-900" />
               <span>Report Problem</span>
             </button>
           )}
@@ -149,13 +149,13 @@ export const TopBar: React.FC<TopBarProps> = ({
           {onOpenNotifications && (
             <button
               onClick={onOpenNotifications}
-              className="relative p-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 hover:text-white hover:bg-slate-800 shadow-xs transition-colors"
+              className="relative p-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 hover:text-slate-900 hover:bg-slate-100 shadow-xs transition-colors"
               title="Open Notifications & Alerts"
               aria-label="Open Notifications"
             >
-              <Bell className="w-4 h-4 text-slate-300" />
+              <Bell className="w-4 h-4 text-slate-700" />
               {(unreadNotificationsCount ?? 0) > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-600 text-white font-bold text-[10px] flex items-center justify-center animate-pulse shadow-xs">
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-600 text-slate-900 font-bold text-[10px] flex items-center justify-center animate-pulse shadow-xs">
                   {unreadNotificationsCount}
                 </span>
               )}
@@ -166,13 +166,13 @@ export const TopBar: React.FC<TopBarProps> = ({
           <button
             type="button"
             onClick={onOpenProfile}
-            className="flex items-center gap-2 pl-2 sm:border-l border-slate-700 hover:opacity-85 transition-opacity"
+            className="flex items-center gap-2 pl-2 sm:border-l border-slate-200 hover:opacity-85 transition-opacity"
             title="View User Profile & Permissions"
           >
-            <span className="text-xs text-slate-300 font-medium hidden md:inline">
+            <span className="text-xs text-slate-700 font-medium hidden md:inline">
               {currentUser.workId}
             </span>
-            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-800 text-slate-200 border border-slate-700">
+            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-800 border border-slate-200">
               {currentUser.role}
             </span>
           </button>

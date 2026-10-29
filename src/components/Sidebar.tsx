@@ -42,15 +42,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const getRoleBadgeColor = (role: UserRole) => {
     switch (role) {
       case 'Operator':
-        return 'text-emerald-400 bg-emerald-950/70 border-emerald-800/80';
+        return 'text-emerald-800 bg-emerald-50 border-emerald-200';
       case 'Supervisor':
-        return 'text-teal-400 bg-teal-950/70 border-teal-800/80';
+        return 'text-teal-800 bg-teal-50 border-teal-200';
       case 'Manager':
-        return 'text-purple-400 bg-purple-950/70 border-purple-800/80';
+        return 'text-purple-800 bg-purple-50 border-purple-200';
       case 'Maintenance':
-        return 'text-amber-400 bg-amber-950/70 border-amber-800/80';
+        return 'text-amber-800 bg-amber-50 border-amber-200';
       case 'Admin':
-        return 'text-rose-400 bg-rose-950/70 border-rose-800/80';
+        return 'text-rose-800 bg-rose-50 border-rose-200';
     }
   };
 
@@ -66,34 +66,34 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Mobile Backdrop */}
       {isOpenMobile && (
         <div
-          className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs z-40 lg:hidden"
+          className="fixed inset-0 bg-slate-400/25 backdrop-blur-xs z-40 lg:hidden"
           onClick={onCloseMobile}
         />
       )}
 
-      {/* Deep Navy Industrial Sidebar */}
+      {/* Light FactoryPulse sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#070d18] border-r border-slate-800/90 flex flex-col justify-between transition-transform duration-200 ease-in-out lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 flex flex-col justify-between transition-transform duration-200 ease-in-out lg:translate-x-0 ${
           isOpenMobile ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         {/* Top Header & Brand */}
         <div className="flex flex-col">
-          <div className="h-16 px-4 border-b border-slate-800/80 flex items-center justify-between">
+          <div className="h-16 px-4 border-b border-slate-200 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center text-white font-black text-xs tracking-wider shadow-md shadow-teal-950/50">
                 FP
               </div>
               <div className="flex flex-col">
                 <div className="flex items-center gap-1.5">
-                  <span className="font-display font-bold text-sm text-slate-100 tracking-tight">
+                  <span className="font-display font-bold text-sm text-slate-900 tracking-tight">
                     FactoryPulse
                   </span>
-                  <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-teal-950/80 border border-teal-800/60 text-teal-400 font-semibold">
+                  <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-teal-50 border border-teal-200 text-teal-800 font-semibold">
                     v2.6
                   </span>
                 </div>
-                <span className="text-[11px] font-mono text-slate-400 tracking-tight">
+                  <span className="text-[11px] font-mono text-slate-600 tracking-tight">
                   ZIRO Machining Cell
                 </span>
               </div>
@@ -101,21 +101,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             <button
               onClick={onCloseMobile}
-              className="lg:hidden p-1.5 rounded-md text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              className="lg:hidden p-1.5 rounded-md text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
-          <div className="mx-3 my-3 rounded-lg border border-cyan-900/70 bg-[#0b1322] px-3 py-2">
-            <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Telemetry source</div>
-            <div className="mt-1 text-xs font-medium text-cyan-300">AI Simulator → FactoryPulse MySQL</div>
+          <div className="mx-3 my-3 rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-2">
+            <div className="text-[10px] font-mono uppercase tracking-wider text-slate-600">Telemetry source</div>
+            <div className="mt-1 text-xs font-medium text-cyan-800">AI Simulator → FactoryPulse MySQL</div>
           </div>
 
           {/* Navigation Links Grouped */}
           <div className="px-3 space-y-5">
             {/* Group 1: Operations */}
             <div>
-              <span className="px-3 text-[10px] font-mono uppercase tracking-wider text-slate-400 font-semibold block mb-1.5">
+              <span className="px-3 text-[10px] font-mono uppercase tracking-wider text-slate-600 font-semibold block mb-1.5">
                 Operations
               </span>
               <nav className="space-y-1">
@@ -124,22 +124,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                     currentScreen === 'dashboard'
                       ? currentUser.role === 'Admin'
-                        ? 'bg-rose-500/15 text-rose-300 border border-rose-500/30 shadow-xs'
-                        : 'bg-teal-500/10 text-teal-300 border border-teal-500/30 shadow-xs'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+                        ? 'bg-rose-500/15 text-rose-800 border border-rose-500/30 shadow-xs'
+                        : 'bg-teal-500/10 text-teal-800 border border-teal-500/30 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
                     {currentUser.role === 'Admin' ? (
                       <ShieldCheck
                         className={`w-4 h-4 ${
-                          currentScreen === 'dashboard' ? 'text-rose-400' : 'text-slate-400'
+                          currentScreen === 'dashboard' ? 'text-slate-700' : 'text-slate-600'
                         }`}
                       />
                     ) : (
                       <Activity
                         className={`w-4 h-4 ${
-                          currentScreen === 'dashboard' ? 'text-teal-400' : 'text-slate-400'
+                          currentScreen === 'dashboard' ? 'text-slate-700' : 'text-slate-600'
                         }`}
                       />
                     )}
@@ -154,14 +154,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onClick={() => handleNavClick('machines')}
                   className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                     currentScreen === 'machines'
-                      ? 'bg-teal-500/10 text-teal-300 border border-teal-500/30 shadow-xs'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+                      ? 'bg-teal-500/10 text-teal-800 border border-teal-500/30 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
                     <Cpu
                       className={`w-4 h-4 ${
-                        currentScreen === 'machines' ? 'text-teal-400' : 'text-slate-400'
+                        currentScreen === 'machines' ? 'text-slate-700' : 'text-slate-600'
                       }`}
                     />
                     <span>Machine Condition</span>
@@ -175,20 +175,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onClick={() => handleNavClick('incidents')}
                   className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                     currentScreen === 'incidents'
-                      ? 'bg-teal-500/10 text-teal-300 border border-teal-500/30 shadow-xs'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+                      ? 'bg-teal-500/10 text-teal-800 border border-teal-500/30 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
                     <AlertTriangle
                       className={`w-4 h-4 ${
-                        currentScreen === 'incidents' ? 'text-amber-400' : 'text-slate-400'
+                        currentScreen === 'incidents' ? 'text-slate-700' : 'text-slate-600'
                       }`}
                     />
                     <span>Incidents &amp; Issues</span>
                   </div>
                   {activeIncidentsCount > 0 ? (
-                    <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold bg-amber-950/80 text-amber-400 border border-amber-700/60">
+                    <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold bg-amber-50 text-amber-800 border border-amber-200">
                       {activeIncidentsCount}
                     </span>
                   ) : currentScreen === 'incidents' ? (
@@ -201,14 +201,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     onClick={() => handleNavClick('maintenance')}
                     className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                       currentScreen === 'maintenance'
-                        ? 'bg-amber-500/10 text-amber-300 border border-amber-500/30 shadow-xs'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+                        ? 'bg-amber-500/10 text-amber-800 border border-amber-500/30 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
                       <Wrench
                         className={`w-4 h-4 ${
-                          currentScreen === 'maintenance' ? 'text-amber-400' : 'text-slate-400'
+                          currentScreen === 'maintenance' ? 'text-slate-700' : 'text-slate-600'
                         }`}
                       />
                       <span>Maintenance Orders</span>
@@ -224,7 +224,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {/* Group 2: Intelligence & Maintenance (Hidden for Operator role per RBAC) */}
             {!isOperator && (
               <div>
-                <span className="px-3 text-[10px] font-mono uppercase tracking-wider text-slate-400 font-semibold block mb-1.5">
+                <span className="px-3 text-[10px] font-mono uppercase tracking-wider text-slate-600 font-semibold block mb-1.5">
                   Intelligence &amp; Governance
                 </span>
                 <nav className="space-y-1">
@@ -232,14 +232,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     onClick={() => handleNavClick('analytics')}
                     className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                       currentScreen === 'analytics'
-                        ? 'bg-teal-500/10 text-teal-300 border border-teal-500/30 shadow-xs'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+                        ? 'bg-teal-500/10 text-teal-800 border border-teal-500/30 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
                       <BarChart3
                         className={`w-4 h-4 ${
-                          currentScreen === 'analytics' ? 'text-teal-400' : 'text-slate-400'
+                          currentScreen === 'analytics' ? 'text-slate-700' : 'text-slate-600'
                         }`}
                       />
                       <span>Analytics &amp; Maintenance</span>
@@ -255,12 +255,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       onClick={() => handleNavClick('inventory')}
                       className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                         currentScreen === 'inventory'
-                          ? 'bg-teal-500/10 text-teal-300 border border-teal-500/30 shadow-xs'
-                          : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+                          ? 'bg-teal-500/10 text-teal-800 border border-teal-500/30 shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                       }`}
                     >
                       <div className="flex items-center gap-2.5">
-                        <Cpu className={`w-4 h-4 ${currentScreen === 'inventory' ? 'text-teal-400' : 'text-slate-400'}`} />
+                        <Cpu className={`w-4 h-4 ${currentScreen === 'inventory' ? 'text-slate-700' : 'text-slate-600'}`} />
                         <span>Machine Management</span>
                       </div>
                       {currentScreen === 'inventory' && (
@@ -271,14 +271,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       onClick={() => handleNavClick('users')}
                       className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                         currentScreen === 'users'
-                          ? 'bg-rose-500/10 text-rose-300 border border-rose-500/30 shadow-xs'
-                          : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+                          ? 'bg-rose-500/10 text-rose-800 border border-rose-500/30 shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                       }`}
                     >
                       <div className="flex items-center gap-2.5">
                         <Users
                           className={`w-4 h-4 ${
-                            currentScreen === 'users' ? 'text-rose-400' : 'text-slate-400'
+                            currentScreen === 'users' ? 'text-slate-700' : 'text-slate-600'
                           }`}
                         />
                         <span>Personnel &amp; RBAC</span>
@@ -289,9 +289,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     </button>
                     <button
                       onClick={() => handleNavClick('activity')}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${currentScreen === 'activity' ? 'bg-rose-500/10 text-rose-300 border border-rose-500/30 shadow-xs' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'}`}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${currentScreen === 'activity' ? 'bg-rose-500/10 text-rose-800 border border-rose-500/30 shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
                     >
-                      <span className="flex items-center gap-2.5"><ClipboardList className="w-4 h-4 text-slate-400"/><span>Activity Log</span></span>
+                      <span className="flex items-center gap-2.5"><ClipboardList className="w-4 h-4 text-slate-600"/><span>Activity Log</span></span>
                       {currentScreen === 'activity' && <span className="w-1.5 h-1.5 rounded-full bg-rose-400"/>}
                     </button>
                     </>
@@ -303,41 +303,41 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Bottom Section: Quick Health Info & User Profile Switcher */}
-        <div className="p-3 border-t border-slate-800/80 space-y-3">
+        <div className="p-3 border-t border-slate-200 space-y-3">
           {/* Project data boundaries */}
-          <div className="p-2.5 rounded-lg bg-[#0b1322] border border-slate-800/80 text-[11px] font-mono space-y-1 text-slate-400">
+          <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-[11px] font-mono space-y-1 text-slate-600">
             <div className="flex items-center justify-between">
-              <span className="text-slate-400">Dashboard readings</span>
-              <span className="text-teal-300 font-semibold">Simulator → MySQL</span>
+              <span className="text-slate-600">Dashboard readings</span>
+              <span className="text-teal-700 font-semibold">Simulator → MySQL</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-slate-400">MySQL history</span>
-              <span className="text-teal-300 font-medium">API configured</span>
+              <span className="text-slate-600">MySQL history</span>
+              <span className="text-teal-700 font-medium">API configured</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-slate-400">Power BI report</span>
-              <span className="text-slate-300 font-medium">Not included</span>
+              <span className="text-slate-600">Power BI report</span>
+              <span className="text-slate-700 font-medium">Not included</span>
             </div>
           </div>
 
           {/* Authenticated user profile */}
           <div>
-            <div className="p-2 rounded-lg bg-slate-900/90 border border-slate-800 flex items-center justify-between">
+            <div className="p-2 rounded-lg bg-white border border-slate-200 flex items-center justify-between">
               <button
                 type="button"
                 onClick={() => onOpenProfile?.()}
                 className="flex items-center gap-2.5 overflow-hidden text-left hover:opacity-90 transition-opacity flex-1 min-w-0"
                 title="View Personnel Profile & Permissions"
               >
-                <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-xs text-teal-300 shrink-0">
+                <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-700 flex items-center justify-center font-bold text-xs text-teal-800 shrink-0">
                   {currentUser.fullName.charAt(0)}
                 </div>
                 <div className="flex flex-col min-w-0">
-                  <span className="text-xs font-semibold text-slate-200 truncate">
+                  <span className="text-xs font-semibold text-slate-800 truncate">
                     {currentUser.fullName}
                   </span>
                   <div className="flex items-center gap-1">
-                    <span className="text-[10px] font-mono text-slate-400">
+                    <span className="text-[10px] font-mono text-slate-600">
                       {currentUser.workId}
                     </span>
                     <span
@@ -354,7 +354,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div className="flex items-center gap-1">
                 <button
                   onClick={onLogout}
-                  className="p-1 rounded text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition-colors"
+                  className="p-1 rounded text-slate-500 hover:text-slate-700 hover:bg-slate-50 transition-colors"
                   title="Logout"
                 >
                   <LogOut className="w-4 h-4" />

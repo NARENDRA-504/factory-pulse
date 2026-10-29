@@ -104,30 +104,30 @@ export const RaiseAlertModal: React.FC<RaiseAlertModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-400/20 backdrop-blur-xs animate-in fade-in duration-150"
       role="dialog"
       aria-modal="true"
       aria-labelledby="alert-modal-title"
     >
-      <div className="relative w-full max-w-lg bg-[#0c121e] border border-slate-700 rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="relative w-full max-w-lg bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800 bg-slate-900/80">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 bg-slate-50">
           <div className="flex items-center gap-2.5">
-            <div className="p-1.5 rounded-lg bg-amber-950/80 border border-amber-700/60 text-amber-400">
+            <div className="p-1.5 rounded-lg bg-amber-50 border border-slate-200 text-amber-700">
               <AlertTriangle className="w-4 h-4" />
             </div>
             <div>
-              <h2 id="alert-modal-title" className="text-sm sm:text-base font-semibold text-white tracking-tight">
+              <h2 id="alert-modal-title" className="text-sm sm:text-base font-semibold text-slate-900 tracking-tight">
                 Raise Machine Alert
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-600">
                 Immediately notifies Maintenance Department and Shift Supervisor
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
             aria-label="Close dialog"
           >
             <X className="w-4 h-4" />
@@ -137,22 +137,22 @@ export const RaiseAlertModal: React.FC<RaiseAlertModalProps> = ({
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-5 space-y-4 overflow-y-auto">
           {errorMessage && (
-            <div className="p-3 bg-rose-950/60 border border-rose-800 rounded-lg text-rose-200 text-xs font-mono">
+            <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg text-slate-700 text-xs font-mono">
               {errorMessage}
             </div>
           )}
 
           {/* Machine (Read-only for operator) */}
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1">
+            <label className="block text-xs font-medium text-slate-700 mb-1">
               Assigned Machine
             </label>
-            <div className="flex items-center justify-between p-2.5 bg-slate-900/90 border border-slate-800 rounded-lg">
+            <div className="flex items-center justify-between p-2.5 bg-slate-50/90 border border-slate-200 rounded-lg">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-mono font-bold text-cyan-300">
+                <span className="text-xs font-mono font-bold text-cyan-800">
                   {machine?.code || 'CNC-MILL-01'}
                 </span>
-                <span className="text-xs text-slate-400">
+                <span className="text-xs text-slate-600">
                   · {machine?.name || 'CNC Milling Center'}
                 </span>
               </div>
@@ -164,8 +164,8 @@ export const RaiseAlertModal: React.FC<RaiseAlertModalProps> = ({
 
           {/* Issue Category (Required) */}
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1.5">
-              Issue Category <span className="text-amber-400">*</span>
+            <label className="block text-xs font-medium text-slate-700 mb-1.5">
+              Issue Category <span className="text-amber-700">*</span>
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {CATEGORIES.map((cat) => {
@@ -183,12 +183,12 @@ export const RaiseAlertModal: React.FC<RaiseAlertModalProps> = ({
                     }}
                     className={`p-2.5 rounded-lg border text-left transition-colors flex flex-col justify-between ${
                       isSelected
-                        ? 'bg-amber-950/40 border-amber-600/80 text-amber-200'
-                        : 'bg-slate-900/60 border-slate-800 text-slate-300 hover:border-slate-700 hover:text-white'
+                        ? 'bg-amber-50 border-amber-600/80 text-slate-700'
+                        : 'bg-slate-50 border-slate-200 text-slate-700 hover:border-slate-200 hover:text-slate-900'
                     }`}
                   >
                     <span className="text-xs font-medium leading-tight">{cat.label}</span>
-                    <span className="text-[10px] text-slate-400 mt-1 leading-normal">
+                    <span className="text-[10px] text-slate-600 mt-1 leading-normal">
                       {cat.description}
                     </span>
                   </button>
@@ -199,7 +199,7 @@ export const RaiseAlertModal: React.FC<RaiseAlertModalProps> = ({
 
           {/* Severity Selection */}
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1.5">
+            <label className="block text-xs font-medium text-slate-700 mb-1.5">
               Urgency / Severity Level
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -212,10 +212,10 @@ export const RaiseAlertModal: React.FC<RaiseAlertModalProps> = ({
                   Critical: 'Critical (Stop)',
                 };
                 const colorMap: Record<IncidentSeverity, string> = {
-                  Low: isSelected ? 'bg-slate-800 border-slate-600 text-slate-200' : 'bg-slate-900/60 border-slate-800 text-slate-400',
-                  Medium: isSelected ? 'bg-amber-950/60 border-amber-500 text-amber-200 font-semibold' : 'bg-slate-900/60 border-slate-800 text-slate-400',
-                  High: isSelected ? 'bg-orange-950/70 border-orange-500 text-orange-200 font-semibold' : 'bg-slate-900/60 border-slate-800 text-slate-400',
-                  Critical: isSelected ? 'bg-rose-950/70 border-rose-500 text-rose-200 font-semibold' : 'bg-slate-900/60 border-slate-800 text-slate-400',
+                  Low: isSelected ? 'bg-slate-100 border-slate-600 text-slate-800' : 'bg-slate-50 border-slate-200 text-slate-600',
+                  Medium: isSelected ? 'bg-amber-50 border-amber-500 text-slate-700 font-semibold' : 'bg-slate-50 border-slate-200 text-slate-600',
+                  High: isSelected ? 'bg-orange-50 border-orange-500 text-slate-700 font-semibold' : 'bg-slate-50 border-slate-200 text-slate-600',
+                  Critical: isSelected ? 'bg-rose-50 border-rose-500 text-slate-700 font-semibold' : 'bg-slate-50 border-slate-200 text-slate-600',
                 };
                 return (
                   <button
@@ -233,7 +233,7 @@ export const RaiseAlertModal: React.FC<RaiseAlertModalProps> = ({
 
           {/* Operator Observation Notes */}
           <div>
-            <label htmlFor="operator-notes" className="block text-xs font-medium text-slate-300 mb-1">
+            <label htmlFor="operator-notes" className="block text-xs font-medium text-slate-700 mb-1">
               Observation Details &amp; Notes
             </label>
             <textarea
@@ -242,24 +242,24 @@ export const RaiseAlertModal: React.FC<RaiseAlertModalProps> = ({
               value={operatorNotes}
               onChange={(e) => setOperatorNotes(e.target.value)}
               placeholder="Describe sounds, smell, tool chatter, or specific workpiece pass..."
-              className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition-colors"
+              className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs text-slate-800 placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition-colors"
             />
           </div>
 
           {/* Immediate Action Checkbox */}
-          <div className="p-3 bg-slate-900/60 border border-slate-800 rounded-lg">
+          <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
             <label className="flex items-start gap-2.5 cursor-pointer">
               <input
                 type="checkbox"
                 checked={isMachineStopped}
                 onChange={(e) => setIsMachineStopped(e.target.checked)}
-                className="mt-0.5 rounded border-slate-700 text-amber-500 focus:ring-0 bg-slate-950"
+                className="mt-0.5 rounded border-slate-200 text-amber-500 focus:ring-0 bg-slate-100"
               />
               <div>
-                <span className="text-xs font-medium text-slate-200 block">
+                <span className="text-xs font-medium text-slate-800 block">
                   Machine has been stopped / paused
                 </span>
-                <span className="text-[11px] text-slate-400 block mt-0.5">
+                <span className="text-[11px] text-slate-600 block mt-0.5">
                   Feed hold or safety enclosure interlock engaged to prevent workpiece damage.
                 </span>
               </div>
@@ -267,19 +267,19 @@ export const RaiseAlertModal: React.FC<RaiseAlertModalProps> = ({
           </div>
 
           {/* Footer Actions */}
-          <div className="pt-2 flex items-center justify-end gap-2.5 border-t border-slate-800">
+          <div className="pt-2 flex items-center justify-end gap-2.5 border-t border-slate-200">
             <button
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="px-3.5 py-2 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+              className="px-3.5 py-2 rounded-lg text-xs font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-4 py-2 rounded-lg text-xs font-semibold bg-amber-600 hover:bg-amber-500 text-white flex items-center gap-1.5 shadow-sm transition-colors disabled:opacity-50"
+              className="px-4 py-2 rounded-lg text-xs font-semibold bg-amber-600 hover:bg-amber-500 text-slate-900 flex items-center gap-1.5 shadow-sm transition-colors disabled:opacity-50"
             >
               {isSubmitting ? (
                 <span>Dispatching Alert...</span>

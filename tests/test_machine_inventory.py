@@ -26,6 +26,12 @@ class InventoryEvidenceTests(unittest.TestCase):
         self.assertEqual(row['connection_status'],'RECEIVING')
         self.assertEqual(row['operating_status'],'CRITICAL')
 
+    def test_idle_snapshot_supersedes_normal_but_not_a_fault(self):
+        row=build_inventory(self.catalog,[],[self.reading(),self.reading('IDLE')],self.now)[0]
+        self.assertEqual(row['operating_status'],'IDLE')
+        faulted=build_inventory(self.catalog,[],[self.reading('IDLE'),self.reading('WARNING')],self.now)[0]
+        self.assertEqual(faulted['operating_status'],'WARNING')
+
     def test_stale_source_does_not_become_a_physical_stop(self):
         row=build_inventory(self.catalog,[],[self.reading('NORMAL',age=90)],self.now)[0]
         self.assertEqual(row['connection_status'],'STALE')

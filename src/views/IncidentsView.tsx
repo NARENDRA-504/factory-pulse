@@ -192,71 +192,71 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
     <div className="space-y-5">
       {/* 1. KPI Summary Strip */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-        <div className="bg-[#0c1424] border border-slate-800/80 rounded-xl p-3.5 flex items-center justify-between shadow-xs">
+        <div className="bg-white border border-slate-200 rounded-xl p-3.5 flex items-center justify-between shadow-xs">
           <div>
-            <span className="text-[11px] font-mono uppercase text-slate-400 font-medium">Total Tickets</span>
-            <div className="text-xl font-bold font-mono text-slate-100 font-mono-numbers mt-1">
+            <span className="text-[11px] font-mono uppercase text-slate-600 font-medium">Total Tickets</span>
+            <div className="text-xl font-bold font-mono text-slate-900 font-mono-numbers mt-1">
               {totalCount}
             </div>
           </div>
-          <div className="p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400">
-            <Layers className="w-4 h-4 text-teal-400" />
+          <div className="p-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-600">
+            <Layers className="w-4 h-4 text-teal-700" />
           </div>
         </div>
 
-        <div className="bg-[#0c1424] border border-slate-800/80 rounded-xl p-3.5 flex items-center justify-between shadow-xs">
+        <div className="bg-white border border-slate-200 rounded-xl p-3.5 flex items-center justify-between shadow-xs">
           <div>
-            <span className="text-[11px] font-mono uppercase text-slate-400 font-medium">Open</span>
-            <div className="text-xl font-bold font-mono text-amber-400 font-mono-numbers mt-1">
+            <span className="text-[11px] font-mono uppercase text-slate-600 font-medium">Open</span>
+            <div className="text-xl font-bold font-mono text-amber-700 font-mono-numbers mt-1">
               {openCount}
             </div>
           </div>
-          <div className="p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400">
-            <AlertCircle className="w-4 h-4 text-amber-400" />
+          <div className="p-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-600">
+            <AlertCircle className="w-4 h-4 text-amber-700" />
           </div>
         </div>
 
-        <div className="bg-[#0c1424] border border-slate-800/80 rounded-xl p-3.5 flex items-center justify-between shadow-xs">
+        <div className="bg-white border border-slate-200 rounded-xl p-3.5 flex items-center justify-between shadow-xs">
           <div>
-            <span className="text-[11px] font-mono uppercase text-slate-400 font-medium">Investigation</span>
-            <div className="text-xl font-bold font-mono text-teal-300 font-mono-numbers mt-1">
+            <span className="text-[11px] font-mono uppercase text-slate-600 font-medium">Investigation</span>
+            <div className="text-xl font-bold font-mono text-teal-800 font-mono-numbers mt-1">
               {inInvestCount}
             </div>
           </div>
-          <div className="p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400">
-            <Clock className="w-4 h-4 text-teal-400" />
+          <div className="p-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-600">
+            <Clock className="w-4 h-4 text-teal-700" />
           </div>
         </div>
 
-        <div className="bg-[#0c1424] border border-slate-800/80 rounded-xl p-3.5 flex items-center justify-between shadow-xs">
+        <div className="bg-white border border-slate-200 rounded-xl p-3.5 flex items-center justify-between shadow-xs">
           <div>
-            <span className="text-[11px] font-mono uppercase text-slate-400 font-medium">Action Required</span>
-            <div className="text-xl font-bold font-mono text-rose-400 font-mono-numbers mt-1">
+            <span className="text-[11px] font-mono uppercase text-slate-600 font-medium">Action Required</span>
+            <div className="text-xl font-bold font-mono text-rose-700 font-mono-numbers mt-1">
               {actionReqCount}
             </div>
           </div>
-          <div className="p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400">
-            <Wrench className="w-4 h-4 text-rose-400" />
+          <div className="p-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-600">
+            <Wrench className="w-4 h-4 text-rose-700" />
           </div>
         </div>
 
-        <div className="bg-[#0c1424] border border-slate-800/80 rounded-xl p-3.5 flex items-center justify-between shadow-xs col-span-2 sm:col-span-1">
+        <div className="bg-white border border-slate-200 rounded-xl p-3.5 flex items-center justify-between shadow-xs col-span-2 sm:col-span-1">
           <div>
-            <span className="text-[11px] font-mono uppercase text-slate-400 font-medium">Closed</span>
-            <div className="text-xl font-bold font-mono text-emerald-400 font-mono-numbers mt-1">
+            <span className="text-[11px] font-mono uppercase text-slate-600 font-medium">Closed</span>
+            <div className="text-xl font-bold font-mono text-emerald-700 font-mono-numbers mt-1">
               {closedCount}
             </div>
           </div>
-          <div className="p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+          <div className="p-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-600">
+            <CheckCircle2 className="w-4 h-4 text-emerald-700" />
           </div>
         </div>
       </div>
 
       <section className="grid grid-cols-1 gap-3 lg:grid-cols-2" aria-label="Incident charts">
-        <div className="rounded-xl border border-slate-800/80 bg-[#0c1424] p-4 shadow-sm">
-          <h2 className="text-sm font-semibold text-slate-100">Tickets by workflow status</h2>
-          <p className="mb-3 mt-1 text-xs text-slate-400">Counts from the incident records currently in this app.</p>
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <h2 className="text-sm font-semibold text-slate-900">Tickets by workflow status</h2>
+          <p className="mb-3 mt-1 text-xs text-slate-600">Counts from the incident records currently in this app.</p>
           <SimpleBarChart data={[
             { label: 'Open', value: openCount, color: '#f59e0b' },
             { label: 'In investigation', value: inInvestCount, color: '#2dd4bf' },
@@ -264,9 +264,9 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
             { label: 'Closed', value: closedCount, color: '#34d399' },
           ]} />
         </div>
-        <div className="rounded-xl border border-slate-800/80 bg-[#0c1424] p-4 shadow-sm">
-          <h2 className="text-sm font-semibold text-slate-100">Severity breakdown</h2>
-          <p className="mb-3 mt-1 text-xs text-slate-400">Current ticket counts by reported severity.</p>
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <h2 className="text-sm font-semibold text-slate-900">Severity breakdown</h2>
+          <p className="mb-3 mt-1 text-xs text-slate-600">Current ticket counts by reported severity.</p>
           <SimpleBarChart data={(['Critical', 'High', 'Medium', 'Low'] as const).map((severity) => ({
             label: severity,
             value: incidents.filter((incident) => incident.severity === severity).length,
@@ -276,14 +276,14 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
       </section>
 
       {/* 2. Search & Controls Bar */}
-      <div className="bg-[#0c1424] border border-slate-800/80 rounded-xl p-4 shadow-sm">
+      <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-mono uppercase text-teal-400 font-semibold tracking-wider">
+            <span className="text-xs font-mono uppercase text-teal-700 font-semibold tracking-wider">
               Tickets Filter
             </span>
             <span className="text-slate-600">·</span>
-            <span className="text-xs text-slate-400 font-mono">
+            <span className="text-xs text-slate-600 font-mono">
               Showing {filteredIncidents.length} of {incidents.length}
             </span>
           </div>
@@ -297,7 +297,7 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search ticket code, machine..."
-                className="pl-8 pr-3 py-1.5 bg-slate-900 border border-slate-700 text-xs font-mono text-white rounded-lg focus:outline-none focus:border-teal-500 w-48 sm:w-56"
+                className="pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 text-xs font-mono text-slate-900 rounded-lg focus:outline-none focus:border-teal-500 w-48 sm:w-56"
               />
             </div>
 
@@ -305,7 +305,7 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-slate-900 border border-slate-700 text-xs font-mono text-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-teal-500"
+              className="bg-slate-50 border border-slate-200 text-xs font-mono text-slate-700 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-teal-500"
             >
               <option value="ALL">All Statuses</option>
               <option value="Open">Open</option>
@@ -318,7 +318,7 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
             <select
               value={severityFilter}
               onChange={(e) => setSeverityFilter(e.target.value)}
-              className="bg-slate-900 border border-slate-700 text-xs font-mono text-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-teal-500"
+              className="bg-slate-50 border border-slate-200 text-xs font-mono text-slate-700 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-teal-500"
             >
               <option value="ALL">All Severities</option>
               <option value="Low">Low</option>
@@ -330,7 +330,7 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
             {canCreate && (
               <button
                 onClick={() => setIsNewModalOpen(true)}
-                className="px-3.5 py-1.5 bg-teal-600 hover:bg-teal-500 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors shadow-sm font-mono"
+                className="px-3.5 py-1.5 bg-teal-600 hover:bg-teal-500 text-slate-900 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors shadow-sm font-mono"
               >
                 <Plus className="w-4 h-4" />
                 Report Incident
@@ -341,14 +341,14 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
       </div>
 
       {actionErrorMessage && (
-        <div className="p-3.5 bg-rose-950/70 border border-rose-800 text-rose-200 text-xs rounded-xl flex items-center justify-between shadow-sm animate-fade-in">
+        <div className="p-3.5 bg-rose-50 border border-rose-200 text-slate-700 text-xs rounded-xl flex items-center justify-between shadow-sm animate-fade-in">
           <div className="flex items-center gap-2.5">
-            <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+            <AlertTriangle className="w-4 h-4 text-rose-700 shrink-0" />
             <span className="font-medium">{actionErrorMessage}</span>
           </div>
           <button
             onClick={() => setActionErrorMessage(null)}
-            className="text-rose-400 hover:text-rose-200 text-xs px-2 py-0.5 rounded font-mono"
+            className="text-rose-700 hover:text-slate-700 text-xs px-2 py-0.5 rounded font-mono"
           >
             Dismiss
           </button>
@@ -358,9 +358,9 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
       {/* 3. Main Grid: Incident Table (5 Cols) + Detail Workspace (7 Cols) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* Left Column: Incidents Table (5 Cols) */}
-        <div className="lg:col-span-5 bg-[#0c1424] border border-slate-800/80 rounded-xl overflow-hidden shadow-sm flex flex-col">
-          <div className="p-3.5 border-b border-slate-800/80 flex items-center justify-between bg-slate-900/40">
-            <span className="text-xs font-mono uppercase text-slate-400 font-semibold">
+        <div className="lg:col-span-5 bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col">
+          <div className="p-3.5 border-b border-slate-200 flex items-center justify-between bg-slate-50/40">
+            <span className="text-xs font-mono uppercase text-slate-600 font-semibold">
               Incident Tickets ({filteredIncidents.length})
             </span>
             <span className="text-[10px] font-mono text-slate-500">Sorted by newest</span>
@@ -380,47 +380,47 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
                     onClick={() => setSelectedIncident(inc)}
                     className={`p-3.5 transition-colors cursor-pointer text-left ${
                       isSelected
-                        ? 'bg-teal-950/30 border-l-2 border-teal-400'
-                        : 'hover:bg-slate-900/60'
+                        ? 'bg-teal-50 border-l-2 border-teal-400'
+                        : 'hover:bg-slate-50'
                     }`}
                   >
                     <div className="flex items-center justify-between gap-2 mb-1">
-                      <span className="font-mono text-xs font-bold text-white">{inc.incidentCode}</span>
+                      <span className="font-mono text-xs font-bold text-slate-900">{inc.incidentCode}</span>
                       <span
                         className={`text-[10px] font-mono font-medium px-1.5 py-0.5 rounded border ${
                           inc.severity === 'Critical'
-                            ? 'text-rose-400 bg-rose-950/80 border-rose-800'
+                            ? 'text-rose-700 bg-rose-50 border-rose-200'
                             : inc.severity === 'High'
-                            ? 'text-orange-400 bg-orange-950/80 border-orange-800'
+                            ? 'text-orange-700 bg-orange-50 border-orange-200'
                             : inc.severity === 'Medium'
-                            ? 'text-amber-400 bg-amber-950/80 border-amber-800'
-                            : 'text-slate-400 bg-slate-900 border-slate-700'
+                            ? 'text-amber-700 bg-amber-50 border-amber-200'
+                            : 'text-slate-600 bg-slate-50 border-slate-200'
                         }`}
                       >
                         {inc.severity}
                       </span>
                     </div>
 
-                    <div className="text-xs font-medium text-slate-300 line-clamp-1">
+                    <div className="text-xs font-medium text-slate-700 line-clamp-1">
                       {inc.symptomDescription}
                     </div>
 
-                    <div className="mt-2 flex items-center justify-between text-[11px] text-slate-400 font-mono">
+                    <div className="mt-2 flex items-center justify-between text-[11px] text-slate-600 font-mono">
                       <span>{inc.machineCode}</span>
                       <span
                         className={`px-1.5 py-0.5 rounded text-[10px] ${
                           inc.status === 'Closed'
-                            ? 'text-emerald-400 bg-emerald-950/60 border border-emerald-900/50'
+                            ? 'text-emerald-700 bg-emerald-50 border border-slate-200'
                             : inc.status === 'Action_Required'
-                            ? 'text-amber-400 bg-amber-950/60 border border-amber-900/50'
-                            : 'text-teal-300 bg-teal-950/60 border border-teal-900/50'
+                            ? 'text-amber-700 bg-amber-50 border border-slate-200'
+                            : 'text-teal-800 bg-teal-50 border border-slate-200'
                         }`}
                       >
                         {inc.status.replace('_', ' ')}
                       </span>
                     </div>
 
-                    <div className="mt-2 pt-2 border-t border-slate-800/60 flex items-center justify-between">
+                    <div className="mt-2 pt-2 border-t border-slate-200/60 flex items-center justify-between">
                       <ProvenanceBadge provenance={inc.dataProvenance} />
                       <span className="text-[10px] text-slate-500 font-mono">{inc.createdAt.substring(0, 10)}</span>
                     </div>
@@ -432,22 +432,22 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
         </div>
 
         {/* Right Column: Incident Detail Workspace (7 Cols) */}
-        <div className="lg:col-span-7 bg-[#0c1424] border border-slate-800/80 rounded-xl p-4 sm:p-6 shadow-sm">
+        <div className="lg:col-span-7 bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-sm">
           {selectedIncident ? (
             <div className="space-y-5">
               {/* Header */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800/80">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-sm font-bold text-teal-300">
+                    <span className="font-mono text-sm font-bold text-teal-800">
                       {selectedIncident.incidentCode}
                     </span>
                     <span className="text-slate-600">·</span>
-                    <span className="font-mono text-xs text-white">{selectedIncident.machineCode}</span>
+                    <span className="font-mono text-xs text-slate-900">{selectedIncident.machineCode}</span>
                     <span className="text-slate-600">·</span>
                     <ProvenanceBadge provenance={selectedIncident.dataProvenance} />
                   </div>
-                  <h2 className="mt-1 font-display font-bold text-lg text-white">
+                  <h2 className="mt-1 font-display font-bold text-lg text-slate-900">
                     {selectedIncident.symptomDescription}
                   </h2>
                 </div>
@@ -458,7 +458,7 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
                   {canAssign && selectedIncident.status === 'Open' && (
                     <button
                       onClick={() => setIsAssignModalOpen(true)}
-                      className="px-3 py-1.5 bg-teal-600 hover:bg-teal-500 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors font-mono"
+                      className="px-3 py-1.5 bg-teal-600 hover:bg-teal-500 text-slate-900 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors font-mono"
                     >
                       <UserCheck className="w-3.5 h-3.5" />
                       Assign Technician
@@ -469,7 +469,7 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
                   {canUpdateProgress && selectedIncident.status !== 'Closed' && (
                     <button
                       onClick={() => setIsProgressModalOpen(true)}
-                      className="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors font-mono"
+                      className="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-slate-900 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors font-mono"
                     >
                       <Wrench className="w-3.5 h-3.5" />
                       Update Progress
@@ -480,7 +480,7 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
                   {canClose && selectedIncident.status !== 'Closed' && (
                     <button
                       onClick={() => setIsCloseModalOpen(true)}
-                      className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors font-mono"
+                      className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-slate-900 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors font-mono"
                     >
                       <CheckCircle2 className="w-3.5 h-3.5" />
                       Close Ticket (Sign-off)
@@ -488,8 +488,8 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
                   )}
 
                   {selectedIncident.status === 'Closed' && (
-                    <span className="px-3 py-1.5 rounded-lg bg-emerald-950/60 border border-emerald-800 text-emerald-300 text-xs font-mono font-semibold flex items-center gap-1.5">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    <span className="px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-mono font-semibold flex items-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-700" />
                       Closed by {selectedIncident.closedRole || 'Maintenance'} ({selectedIncident.closedByName})
                     </span>
                   )}
@@ -497,64 +497,64 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
               </div>
 
               {/* Status & Metadata Strip */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono p-3 bg-slate-900/60 border border-slate-800 rounded-lg">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono p-3 bg-slate-50 border border-slate-200 rounded-lg">
                 <div>
                   <span className="text-[10px] text-slate-500 uppercase block">Reported By</span>
-                  <span className="text-slate-300 font-semibold">{selectedIncident.reporterName}</span>
+                  <span className="text-slate-700 font-semibold">{selectedIncident.reporterName}</span>
                   <span className="text-[10px] text-slate-500 block">({selectedIncident.reporterRole})</span>
                 </div>
                 <div>
                   <span className="text-[10px] text-slate-500 uppercase block">Assigned Engineer</span>
-                  <span className="text-teal-300 font-semibold">{selectedIncident.assignedToName || 'Unassigned'}</span>
+                  <span className="text-teal-800 font-semibold">{selectedIncident.assignedToName || 'Unassigned'}</span>
                 </div>
                 <div>
                   <span className="text-[10px] text-slate-500 uppercase block">Severity Priority</span>
-                  <span className="text-amber-400 font-semibold">{selectedIncident.severity}</span>
+                  <span className="text-amber-700 font-semibold">{selectedIncident.severity}</span>
                 </div>
                 <div>
                   <span className="text-[10px] text-slate-500 uppercase block">Ticket State</span>
-                  <span className="text-white font-semibold">{selectedIncident.status.replace('_', ' ')}</span>
+                  <span className="text-slate-900 font-semibold">{selectedIncident.status.replace('_', ' ')}</span>
                 </div>
               </div>
 
               {/* Verified Machine Sensor Snapshot (Measured Values) */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-mono uppercase text-slate-400 font-semibold flex items-center gap-1.5">
-                    <FileText className="w-3.5 h-3.5 text-teal-400" />
+                  <span className="text-xs font-mono uppercase text-slate-600 font-semibold flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5 text-teal-700" />
                     Verified Machine Sensor Snapshot (Measured Values)
                   </span>
-                  <span className="text-[10px] font-mono text-emerald-400">Telemetry Locked at Failure</span>
+                  <span className="text-[10px] font-mono text-emerald-700">Telemetry Locked at Failure</span>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                  <div className="p-2.5 bg-slate-900 border border-slate-800 rounded-lg">
+                  <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg">
                     <div className="text-[10px] font-mono text-slate-500 uppercase">Vibration RMS</div>
-                    <div className="text-base font-mono font-bold text-white font-mono-numbers">
+                    <div className="text-base font-mono font-bold text-slate-900 font-mono-numbers">
                       {(selectedIncident.measuredVibRms == null ? 'Not measured' : selectedIncident.measuredVibRms.toFixed(2))}{' '}
-                      <span className="text-xs font-normal text-slate-400">m/s²</span>
+                      <span className="text-xs font-normal text-slate-600">m/s²</span>
                     </div>
                   </div>
 
-                  <div className="p-2.5 bg-slate-900 border border-slate-800 rounded-lg">
+                  <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg">
                     <div className="text-[10px] font-mono text-slate-500 uppercase">Motor Power (kW)</div>
-                    <div className="text-base font-mono font-bold text-teal-300 font-mono-numbers">
+                    <div className="text-base font-mono font-bold text-teal-800 font-mono-numbers">
                       {(selectedIncident.measuredMotorPowerKw == null ? 'Not measured' : selectedIncident.measuredMotorPowerKw.toFixed(1))}{' '}
-                      <span className="text-xs font-normal text-slate-400">kW</span>
+                      <span className="text-xs font-normal text-slate-600">kW</span>
                     </div>
                   </div>
 
-                  <div className="p-2.5 bg-slate-900 border border-slate-800 rounded-lg">
+                  <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg">
                     <div className="text-[10px] font-mono text-slate-500 uppercase">Motor Load (%)</div>
-                    <div className="text-base font-mono font-bold text-amber-400 font-mono-numbers">
+                    <div className="text-base font-mono font-bold text-amber-700 font-mono-numbers">
                       {(selectedIncident.measuredMotorLoadPct == null ? 'Not measured' : selectedIncident.measuredMotorLoadPct.toFixed(1))}{' '}
-                      <span className="text-xs font-normal text-slate-400">%</span>
+                      <span className="text-xs font-normal text-slate-600">%</span>
                     </div>
                   </div>
 
-                  <div className="p-2.5 bg-slate-900 border border-slate-800 rounded-lg">
+                  <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg">
                     <div className="text-[10px] font-mono text-slate-500 uppercase">Correlated Vb Wear</div>
-                    <div className="text-base font-mono font-bold text-white font-mono-numbers">
+                    <div className="text-base font-mono font-bold text-slate-900 font-mono-numbers">
                       {selectedIncident.correlatedVbMm !== undefined ? `${selectedIncident.correlatedVbMm} mm` : 'N/A'}
                     </div>
                   </div>
@@ -567,62 +567,62 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
 
               {/* Operator Notes / Maintenance Timeline */}
               {selectedIncident.operatorNotes && (
-                <div className="p-3 bg-slate-900/60 border border-slate-800 rounded-lg text-xs">
-                  <span className="font-mono text-[10px] text-slate-400 uppercase font-semibold block mb-1">
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs">
+                  <span className="font-mono text-[10px] text-slate-600 uppercase font-semibold block mb-1">
                     Operator Field Observations
                   </span>
-                  <p className="text-slate-300">{selectedIncident.operatorNotes}</p>
+                  <p className="text-slate-700">{selectedIncident.operatorNotes}</p>
                 </div>
               )}
 
               {selectedIncident.notes && (
-                <div className="p-3 bg-slate-900/80 border border-amber-900/40 rounded-lg text-xs">
-                  <span className="font-mono text-[10px] text-amber-400 uppercase font-semibold block mb-1">
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs">
+                  <span className="font-mono text-[10px] text-amber-700 uppercase font-semibold block mb-1">
                     Maintenance Progress Log
                   </span>
-                  <p className="text-slate-300 whitespace-pre-line">{selectedIncident.notes}</p>
+                  <p className="text-slate-700 whitespace-pre-line">{selectedIncident.notes}</p>
                 </div>
               )}
 
               {selectedIncident.closureNotes && (
-                <div className="p-3 bg-emerald-950/40 border border-emerald-900/60 rounded-lg text-xs">
-                  <span className="font-mono text-[10px] text-emerald-400 uppercase font-semibold block mb-1">
+                <div className="p-3 bg-emerald-50 border border-slate-200 rounded-lg text-xs">
+                  <span className="font-mono text-[10px] text-emerald-700 uppercase font-semibold block mb-1">
                     Formal Sign-off &amp; Closure Record
                   </span>
-                  <p className="text-slate-300">{selectedIncident.closureNotes}</p>
-                  <div className="mt-1 text-[10px] text-emerald-400 font-mono">
+                  <p className="text-slate-700">{selectedIncident.closureNotes}</p>
+                  <div className="mt-1 text-[10px] text-emerald-700 font-mono">
                     Signed by {selectedIncident.closedByName} ({selectedIncident.closedRole}) on {selectedIncident.closedAt}
                   </div>
                 </div>
               )}
 
               {/* ------------------------------------------------------------- */}
-              {selectedIncident.sensorSnapshot && <section className="rounded-xl border border-slate-800 p-4"><h3 className="font-semibold text-sm">Saved sensor evidence at report time</h3><p className="mt-1 text-xs text-slate-400">Original readings attached by FactoryPulse from MySQL.</p><div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">{selectedIncident.sensorSnapshot.map(reading=><div key={reading.reading_id} className="rounded-lg bg-slate-950 p-3"><p className="text-xs text-slate-400">{reading.sensor_name}</p><p className="mt-1 text-sm text-cyan-200">{reading.sensor_value??'Unavailable'} {reading.sensor_unit}</p><p className="mt-1 text-[10px] text-slate-500">{new Date(reading.timestamp).toLocaleString()}</p></div>)}</div></section>}
+              {selectedIncident.sensorSnapshot && <section className="rounded-xl border border-slate-200 p-4"><h3 className="font-semibold text-sm">Saved sensor evidence at report time</h3><p className="mt-1 text-xs text-slate-600">Original readings attached by FactoryPulse from MySQL.</p><div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">{selectedIncident.sensorSnapshot.map(reading=><div key={reading.reading_id} className="rounded-lg bg-slate-100 p-3"><p className="text-xs text-slate-600">{reading.sensor_name}</p><p className="mt-1 text-sm text-slate-700">{reading.sensor_value??'Unavailable'} {reading.sensor_unit}</p><p className="mt-1 text-[10px] text-slate-500">{new Date(reading.timestamp).toLocaleString()}</p></div>)}</div></section>}
               {/* AI Incident Investigation Assistant Panel */}
               {/* ------------------------------------------------------------- */}
-              <div className="pt-4 border-t border-slate-800">
+              <div className="pt-4 border-t border-slate-200">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <Bot className="w-5 h-5 text-teal-400" />
+                    <Bot className="w-5 h-5 text-teal-700" />
                     <div>
-                      <h3 className="font-display font-bold text-sm text-white">
+                      <h3 className="font-display font-bold text-sm text-slate-900">
                         AI Incident Investigation Assistant
                       </h3>
-                      <p className="text-[11px] text-slate-400">
+                      <p className="text-[11px] text-slate-600">
                         Use Factory Intelligence on the live dashboard for authorized SQL evidence. Optional Google analysis requires backend configuration.
                       </p>
                     </div>
                   </div>
 
-                  <span className="text-xs text-amber-200">Provider not configured</span>
+                  <span className="text-xs text-slate-700">Provider not configured</span>
                 </div>
 
                 {selectedIncident.diagnosis ? (
-                  <div className="space-y-4 bg-slate-900/90 border border-slate-700/80 rounded-xl p-4 sm:p-5">
+                  <div className="space-y-4 bg-slate-50/90 border border-slate-200/80 rounded-xl p-4 sm:p-5">
                     {/* Model & Provenance Banner */}
-                    <div className="flex flex-wrap items-center justify-between gap-2 text-[10px] font-mono text-slate-400 pb-3 border-b border-slate-800">
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-[10px] font-mono text-slate-600 pb-3 border-b border-slate-200">
                       <div className="flex items-center gap-2">
-                        <span className="text-teal-400 font-semibold">{selectedIncident.diagnosis.modelId}</span>
+                        <span className="text-teal-700 font-semibold">{selectedIncident.diagnosis.modelId}</span>
                         <span className="text-slate-600">·</span>
                         <span>Generated: {selectedIncident.diagnosis.generatedAt}</span>
                       </div>
@@ -630,10 +630,10 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
                     </div>
 
                     {/* Prominent Mandatory Safety Disclaimer */}
-                    <div className="p-3 bg-amber-950/50 border border-amber-800/80 rounded-lg text-xs text-amber-200 flex items-start gap-2.5">
-                      <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-slate-700 flex items-start gap-2.5">
+                      <ShieldAlert className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
                       <div className="leading-relaxed">
-                        <span className="font-bold block uppercase text-[10px] tracking-wide text-amber-300">
+                        <span className="font-bold block uppercase text-[10px] tracking-wide text-amber-800">
                           Mandatory Safety Disclaimer
                         </span>
                         {selectedIncident.diagnosis.safetyDisclaimer}
@@ -642,22 +642,22 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
 
                     {/* Diagnostic Hypotheses (Clearly Labeled as Unverified) */}
                     <div>
-                      <span className="text-xs font-mono uppercase text-amber-400 font-bold block mb-2">
+                      <span className="text-xs font-mono uppercase text-amber-700 font-bold block mb-2">
                         Diagnostic Hypotheses (Unverified Guidance — Requires Physical Inspection)
                       </span>
                       <div className="space-y-2.5">
                         {selectedIncident.diagnosis.diagnosticHypotheses.map((hyp, idx) => (
                           <div
                             key={idx}
-                            className="p-3 bg-slate-950/80 border border-amber-900/40 rounded-lg text-xs"
+                            className="p-3 bg-slate-100/80 border border-slate-200 rounded-lg text-xs"
                           >
-                            <div className="font-semibold text-white flex items-center justify-between gap-2">
+                            <div className="font-semibold text-slate-900 flex items-center justify-between gap-2">
                               <span>Hypothesis {idx + 1}: {hyp.hypothesis}</span>
-                              <span className="text-[10px] font-mono text-amber-400 bg-amber-950/80 px-1.5 py-0.5 rounded border border-amber-800 shrink-0">
+                              <span className="text-[10px] font-mono text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 shrink-0">
                                 Unverified
                               </span>
                             </div>
-                            <p className="mt-1 text-slate-300 text-[11px] leading-relaxed">{hyp.rationale}</p>
+                            <p className="mt-1 text-slate-700 text-[11px] leading-relaxed">{hyp.rationale}</p>
                           </div>
                         ))}
                       </div>
@@ -665,7 +665,7 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
 
                     {/* Suggested Physical Investigation Steps */}
                     <div>
-                      <span className="text-xs font-mono uppercase text-teal-400 font-bold block mb-2">
+                      <span className="text-xs font-mono uppercase text-teal-700 font-bold block mb-2">
                         Recommended Physical Investigation Steps
                       </span>
                       <div className="space-y-2">
@@ -677,15 +677,15 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
                               onClick={() => toggleStep(`step_${idx}`)}
                               className={`flex items-start gap-2.5 p-2.5 rounded-lg border text-xs cursor-pointer transition-colors ${
                                 isDone
-                                  ? 'bg-emerald-950/40 border-emerald-800 text-slate-300'
-                                  : 'bg-slate-950/60 border-slate-800 text-slate-200 hover:border-slate-700'
+                                  ? 'bg-emerald-50 border-emerald-200 text-slate-700'
+                                  : 'bg-slate-100 border-slate-200 text-slate-800 hover:border-slate-200'
                               }`}
                             >
                               <input
                                 type="checkbox"
                                 checked={isDone}
                                 onChange={() => {}}
-                                className="mt-0.5 rounded border-slate-700 text-teal-500 focus:ring-0"
+                                className="mt-0.5 rounded border-slate-200 text-teal-500 focus:ring-0"
                               />
                               <span className={isDone ? 'line-through text-slate-500' : ''}>{step}</span>
                             </label>
@@ -695,12 +695,12 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
                     </div>
 
                     {/* Excluded Unverified Metrics Note */}
-                    <div className="pt-2 border-t border-slate-800/80 text-[10px] font-mono text-slate-500">
+                    <div className="pt-2 border-t border-slate-200 text-[10px] font-mono text-slate-500">
                       Excluded Channels: {selectedIncident.diagnosis.unverifiedMetricsExcluded.map((m) => m.metric).join(', ')} ({selectedIncident.diagnosis.unverifiedMetricsExcluded[0]?.reason})
                     </div>
                   </div>
                 ) : (
-                  <div className="p-4 bg-slate-900/40 border border-dashed border-slate-800 rounded-xl text-center text-xs text-slate-500">
+                  <div className="p-4 bg-slate-50/40 border border-dashed border-slate-200 rounded-xl text-center text-xs text-slate-500">
                     No generated diagnosis is available. Recorded sensor evidence remains accessible on the live dashboard.
                   </div>
                 )}
@@ -718,15 +718,15 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
       {/* MODAL 1: CREATE NEW INCIDENT REPORT */}
       {/* ------------------------------------------------------------- */}
       {isNewModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0c1424] border border-slate-700 rounded-xl max-w-xl w-full p-6 shadow-2xl overflow-y-auto max-h-[90vh]">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h3 className="font-display font-bold text-base text-white">
+        <div className="fixed inset-0 z-50 bg-slate-400/20 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-xl max-w-xl w-full p-6 shadow-2xl overflow-y-auto max-h-[90vh]">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+              <h3 className="font-display font-bold text-base text-slate-900">
                 Submit New Incident Report
               </h3>
               <button
                 onClick={() => setIsNewModalOpen(false)}
-                className="text-slate-400 hover:text-white"
+                className="text-slate-600 hover:text-slate-900"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -735,14 +735,14 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
             <form onSubmit={handleCreateSubmit} className="mt-4 space-y-4 text-xs">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-400 font-mono mb-1">Target Machine</label>
+                  <label className="block text-slate-600 font-mono mb-1">Target Machine</label>
                   <select
                     value={newMachineCode}
                     onChange={(e) => {
                       setNewMachineCode(e.target.value);
                       setFormSnapshot(apiClient.getLiveTelemetrySnapshot(e.target.value));
                     }}
-                    className="w-full bg-slate-900 border border-slate-700 text-white rounded p-2 font-mono"
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded p-2 font-mono"
                   >
                     {SEED_MACHINES.map((m) => (
                       <option key={m.machineId || m.machineCode} value={m.machineCode}>
@@ -753,11 +753,11 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-slate-400 font-mono mb-1">Severity Priority</label>
+                  <label className="block text-slate-600 font-mono mb-1">Severity Priority</label>
                   <select
                     value={newSeverity}
                     onChange={(e) => setNewSeverity(e.target.value as any)}
-                    className="w-full bg-slate-900 border border-slate-700 text-white rounded p-2 font-mono"
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded p-2 font-mono"
                   >
                     <option value="Low">Low (Informational observation)</option>
                     <option value="Medium">Medium (Machining quality affected)</option>
@@ -768,61 +768,61 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
               </div>
 
               <div>
-                <label className="block text-slate-400 font-mono mb-1">Component / Subsystem Area</label>
+                <label className="block text-slate-600 font-mono mb-1">Component / Subsystem Area</label>
                 <input
                   type="text"
                   required
                   value={newComponentArea}
                   onChange={(e) => setNewComponentArea(e.target.value)}
                   placeholder="e.g. Spindle & Toolholder, Wayguide Lube, Coolant Chiller"
-                  className="w-full bg-slate-900 border border-slate-700 text-white rounded p-2"
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded p-2"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-400 font-mono mb-1">Observed Symptom Description</label>
+                <label className="block text-slate-600 font-mono mb-1">Observed Symptom Description</label>
                 <textarea
                   required
                   rows={2}
                   value={newSymptom}
                   onChange={(e) => setNewSymptom(e.target.value)}
                   placeholder="Describe abnormal vibration, sound, odor, or surface finish defect..."
-                  className="w-full bg-slate-900 border border-slate-700 text-white rounded p-2"
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded p-2"
                 ></textarea>
               </div>
 
               <div>
-                <label className="block text-slate-400 font-mono mb-1">Operator Notes</label>
+                <label className="block text-slate-600 font-mono mb-1">Operator Notes</label>
                 <textarea
                   rows={2}
                   value={newOperatorNotes}
                   onChange={(e) => setNewOperatorNotes(e.target.value)}
                   placeholder="Additional context on tooling insert condition, cut cycle count, etc."
-                  className="w-full bg-slate-900 border border-slate-700 text-white rounded p-2"
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded p-2"
                 ></textarea>
               </div>
 
               {/* Attached Sensor Snapshot Section */}
-              <div className="p-3 bg-slate-900 border border-slate-800 rounded-lg">
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-mono text-[10px] text-slate-400 uppercase font-semibold">
+                  <span className="font-mono text-[10px] text-slate-600 uppercase font-semibold">
                     Attached Sensor Telemetry Snapshot
                   </span>
                 </div>
-                <p className="text-xs text-slate-400">FactoryPulse attaches the latest saved MySQL sensor readings when you submit. Original sensor units and timestamps are preserved. Unmeasured vibration acceleration, motor power and motor load remain unavailable.</p>
+                <p className="text-xs text-slate-600">FactoryPulse attaches the latest saved MySQL sensor readings when you submit. Original sensor units and timestamps are preserved. Unmeasured vibration acceleration, motor power and motor load remain unavailable.</p>
               </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setIsNewModalOpen(false)}
-                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded font-mono"
+                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded font-mono"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 bg-teal-600 hover:bg-teal-500 text-white font-semibold rounded font-mono"
+                  className="px-4 py-1.5 bg-teal-600 hover:bg-teal-500 text-slate-900 font-semibold rounded font-mono"
                 >
                   Submit Incident
                 </button>
@@ -836,18 +836,18 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
       {/* MODAL 2: ASSIGN TECHNICIAN (SUPERVISOR ONLY) */}
       {/* ------------------------------------------------------------- */}
       {isAssignModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0c1424] border border-slate-700 rounded-xl max-w-sm w-full p-5 shadow-2xl">
-            <h3 className="font-display font-bold text-sm text-white mb-3">
+        <div className="fixed inset-0 z-50 bg-slate-400/20 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-xl max-w-sm w-full p-5 shadow-2xl">
+            <h3 className="font-display font-bold text-sm text-slate-900 mb-3">
               Assign Incident to Maintenance Engineer
             </h3>
             <form onSubmit={handleAssignSubmit} className="space-y-3 text-xs">
               <div>
-                <label className="block text-slate-400 font-mono mb-1">Technician Name</label>
+                <label className="block text-slate-600 font-mono mb-1">Technician Name</label>
                 <select
                   value={assigneeName}
                   onChange={(e) => setAssigneeName(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 text-white rounded p-2 font-mono"
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded p-2 font-mono"
                 >
                   <option value="">Choose an active technician</option>{technicians.map(person=><option key={person.id} value={person.full_name}>{person.full_name} ({person.work_id})</option>)}
                   </select>
@@ -857,13 +857,13 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsAssignModalOpen(false)}
-                  className="px-3 py-1.5 bg-slate-800 text-slate-300 rounded font-mono"
+                  className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded font-mono"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 bg-teal-600 hover:bg-teal-500 text-white font-semibold rounded font-mono"
+                  className="px-4 py-1.5 bg-teal-600 hover:bg-teal-500 text-slate-900 font-semibold rounded font-mono"
                 >
                   Confirm Assignment
                 </button>
@@ -877,12 +877,12 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
       {/* MODAL 3: UPDATE PROGRESS (MAINTENANCE ONLY) */}
       {/* ------------------------------------------------------------- */}
       {isProgressModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0c1424] border border-slate-700 rounded-xl max-w-md w-full p-5 shadow-2xl">
-            <h3 className="font-display font-bold text-sm text-white mb-2">
+        <div className="fixed inset-0 z-50 bg-slate-400/20 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-xl max-w-md w-full p-5 shadow-2xl">
+            <h3 className="font-display font-bold text-sm text-slate-900 mb-2">
               Log Maintenance Investigation Progress
             </h3>
-            <p className="text-xs text-slate-400 mb-3">
+            <p className="text-xs text-slate-600 mb-3">
               Record physical inspection findings (e.g., dial indicator runout, collet cleaning, insert replacement).
             </p>
             <form onSubmit={handleProgressSubmit} className="space-y-3 text-xs">
@@ -893,7 +893,7 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
                   value={progressNotes}
                   onChange={(e) => setProgressNotes(e.target.value)}
                   placeholder="e.g. Performed spindle sweep test; confirmed 0.003mm radial play. Cleaned 7:24 taper."
-                  className="w-full bg-slate-900 border border-slate-700 text-white rounded p-2"
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded p-2"
                 ></textarea>
               </div>
 
@@ -901,13 +901,13 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsProgressModalOpen(false)}
-                  className="px-3 py-1.5 bg-slate-800 text-slate-300 rounded font-mono"
+                  className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded font-mono"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded font-mono"
+                  className="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 text-slate-900 font-semibold rounded font-mono"
                 >
                   Save Progress Log
                 </button>
@@ -921,24 +921,24 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
       {/* MODAL 4: CLOSE TICKET (SUPERVISOR OR MAINTENANCE SIGN-OFF) */}
       {/* ------------------------------------------------------------- */}
       {isCloseModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0c1424] border border-slate-700 rounded-xl max-w-md w-full p-5 shadow-2xl">
-            <h3 className="font-display font-bold text-sm text-white mb-1">
+        <div className="fixed inset-0 z-50 bg-slate-400/20 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-xl max-w-md w-full p-5 shadow-2xl">
+            <h3 className="font-display font-bold text-sm text-slate-900 mb-1">
               Operational Sign-Off &amp; Ticket Closure
             </h3>
-            <p className="text-xs text-slate-400 mb-3">
+            <p className="text-xs text-slate-600 mb-3">
               Certified by {currentUser.role} ({currentUser.fullName}). Confirm physical machine readiness before clearing.
             </p>
             <form onSubmit={handleCloseSubmit} className="space-y-3 text-xs">
               <div>
-                <label className="block text-slate-400 font-mono mb-1">Closure Verification Notes</label>
+                <label className="block text-slate-600 font-mono mb-1">Closure Verification Notes</label>
                 <textarea
                   required
                   rows={3}
                   value={closureNotes}
                   onChange={(e) => setClosureNotes(e.target.value)}
                   placeholder="e.g. Test cut cycle verified nominal. Vibration measured at 1.8 m/s². Machine returned to active production."
-                  className="w-full bg-slate-900 border border-slate-700 text-white rounded p-2"
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded p-2"
                 ></textarea>
               </div>
 
@@ -946,13 +946,13 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsCloseModalOpen(false)}
-                  className="px-3 py-1.5 bg-slate-800 text-slate-300 rounded font-mono"
+                  className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded font-mono"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded font-mono"
+                  className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-slate-900 font-semibold rounded font-mono"
                 >
                   Approve Sign-off &amp; Close
                 </button>

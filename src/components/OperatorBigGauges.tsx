@@ -67,19 +67,19 @@ export const OperatorBigGauges: React.FC<OperatorBigGaugesProps> = ({
       : '#10b981';
 
     return (
-      <div className="bg-[#0c1424] border border-slate-800/90 rounded-2xl p-4 sm:p-5 flex flex-col items-center justify-between shadow-md relative overflow-hidden">
+      <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 flex flex-col items-center justify-between shadow-md relative overflow-hidden">
         {/* Top Label */}
-        <div className="w-full flex items-center justify-between pb-2 border-b border-slate-800/70">
-          <span className="text-xs font-mono font-semibold uppercase tracking-wider text-slate-300">
+        <div className="w-full flex items-center justify-between pb-2 border-b border-slate-200/70">
+          <span className="text-xs font-mono font-semibold uppercase tracking-wider text-slate-700">
             {label}
           </span>
           <span
             className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase tracking-wider ${
               isHigh
-                ? 'bg-rose-950 text-rose-300 border border-rose-800'
+                ? 'bg-rose-50 text-rose-800 border border-rose-200'
                 : isMid
-                ? 'bg-amber-950 text-amber-300 border border-amber-800'
-                : 'bg-teal-950/80 text-teal-300 border border-teal-800/60'
+                ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                : 'bg-teal-50 text-teal-800 border border-teal-200'
             }`}
           >
             {isHigh ? 'Danger' : isMid ? 'Caution' : 'Safe'}
@@ -95,7 +95,7 @@ export const OperatorBigGauges: React.FC<OperatorBigGaugesProps> = ({
               cy="75"
               r={radius}
               fill="transparent"
-              stroke="#1e293b"
+              stroke="#e2e8f0"
               strokeWidth="12"
               strokeDasharray={arcLength}
               strokeDashoffset="0"
@@ -128,14 +128,14 @@ export const OperatorBigGauges: React.FC<OperatorBigGaugesProps> = ({
                   : value.toFixed(1)
                 : value}
             </span>
-            <span className="text-xs font-mono text-slate-400 font-semibold">{unit}</span>
+            <span className="text-xs font-mono text-slate-600 font-semibold">{unit}</span>
           </div>
         </div>
 
         {/* Bottom range indicator */}
-        <div className="w-full flex items-center justify-between text-[11px] font-mono text-slate-400 pt-2 border-t border-slate-800/60">
+        <div className="w-full flex items-center justify-between text-[11px] font-mono text-slate-600 pt-2 border-t border-slate-200/60">
           <span>Min: {min}</span>
-          <span className="text-slate-300 font-medium">Limit: &lt; {warnThresh}</span>
+          <span className="text-slate-700 font-medium">Limit: &lt; {warnThresh}</span>
           <span>Max: {max}</span>
         </div>
       </div>
@@ -145,16 +145,16 @@ export const OperatorBigGauges: React.FC<OperatorBigGaugesProps> = ({
   return (
     <div className="space-y-4">
       {/* Visual Shop-Floor Light Tower Banner */}
-      <div className="bg-[#0B111E] border border-slate-800/90 rounded-2xl p-4 sm:p-5 shadow-lg flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-lg flex flex-col md:flex-row items-center justify-between gap-4">
         {/* Machine Status Lights (Traffic Light for Operators) */}
         <div className="flex items-center gap-4 sm:gap-6">
-          <div className="flex items-center gap-2 bg-slate-900/90 border border-slate-800 p-2.5 rounded-xl shadow-inner">
+          <div className="flex items-center gap-2 bg-slate-50/90 border border-slate-200 p-2.5 rounded-xl shadow-inner">
             {/* Red Light */}
             <div
               className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
                 isCritical
                   ? 'bg-rose-500 border-rose-300 shadow-[0_0_15px_rgba(244,63,94,0.8)] animate-pulse'
-                  : 'bg-rose-950/40 border-rose-900/40 opacity-30'
+                  : 'bg-rose-50 border-slate-200 opacity-30'
               }`}
               title="Stop / Danger"
             />
@@ -163,7 +163,7 @@ export const OperatorBigGauges: React.FC<OperatorBigGaugesProps> = ({
               className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
                 !isCritical && isWarning
                   ? 'bg-amber-500 border-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.8)]'
-                  : 'bg-amber-950/40 border-amber-900/40 opacity-30'
+                  : 'bg-amber-50 border-slate-200 opacity-30'
               }`}
               title="Caution / Warning"
             />
@@ -172,7 +172,7 @@ export const OperatorBigGauges: React.FC<OperatorBigGaugesProps> = ({
               className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
                 isStreaming && !isCritical && !isWarning
                   ? 'bg-teal-400 border-teal-200 shadow-[0_0_15px_rgba(45,212,191,0.8)] animate-pulse'
-                  : 'bg-teal-950/40 border-teal-900/40 opacity-30'
+                  : 'bg-teal-50 border-slate-200 opacity-30'
               }`}
               title="Normal Running"
             />
@@ -180,19 +180,19 @@ export const OperatorBigGauges: React.FC<OperatorBigGaugesProps> = ({
 
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-base sm:text-xl font-bold font-mono tracking-wide text-white">
+              <span className="text-base sm:text-xl font-bold font-mono tracking-wide text-slate-900">
                 {getMachineDisplayName(machine?.code || 'CNC-MILL-01', machine?.name)} ({machine?.code || 'CNC-MILL-01'})
               </span>
             </div>
-            <p className="text-xs sm:text-sm font-mono text-slate-300 flex items-center gap-2 mt-0.5">
+            <p className="text-xs sm:text-sm font-mono text-slate-700 flex items-center gap-2 mt-0.5">
               <span>Operating State:</span>
               <span
                 className={`font-bold px-2 py-0.5 rounded text-xs ${
                   isCritical
-                    ? 'bg-rose-950 text-rose-300 border border-rose-800'
+                    ? 'bg-rose-50 text-rose-800 border border-rose-200'
                     : isWarning
-                    ? 'bg-amber-950 text-amber-300 border border-amber-800'
-                    : 'bg-teal-950 text-teal-300 border border-teal-800'
+                    ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                    : 'bg-teal-50 text-teal-800 border border-teal-200'
                 }`}
               >
                 {statusLabel}
@@ -205,9 +205,9 @@ export const OperatorBigGauges: React.FC<OperatorBigGaugesProps> = ({
         <div className="flex items-center gap-3 w-full md:w-auto justify-end">
           <button
             onClick={onRaiseAlert}
-            className="w-full sm:w-auto px-5 py-3 rounded-xl bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white font-bold font-mono text-sm flex items-center justify-center gap-2 shadow-lg transition-colors"
+            className="w-full sm:w-auto px-5 py-3 rounded-xl bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-slate-900 font-bold font-mono text-sm flex items-center justify-center gap-2 shadow-lg transition-colors"
           >
-            <AlertTriangle className="w-5 h-5 text-white" />
+            <AlertTriangle className="w-5 h-5 text-slate-900" />
             <span>REPORT ABNORMAL NOISE / ISSUE</span>
           </button>
         </div>
@@ -265,24 +265,24 @@ export const OperatorBigGauges: React.FC<OperatorBigGaugesProps> = ({
       </div>
 
       {/* Operator Immediate Action Guidance Card */}
-      <div className="bg-[#0c1424] border border-slate-800/80 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="p-3 rounded-xl bg-teal-950/70 border border-teal-800/60 text-teal-300">
-            <CheckCircle2 className="w-6 h-6 text-teal-400" />
+          <div className="p-3 rounded-xl bg-teal-50 border border-teal-200 text-teal-800">
+            <CheckCircle2 className="w-6 h-6 text-teal-700" />
           </div>
           <div>
-            <h4 className="text-sm font-bold text-white font-mono">
+            <h4 className="text-sm font-bold text-slate-900 font-mono">
               Shop Floor Operator Rules
             </h4>
-            <p className="text-xs text-slate-300 font-mono mt-0.5">
+            <p className="text-xs text-slate-700 font-mono mt-0.5">
               Keep eye on green zone. If vibration needle turns amber (&gt;3.2 m/s²) or red, halt feed and report issue immediately.
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          <span className="text-xs font-mono text-slate-400">Emergency Protocol:</span>
-          <span className="px-2.5 py-1 rounded bg-slate-900 border border-slate-700 text-teal-300 font-mono text-xs font-bold">
+          <span className="text-xs font-mono text-slate-600">Emergency Protocol:</span>
+          <span className="px-2.5 py-1 rounded bg-slate-50 border border-slate-200 text-teal-800 font-mono text-xs font-bold">
             SOP-SP-01
           </span>
         </div>

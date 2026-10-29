@@ -1,4 +1,44 @@
 @import "tailwindcss";
+@theme {
+  /* Premium neutral palette: soft mineral whites with deep blue-charcoal ink. */
+  --color-slate-50: #f6f8f8;
+  --color-slate-100: #eef2f3;
+  --color-slate-200: #dce4e7;
+  --color-slate-300: #c4d0d5;
+  --color-slate-400: #96a7af;
+  --color-slate-500: #71838d;
+  --color-slate-600: #566a76;
+  --color-slate-700: #3e5360;
+  --color-slate-800: #263d4b;
+  --color-slate-900: #172d3a;
+  --color-slate-950: #10232e;
+
+  /* Calm, unified evergreen accent for controls, active navigation and KPIs. */
+  --color-teal-50: #eef7f5;
+  --color-teal-100: #d9ece8;
+  --color-teal-200: #b6dbd4;
+  --color-teal-300: #8bc5b9;
+  --color-teal-400: #62ad9e;
+  --color-teal-500: #398f81;
+  --color-teal-600: #176f65;
+  --color-teal-700: #155b54;
+  --color-teal-800: #164a46;
+  --color-teal-900: #153d3b;
+  --color-teal-950: #102c2d;
+
+  /* Technical blue secondary accent for telemetry and chart series. */
+  --color-cyan-50: #eff7fa;
+  --color-cyan-100: #d9edf2;
+  --color-cyan-200: #b8dce5;
+  --color-cyan-300: #88c2d0;
+  --color-cyan-400: #58a8ba;
+  --color-cyan-500: #31899d;
+  --color-cyan-600: #176b7d;
+  --color-cyan-700: #155767;
+  --color-cyan-800: #154754;
+  --color-cyan-900: #153b46;
+  --color-cyan-950: #102b34;
+}
 
 :root {
   --font-sans: 'Public Sans', system-ui, -apple-system, sans-serif;
@@ -8,8 +48,8 @@
 
 body {
   font-family: var(--font-sans);
-  background-color: #f8fafc;
-  color: #0f172a;
+  background-color: #f6f8f8;
+  color: #172d3a;
   min-height: 100vh;
 }
 
@@ -24,4 +64,89 @@ h1, h2, h3, h4, h5, h6 {
 .font-mono-numbers {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
+}
+
+/* FactoryPulse's shared light operations theme across navigation and pages. */
+.fp-shell {
+  --fp-canvas: #f6f8f8;
+  --fp-panel: #ffffff;
+  --fp-border: #dce4e7;
+  --fp-ink: #172d3a;
+  --fp-muted: #566a76;
+  background: var(--fp-canvas) !important;
+  color: var(--fp-ink);
+}
+
+.fp-shell main {
+  background: var(--fp-canvas);
+}
+
+.fp-shell header {
+  background-color: rgb(255 255 255 / 96%) !important;
+  border-color: var(--fp-border) !important;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 4%);
+}
+
+.fp-shell footer {
+  background: #fff !important;
+  border-color: var(--fp-border) !important;
+}
+
+.fp-shell input,
+.fp-shell select,
+.fp-shell textarea {
+  color: #172d3a;
+  background-color: #fff;
+  border-color: #c4d0d5;
+}
+
+.fp-shell input::placeholder,
+.fp-shell textarea::placeholder {
+  color: #71838d;
+}
+
+.fp-shell button[class*="bg-"][class*="-600"] {
+  color: #fff !important;
+}
+
+.fp-shell button[class*="bg-"][class*="-600"] svg,
+.fp-shell [class*="bg-cyan-600"] {
+  color: #fff !important;
+}
+
+.fp-shell [class*="rounded-2xl"] {
+  border-radius: 0.9rem;
+}
+
+.fp-shell [class*="shadow-xl"],
+.fp-shell [class*="shadow-lg"] {
+  --tw-shadow: 0 1px 3px 0 rgb(15 23 42 / 7%), 0 1px 2px -1px rgb(15 23 42 / 5%);
+  box-shadow: var(--tw-shadow);
+}
+
+@media (max-width: 640px) {
+  .fp-shell main {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    padding-top: 1rem;
+  }
+}
+
+/* Filled action buttons use white labels against the deeper premium accents. */
+.fp-shell button[class*="bg-teal-600"],
+.fp-shell button[class*="bg-cyan-600"],
+.fp-shell button[class*="bg-rose-600"] {
+  color: #fff !important;
+}
+
+.fp-shell button[class*="bg-teal-600"] [class*="text-slate-900"],
+.fp-shell button[class*="bg-cyan-600"] [class*="text-slate-900"],
+.fp-shell button[class*="bg-rose-600"] [class*="text-slate-900"] {
+  color: #fff !important;
+}
+
+.fp-shell button[class*="bg-teal-600"] svg,
+.fp-shell button[class*="bg-cyan-600"] svg,
+.fp-shell button[class*="bg-rose-600"] svg {
+  color: #fff !important;
 }

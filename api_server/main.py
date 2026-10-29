@@ -150,6 +150,7 @@ class UserProfileResponse(BaseModel):
     department: Optional[str] = None
     shift: Optional[str] = None
     is_active: bool = True
+    session_started_at_utc: Optional[str] = None
 
 class LoginResponse(BaseModel):
     access_token: str
@@ -168,6 +169,12 @@ class AuditEventRecord(BaseModel):
     factory_time_zone: str
     session_id: Optional[str] = None
     request_id: Optional[str] = None
+    session_duration_seconds: Optional[int] = None
+    client_ip: Optional[str] = None
+    device_info: Optional[str] = None
+    resource_type: Optional[str] = None
+    resource_id: Optional[str] = None
+    changed_fields: Optional[List[str]] = None
     details: Optional[str] = None
 
 class TelemetryReadingSchema(BaseModel):
@@ -199,7 +206,7 @@ class SimulatorTelemetryIngest(BaseModel):
     sensor_value: float | str | None
     expected_min: float = Field(..., allow_inf_nan=False)
     expected_max: float = Field(..., allow_inf_nan=False)
-    machine_status: Literal["NORMAL", "WARNING", "CRITICAL", "MAINTENANCE", "STOPPED"]
+    machine_status: Literal["NORMAL", "IDLE", "WARNING", "CRITICAL", "MAINTENANCE", "STOPPED"]
     data_quality: Literal["GOOD", "NOISY"]
     fault_mode: Optional[str] = Field(None, max_length=128)
 
@@ -371,23 +378,48 @@ def _verify_password(password: str, encoded: str) -> bool:
 def _token_digest(token: str) -> str:
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
+def _audit_request_context(request: Optional[Request]) -> Dict[str, Optional[str]]:
+    """Capture direct peer and browser hint only; do not trust forwarded client headers."""
+    if request is None:
+        return {"client_ip": None, "device_info": None}
+    peer = request.client.host if request.client else None
+    user_agent = request.headers.get("user-agent")
+    return {"client_ip": (peer or "")[:45] or None, "device_info": (user_agent or "")[:255] or None}
+
+
 def _audit_insert(connection, *, employee_id=None, employee_name=None, role=None,
-                  employee_work_id=None, event_type: str, session_id=None, request_id=None, details=None):
-    connection.execute(_sql_text("""
-        INSERT INTO activity_log
-            (employee_id, employee_work_id, employee_name, role_at_event, event_type, occurred_at_utc,
-             session_id, request_id, details)
-        VALUES (:employee_id, :employee_work_id, :employee_name, :role, :event_type, UTC_TIMESTAMP(6),
-                :session_id, :request_id, :details)
-    """), {
-        "employee_id": employee_id, "employee_work_id": employee_work_id, "employee_name": employee_name, "role": role,
-        "event_type": event_type, "session_id": session_id, "request_id": request_id,
+                  employee_work_id=None, event_type: str, session_id=None, request_id=None,
+                  details=None, request: Optional[Request] = None, resource_type=None,
+                  resource_id=None, changed_fields=None):
+    """Write the base audit event and only optional columns present in this DB version."""
+    columns = {row[0] for row in connection.execute(_sql_text("""
+        SELECT COLUMN_NAME FROM information_schema.columns
+        WHERE table_schema = DATABASE() AND table_name = 'activity_log'
+    """)).all()}
+    values = {
+        "employee_id": employee_id, "employee_work_id": employee_work_id,
+        "employee_name": employee_name, "role_at_event": role, "event_type": event_type,
+        "occurred_at_utc": None, "session_id": session_id, "request_id": request_id,
         "details": (details or "")[:500] or None,
-    })
+        **_audit_request_context(request),
+        "resource_type": (resource_type or "")[:64] or None,
+        "resource_id": (str(resource_id)[:64] if resource_id is not None else None),
+        "changed_fields": json.dumps(sorted({str(item)[:64] for item in (changed_fields or [])})) if changed_fields else None,
+    }
+    base = ["employee_id", "employee_work_id", "employee_name", "role_at_event", "event_type",
+            "occurred_at_utc", "session_id", "request_id", "details"]
+    optional = ["client_ip", "device_info", "resource_type", "resource_id", "changed_fields"]
+    selected = base + [name for name in optional if name in columns]
+    sql_columns = ", ".join(selected)
+    sql_values = ", ".join("UTC_TIMESTAMP(6)" if name == "occurred_at_utc" else f":{name}" for name in selected)
+    params = {name: values[name] for name in selected if name != "occurred_at_utc"}
+    connection.execute(_sql_text(f"INSERT INTO activity_log ({sql_columns}) VALUES ({sql_values})"), params)
 
 def record_activity(*, user: Optional[Dict[str, Any]], event_type: str,
                     request_id: Optional[str] = None, session_id: Optional[str] = None,
-                    details: Optional[str] = None) -> None:
+                    details: Optional[str] = None, request: Optional[Request] = None,
+                    resource_type: Optional[str] = None, resource_id: Optional[str] = None,
+                    changed_fields: Optional[List[str]] = None) -> None:
     if DEMO_AUTH_ENABLED:
         return  # The test environment deliberately has no durable business audit trail.
     engine = get_telemetry_engine()
@@ -400,7 +432,8 @@ def record_activity(*, user: Optional[Dict[str, Any]], event_type: str,
                 employee_work_id=(user or {}).get("work_id"),
                 role=(user or {}).get("role"), event_type=event_type,
                 session_id=session_id or (user or {}).get("session_id"),
-                request_id=request_id, details=details,
+                request_id=request_id, details=details, request=request,
+                resource_type=resource_type, resource_id=resource_id, changed_fields=changed_fields,
             )
     except Exception as exc:
         print(f"[Activity Log] Write failed: {type(exc).__name__}")
@@ -427,13 +460,16 @@ def get_current_user(request: Request, authorization: Optional[str] = Header(Non
         if not current or not current.get("is_active", True):
             DEMO_SESSIONS.pop(_token_digest(token), None)
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Account is inactive")
-        return {k: v for k, v in current.items() if k not in {"password", "password_hash"}} | {"session_id": session["session_id"]}
+        return {k: v for k, v in current.items() if k not in {"password", "password_hash"}} | {
+            "session_id": session["session_id"],
+            "session_started_at_utc": session["created_at"].isoformat(),
+        }
 
     engine = get_telemetry_engine()
     try:
         with engine.connect() as connection:
             row = connection.execute(_sql_text("""
-                SELECT s.session_id, s.employee_id, s.expires_at_utc, s.revoked_at_utc,
+                SELECT s.session_id, s.employee_id, s.created_at_utc, s.expires_at_utc, s.revoked_at_utc,
                        u.work_id, u.full_name, u.role, u.assigned_machine, u.email, u.is_active,
                        u.department, u.shift
                 FROM auth_sessions s JOIN users u ON u.id = s.employee_id
@@ -447,13 +483,14 @@ def get_current_user(request: Request, authorization: Optional[str] = Header(Non
         if expiry <= _utcnow():
             with engine.begin() as connection:
                 connection.execute(_sql_text("UPDATE auth_sessions SET revoked_at_utc = UTC_TIMESTAMP(6), revoke_reason = 'expired' WHERE session_id = :session_id AND revoked_at_utc IS NULL"), {"session_id": row["session_id"]})
-                _audit_insert(connection, employee_id=row["employee_id"], employee_work_id=row["work_id"], employee_name=row["full_name"], role=row["role"], event_type="session_expiry", session_id=row["session_id"], request_id=getattr(request.state, "request_id", None))
+                _audit_insert(connection, employee_id=row["employee_id"], employee_work_id=row["work_id"], employee_name=row["full_name"], role=row["role"], event_type="session_expiry", session_id=row["session_id"], request_id=getattr(request.state, "request_id", None), request=request)
             raise HTTPException(status_code=401, detail="Session expired. Sign in again.")
         return {
             "id": row["employee_id"], "work_id": row["work_id"], "full_name": row["full_name"],
             "role": row["role"], "assigned_machine": row["assigned_machine"],
             "email": row["email"], "department": row["department"], "shift": row["shift"],
             "is_active": row["is_active"], "session_id": row["session_id"],
+            "session_started_at_utc": row["created_at_utc"].replace(tzinfo=datetime.timezone.utc).isoformat() if row["created_at_utc"].tzinfo is None else row["created_at_utc"].astimezone(datetime.timezone.utc).isoformat(),
         }
     except HTTPException:
         raise
@@ -488,13 +525,14 @@ def login(payload: LoginRequest, request: Request):
             raise HTTPException(status_code=401, detail="Invalid employee ID or password")
         access_token = secrets.token_urlsafe(32)
         session_id = str(uuid.uuid4())
+        created_at = _utcnow()
         DEMO_SESSIONS[_token_digest(access_token)] = {
             "user": {k: v for k, v in user.items() if k != "password"},
-            "session_id": session_id, "expires_at": _utcnow() + datetime.timedelta(hours=SESSION_HOURS),
+            "session_id": session_id, "created_at": created_at, "expires_at": created_at + datetime.timedelta(hours=SESSION_HOURS),
         }
         return LoginResponse(access_token=access_token, user=UserProfileResponse(
             id=user["id"], work_id=user["work_id"], full_name=user["full_name"], role=user["role"],
-            assigned_machine=user["assigned_machine"], email=user["email"], department=user.get("department"), shift=user.get("shift"),
+            assigned_machine=user["assigned_machine"], email=user["email"], department=user.get("department"), shift=user.get("shift"), session_started_at_utc=created_at.isoformat(),
         ))
 
     engine = get_telemetry_engine()
@@ -510,17 +548,28 @@ def login(payload: LoginRequest, request: Request):
             if not credentials_valid:
                 _audit_insert(connection, employee_id=user["id"] if user else None, employee_work_id=work_id, employee_name=user["full_name"] if user else None,
                               role=user["role"] if user else None, event_type="failed_sign_in",
-                              request_id=getattr(request.state, "request_id", None), details=f"Failed sign-in for badge {work_id[:32]}")
+                              request_id=getattr(request.state, "request_id", None), details=f"Failed sign-in for badge {work_id[:32]}", request=request)
             else:
                 session_id = str(uuid.uuid4())
                 access_token = secrets.token_urlsafe(48)
-                expires_at = _utcnow() + datetime.timedelta(hours=SESSION_HOURS)
-                connection.execute(_sql_text("""
-                    INSERT INTO auth_sessions (session_id, employee_id, token_hash, created_at_utc, expires_at_utc)
-                    VALUES (:session_id, :employee_id, :token_hash, UTC_TIMESTAMP(6), :expires_at_utc)
-                """), {"session_id": session_id, "employee_id": user["id"], "token_hash": _token_digest(access_token), "expires_at_utc": expires_at.replace(tzinfo=None)})
+                created_at = _utcnow()
+                expires_at = created_at + datetime.timedelta(hours=SESSION_HOURS)
+                session_values = {
+                    "session_id": session_id, "employee_id": user["id"], "token_hash": _token_digest(access_token),
+                    "created_at_utc": created_at.replace(tzinfo=None), "expires_at_utc": expires_at.replace(tzinfo=None),
+                    **_audit_request_context(request),
+                }
+                session_columns = {row[0] for row in connection.execute(_sql_text("""
+                    SELECT COLUMN_NAME FROM information_schema.columns
+                    WHERE table_schema = DATABASE() AND table_name = 'auth_sessions'
+                """)).all()}
+                session_fields = ["session_id", "employee_id", "token_hash", "created_at_utc", "expires_at_utc"]
+                session_fields.extend(name for name in ("client_ip", "device_info") if name in session_columns)
+                connection.execute(_sql_text(
+                    f"INSERT INTO auth_sessions ({', '.join(session_fields)}) VALUES ({', '.join(':' + name for name in session_fields)})"
+                ), {name: session_values[name] for name in session_fields})
                 _audit_insert(connection, employee_id=user["id"], employee_work_id=user["work_id"], employee_name=user["full_name"], role=user["role"],
-                              event_type="sign_in", session_id=session_id, request_id=getattr(request.state, "request_id", None))
+                              event_type="sign_in", session_id=session_id, request_id=getattr(request.state, "request_id", None), request=request)
     except HTTPException:
         raise
     except Exception as exc:
@@ -537,7 +586,8 @@ def login(payload: LoginRequest, request: Request):
             full_name=user["full_name"],
             role=user["role"],
             assigned_machine=user["assigned_machine"],
-            email=user["email"], department=user.get("department"), shift=user.get("shift"), is_active=user.get("is_active", True)
+            email=user["email"], department=user.get("department"), shift=user.get("shift"), is_active=user.get("is_active", True),
+            session_started_at_utc=created_at.isoformat()
         )
     )
 
@@ -549,7 +599,8 @@ def get_me(user: Dict[str, Any] = Depends(get_current_user)):
         full_name=user["full_name"],
         role=user["role"],
         assigned_machine=user["assigned_machine"],
-        email=user["email"], department=user.get("department"), shift=user.get("shift"), is_active=user.get("is_active", True)
+        email=user["email"], department=user.get("department"), shift=user.get("shift"), is_active=user.get("is_active", True),
+        session_started_at_utc=user.get("session_started_at_utc")
     )
 
 @app.post("/api/v1/auth/logout")
@@ -564,7 +615,7 @@ def logout(request: Request, user: Dict[str, Any] = Depends(get_current_user), a
         with engine.begin() as connection:
             connection.execute(_sql_text("UPDATE auth_sessions SET revoked_at_utc = UTC_TIMESTAMP(6), revoke_reason = 'user_sign_out' WHERE session_id = :session_id AND revoked_at_utc IS NULL"), {"session_id": user["session_id"]})
             _audit_insert(connection, employee_id=user["id"], employee_work_id=user["work_id"], employee_name=user["full_name"], role=user["role"],
-                          event_type="sign_out", session_id=user["session_id"], request_id=getattr(request.state, "request_id", None))
+                          event_type="sign_out", session_id=user["session_id"], request_id=getattr(request.state, "request_id", None), request=request)
     except Exception as exc:
         print(f"[Authentication] Logout failed: {type(exc).__name__}")
         raise HTTPException(status_code=503, detail="Could not record sign-out") from exc
@@ -579,10 +630,19 @@ def get_admin_activity_log(limit: int = 250, user: Dict[str, Any] = Depends(requ
     engine = get_telemetry_engine()
     try:
         with engine.connect() as connection:
-            rows = connection.execute(_sql_text("""
-                SELECT id, employee_id, employee_name, role_at_event, event_type, occurred_at_utc,
-                       employee_work_id, session_id, request_id, details
-                FROM activity_log ORDER BY occurred_at_utc DESC, id DESC LIMIT :limit
+            columns = {row[0] for row in connection.execute(_sql_text("""
+                SELECT COLUMN_NAME FROM information_schema.columns
+                WHERE table_schema = DATABASE() AND table_name = 'activity_log'
+            """)).all()}
+            optional = [name for name in ("client_ip", "device_info", "resource_type", "resource_id", "changed_fields") if name in columns]
+            projection = ["a.id", "a.employee_id", "a.employee_name", "a.role_at_event", "a.event_type", "a.occurred_at_utc",
+                          "a.employee_work_id", "a.session_id", "a.request_id", "a.details"]
+            projection.extend(f"a.{name}" for name in optional)
+            projection.append("CASE WHEN s.session_id IS NULL THEN NULL ELSE GREATEST(0, TIMESTAMPDIFF(SECOND, s.created_at_utc, CASE WHEN s.revoked_at_utc IS NOT NULL THEN s.revoked_at_utc WHEN s.expires_at_utc < UTC_TIMESTAMP(6) THEN s.expires_at_utc ELSE UTC_TIMESTAMP(6) END)) END AS session_duration_seconds")
+            rows = connection.execute(_sql_text(f"""
+                SELECT {', '.join(projection)}
+                FROM activity_log a LEFT JOIN auth_sessions s ON s.session_id = a.session_id
+                ORDER BY a.occurred_at_utc DESC, a.id DESC LIMIT :limit
             """), {"limit": limit}).mappings().all()
         events = []
         for row in rows:
@@ -592,6 +652,16 @@ def get_admin_activity_log(limit: int = 250, user: Dict[str, Any] = Depends(requ
                 event_type=row["event_type"], occurred_at_utc=_iso_utc(row["occurred_at_utc"]),
                 occurred_at_local=local_timestamp, factory_time_zone=zone_name,
                 session_id=row["session_id"], request_id=row["request_id"], details=row["details"],
+                session_duration_seconds=row.get("session_duration_seconds"),
+                client_ip=row.get("client_ip"), device_info=row.get("device_info"),
+                resource_type=row.get("resource_type"), resource_id=row.get("resource_id"),
+                changed_fields=(
+                    json.loads(row["changed_fields"])
+                    if isinstance(row.get("changed_fields"), str) and row.get("changed_fields")
+                    else list(row["changed_fields"])
+                    if isinstance(row.get("changed_fields"), (list, tuple))
+                    else None
+                ),
             ).model_dump())
         try:
             ZoneInfo(FACTORY_TIMEZONE)
@@ -641,7 +711,7 @@ def create_admin_user(payload: AdminUserCreateRequest, request: Request, user: D
                 VALUES (:work_id, :full_name, :password_hash, :role, :assigned_machine, :email, :department, :shift, TRUE)
             """), {"work_id": work_id, "full_name": payload.full_name.strip(), "password_hash": password_hash, "role": payload.role, "assigned_machine": payload.assigned_machine, "email": payload.email.strip(), "department": payload.department, "shift": payload.shift})
             new_id = result.lastrowid
-            _audit_insert(connection, employee_id=user["id"], employee_work_id=user["work_id"], employee_name=user["full_name"], role=user["role"], event_type="user_created", session_id=user.get("session_id"), request_id=getattr(request.state, "request_id", None), details=f"Created employee {work_id} with role {payload.role}")
+            _audit_insert(connection, employee_id=user["id"], employee_work_id=user["work_id"], employee_name=user["full_name"], role=user["role"], event_type="user_created", session_id=user.get("session_id"), request_id=getattr(request.state, "request_id", None), request=request, resource_type="user", resource_id=new_id, changed_fields=["work_id", "full_name", "role", "assigned_machine", "email", "department", "shift", "is_active"], details=f"Created employee {work_id} with role {payload.role}")
         return {"id": new_id, "work_id": work_id, "full_name": payload.full_name.strip(), "role": payload.role, "assigned_machine": payload.assigned_machine, "email": payload.email.strip(), "department": payload.department, "shift": payload.shift, "is_active": True}
     except Exception as exc:
         if isinstance(exc, HTTPException): raise
@@ -651,6 +721,7 @@ def create_admin_user(payload: AdminUserCreateRequest, request: Request, user: D
 @app.patch("/api/v1/admin/users/{employee_id}")
 def update_admin_user(employee_id: int, payload: AdminUserUpdateRequest, request: Request, user: Dict[str, Any] = Depends(require_roles(["Admin"]))):
     updates = payload.model_dump(exclude_unset=True)
+    audited_fields = sorted(updates.keys())
     if not updates:
         raise HTTPException(status_code=422, detail="No personnel fields supplied")
     if any(updates.get(field) is None for field in ("full_name", "role", "email", "is_active") if field in updates):
@@ -699,7 +770,7 @@ def update_admin_user(employee_id: int, payload: AdminUserUpdateRequest, request
             if password_to_hash:
                 connection.execute(_sql_text("UPDATE auth_sessions SET revoked_at_utc = UTC_TIMESTAMP(6), revoke_reason = 'password_reset' WHERE employee_id = :id AND revoked_at_utc IS NULL"), {"id": employee_id})
             event_type = "user_password_reset" if password_to_hash else ("user_role_changed" if "role" in updates else "user_updated")
-            _audit_insert(connection, employee_id=user["id"], employee_work_id=user["work_id"], employee_name=user["full_name"], role=user["role"], event_type=event_type, session_id=user.get("session_id"), request_id=getattr(request.state, "request_id", None), details=f"Updated {before['work_id']}; role {before['role']} -> {updates.get('role', before['role'])}")
+            _audit_insert(connection, employee_id=user["id"], employee_work_id=user["work_id"], employee_name=user["full_name"], role=user["role"], event_type=event_type, session_id=user.get("session_id"), request_id=getattr(request.state, "request_id", None), request=request, resource_type="user", resource_id=employee_id, changed_fields=audited_fields, details=f"Updated {before['work_id']}; role {before['role']} -> {updates.get('role', before['role'])}")
             after = connection.execute(_sql_text("SELECT id, work_id, full_name, role, assigned_machine, email, department, shift, is_active FROM users WHERE id = :id"), {"id": employee_id}).mappings().first()
         return dict(after)
     except HTTPException: raise
@@ -732,7 +803,7 @@ def deactivate_admin_user(employee_id: int, request: Request, user: Dict[str, An
                 if admin_count <= 1: raise HTTPException(status_code=409, detail="At least one active administrator must remain")
             connection.execute(_sql_text("UPDATE users SET is_active = FALSE WHERE id = :id"), {"id": employee_id})
             connection.execute(_sql_text("UPDATE auth_sessions SET revoked_at_utc = UTC_TIMESTAMP(6), revoke_reason = 'account_deactivated' WHERE employee_id = :id AND revoked_at_utc IS NULL"), {"id": employee_id})
-            _audit_insert(connection, employee_id=user["id"], employee_work_id=user["work_id"], employee_name=user["full_name"], role=user["role"], event_type="user_deactivated", session_id=user.get("session_id"), request_id=getattr(request.state, "request_id", None), details=f"Deactivated employee {employee['work_id']}")
+            _audit_insert(connection, employee_id=user["id"], employee_work_id=user["work_id"], employee_name=user["full_name"], role=user["role"], event_type="user_deactivated", session_id=user.get("session_id"), request_id=getattr(request.state, "request_id", None), request=request, resource_type="user", resource_id=employee_id, changed_fields=["is_active"], details=f"Deactivated employee {employee['work_id']}")
         return {"deactivated": True}
     except HTTPException: raise
     except Exception as exc:
@@ -839,7 +910,21 @@ SIMULATOR_SENSOR_UNITS = {
     "Vibration": "mm/s",
     "RPM": "RPM",
     "Torque": "Nm",
+    # Mechanical shaft power derived by the Simulator from Torque and RPM.
+    "Motor Power": "kW",
+    # Simulator proxy derived from its configured torque range, not measured electrical load.
+    "Motor Load": "%",
     "Current": "A",
+    "Voltage": "V",
+    "Pressure": "bar",
+    "Coolant Flow": "L/min",
+    "Battery SOC": "%",
+    "Battery SOH": "%",
+    "Good Parts": "parts",
+    "Scrap Parts": "parts",
+    "Shift Target": "parts",
+    "Cycle Time": "s/cycle",
+    "Target Cycle Time": "s/cycle",
 }
 
 def validate_simulator_sensor_unit(payload: SimulatorTelemetryIngest) -> None:
@@ -1129,29 +1214,55 @@ def get_simulator_fleet_latest_readings(
 
     engine = get_telemetry_engine()
     try:
-        machine_filter = "WHERE machine_id = :machine_id" if assigned_machine_id else ""
+        machine_filter = "WHERE latest.machine_id = :machine_id" if assigned_machine_id else ""
         parameters = {"machine_id": assigned_machine_id} if assigned_machine_id else {}
-        # Loose index grouping followed by bounded index seeks avoids a window
-        # sort of every historical JSON row on each dashboard refresh.
-        query = """
-            SELECT reading_id, machine_id, machine_code, reading_timestamp, machine_type, department,
-                   production_line, sensor_name, sensor_unit, sensor_value_json, expected_min,
-                   expected_max, machine_status, data_quality, fault_mode, data_provenance
-            FROM simulator_sensor_readings
-            WHERE machine_id = :machine_id AND sensor_name = :sensor_name
-              AND data_source = 'AI_SIMULATOR'
-            ORDER BY reading_timestamp DESC, id DESC LIMIT 1
-        """
         with engine.connect() as connection:
-            streams = connection.execute(_sql_text(f"""
-                SELECT machine_id, sensor_name FROM simulator_sensor_readings
-                {machine_filter} GROUP BY machine_id, sensor_name
-            """), parameters).mappings().all()
-            rows = []
-            for stream in streams:
-                row = connection.execute(_sql_text(query), dict(stream)).mappings().first()
-                if row:
-                    rows.append(row)
+            # The migration maintains one pointer per machine/sensor stream.
+            # Joining through it keeps the one-second dashboard poll to a
+            # single indexed query instead of one round trip per stream.
+            latest_query = f"""
+                SELECT r.reading_id, r.machine_id, r.machine_code, r.reading_timestamp,
+                       r.machine_type, r.department, r.production_line, r.sensor_name,
+                       r.sensor_unit, r.sensor_value_json, r.expected_min, r.expected_max,
+                       r.machine_status, r.data_quality, r.fault_mode, r.data_provenance
+                FROM simulator_sensor_latest latest
+                JOIN simulator_sensor_readings r ON r.id = latest.reading_row_id
+                {machine_filter}
+                  {'AND' if machine_filter else 'WHERE'} r.data_source = 'AI_SIMULATOR'
+            """
+            try:
+                rows = connection.execute(_sql_text(latest_query), parameters).mappings().all()
+            except Exception as projection_error:
+                # Keep older or partially migrated local databases readable.
+                # This path is only used if the latest-pointer table is absent
+                # or unavailable; it preserves the prior indexed history lookup.
+                print(f"[Telemetry API] Latest projection unavailable: {type(projection_error).__name__}")
+                connection.rollback()
+                rows = []
+
+            if not rows:
+                # Also recover historical readings if the pointer table exists
+                # but its backfill has not been run yet.
+                machine_history_filter = "WHERE machine_id = :machine_id" if assigned_machine_id else ""
+                streams = connection.execute(_sql_text(f"""
+                    SELECT machine_id, sensor_name FROM simulator_sensor_readings
+                    {machine_history_filter} GROUP BY machine_id, sensor_name
+                """), parameters).mappings().all()
+                history_query = """
+                    SELECT reading_id, machine_id, machine_code, reading_timestamp, machine_type,
+                           department, production_line, sensor_name, sensor_unit, sensor_value_json,
+                           expected_min, expected_max, machine_status, data_quality, fault_mode,
+                           data_provenance
+                    FROM simulator_sensor_readings
+                    WHERE machine_id = :machine_id AND sensor_name = :sensor_name
+                      AND data_source = 'AI_SIMULATOR'
+                    ORDER BY reading_timestamp DESC, id DESC LIMIT 1
+                """
+                rows = []
+                for stream in streams:
+                    row = connection.execute(_sql_text(history_query), dict(stream)).mappings().first()
+                    if row:
+                        rows.append(row)
         response = []
         for row in rows:
             machine = master.get(row["machine_id"])

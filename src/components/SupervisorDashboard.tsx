@@ -183,19 +183,19 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
   };
 
   return (
-    <div className="space-y-6 text-slate-100">
+    <div className="space-y-6 text-slate-900">
       {/* 1. Header with Role Purpose & Shift Status */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#0c1424] border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-xl">
         <div>
-          <div className="flex items-center gap-2 text-xs font-semibold text-teal-300 uppercase tracking-wider mb-1.5 font-mono">
-            <Users className="w-4 h-4 text-teal-400" />
+          <div className="flex items-center gap-2 text-xs font-semibold text-teal-800 uppercase tracking-wider mb-1.5 font-mono">
+            <Users className="w-4 h-4 text-teal-700" />
             <span>Supervisor Command Console · Shift A (06:00 – 14:00 UTC)</span>
           </div>
-          <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight font-display">
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight font-display">
             Shift Operations &amp; Plant Fleet Control
           </h1>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-3xl leading-relaxed">
-            Active roster: <span className="font-semibold text-teal-300">{machines.length} operational units</span> across 4 manufacturing plants (400-machine catalog). Coordinate shop floor triage, assign technicians, monitor thermal loads, and maintain line readiness.
+          <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-3xl leading-relaxed">
+            Active roster: <span className="font-semibold text-teal-800">{machines.length} operational units</span> across 4 manufacturing plants (400-machine catalog). Coordinate shop floor triage, assign technicians, monitor thermal loads, and maintain line readiness.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
@@ -208,16 +208,16 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
           </button>
           <button
             onClick={() => onNavigate('maintenance')}
-            className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-2 transition-colors border border-slate-700"
+            className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold flex items-center gap-2 transition-colors border border-slate-200"
           >
-            <Wrench className="w-4 h-4 text-amber-400" />
+            <Wrench className="w-4 h-4 text-amber-700" />
             <span>Maintenance Queue ({workOrders.filter(w => w.status !== 'Completed').length})</span>
           </button>
           <button
             onClick={() => onNavigate('machines')}
-            className="px-4 py-2.5 rounded-xl bg-[#070d18] hover:bg-slate-900 text-slate-300 text-xs font-semibold flex items-center gap-2 transition-colors border border-slate-800"
+            className="px-4 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-2 transition-colors border border-slate-200"
           >
-            <Cpu className="w-4 h-4 text-cyan-400" />
+            <Cpu className="w-4 h-4 text-cyan-700" />
             <span>Inspect Machines</span>
           </button>
         </div>
@@ -225,12 +225,12 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
 
       {/* Success Notification Banner */}
       {assignSuccessMsg && (
-        <div className="p-3.5 bg-emerald-950/60 border border-emerald-700/80 rounded-xl text-xs text-emerald-200 flex items-center justify-between font-medium shadow-lg">
+        <div className="p-3.5 bg-emerald-50 border border-slate-200 rounded-xl text-xs text-slate-700 flex items-center justify-between font-medium shadow-lg">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
             <span>{assignSuccessMsg}</span>
           </div>
-          <button onClick={() => setAssignSuccessMsg(null)} className="text-emerald-400 hover:text-emerald-200">
+          <button onClick={() => setAssignSuccessMsg(null)} className="text-emerald-700 hover:text-slate-700">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -239,102 +239,102 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
       {/* 2. Key Operational Metrics Strip */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Metric 1: Fleet Health */}
-        <div className="bg-[#0c1424] border border-slate-800 rounded-2xl p-5 shadow-lg">
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-lg">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-400 uppercase tracking-wider block font-mono">
+            <span className="text-xs font-medium text-slate-600 uppercase tracking-wider block font-mono">
               Fleet Health ({totalFleet} Units)
             </span>
-            <div className="w-8 h-8 rounded-lg bg-emerald-950/70 border border-emerald-800/80 flex items-center justify-center text-emerald-400">
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700">
               <Cpu className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-2.5 flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-extrabold text-white tabular-nums">
+            <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 tabular-nums">
               {nominalCount}
             </span>
-            <span className="text-xs text-emerald-400 font-semibold font-mono">
+            <span className="text-xs text-emerald-700 font-semibold font-mono">
               ({((nominalCount / (totalFleet || 1)) * 100).toFixed(1)}% Nominal)
             </span>
           </div>
-          <p className="text-xs text-slate-400 mt-2.5 flex items-center gap-2 font-mono">
-            <span className="text-amber-400 font-medium">{warningCount} Warning</span>
+          <p className="text-xs text-slate-600 mt-2.5 flex items-center gap-2 font-mono">
+            <span className="text-amber-700 font-medium">{warningCount} Warning</span>
             <span>·</span>
-            <span className="text-rose-400 font-medium">{criticalCount} Critical</span>
+            <span className="text-rose-700 font-medium">{criticalCount} Critical</span>
             {offlineCount > 0 && <span>· <span className="text-slate-500">{offlineCount} Offline</span></span>}
           </p>
         </div>
 
         {/* Metric 2: Open Incidents Needing Action */}
-        <div className="bg-[#0c1424] border border-slate-800 rounded-2xl p-5 shadow-lg">
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-lg">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-400 uppercase tracking-wider block font-mono">
+            <span className="text-xs font-medium text-slate-600 uppercase tracking-wider block font-mono">
               Active Shift Incidents
             </span>
-            <div className="w-8 h-8 rounded-lg bg-amber-950/70 border border-amber-800/80 flex items-center justify-center text-amber-400">
+            <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700">
               <AlertTriangle className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-2.5 flex items-baseline gap-2">
-            <span className={`text-2xl sm:text-3xl font-extrabold tabular-nums ${openIncidents.length > 0 ? 'text-amber-400' : 'text-white'}`}>
+            <span className={`text-2xl sm:text-3xl font-extrabold tabular-nums ${openIncidents.length > 0 ? 'text-amber-700' : 'text-slate-900'}`}>
               {openIncidents.length}
             </span>
-            <span className="text-xs text-slate-400 font-mono">
+            <span className="text-xs text-slate-600 font-mono">
               ({unassignedIncidents.length} Unassigned)
             </span>
           </div>
-          <p className="text-xs text-slate-400 mt-2.5">
+          <p className="text-xs text-slate-600 mt-2.5">
             {criticalIncidents.length > 0 ? (
-              <span className="text-rose-400 font-semibold font-mono">
+              <span className="text-rose-700 font-semibold font-mono">
                 {criticalIncidents.length} High/Critical priority
               </span>
             ) : (
-              <span className="text-emerald-400 font-mono">All tickets in triage</span>
+              <span className="text-emerald-700 font-mono">All tickets in triage</span>
             )}
           </p>
         </div>
 
         {/* Metric 3: Fleet Coolant Temperature */}
-        <div className="bg-[#0c1424] border border-slate-800 rounded-2xl p-5 shadow-lg">
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-lg">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-400 uppercase tracking-wider block font-mono">
+            <span className="text-xs font-medium text-slate-600 uppercase tracking-wider block font-mono">
               Fleet Avg Chiller Temp
             </span>
-            <div className="w-8 h-8 rounded-lg bg-sky-950/70 border border-sky-800/80 flex items-center justify-center text-sky-400">
+            <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-700">
               <Flame className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-2.5 flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-extrabold text-white tabular-nums font-mono">
+            <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 tabular-nums font-mono">
               27.9°C
             </span>
-            <span className="text-xs text-emerald-400 font-semibold bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800 font-mono">
+            <span className="text-xs text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-mono">
               Within Limits
             </span>
           </div>
-          <p className="text-xs text-slate-400 mt-2.5 font-mono">
+          <p className="text-xs text-slate-600 mt-2.5 font-mono">
             Safe Limit: &lt; 35.0°C · Plant C elevated (37.4°C)
           </p>
         </div>
 
         {/* Metric 4: Fleet Motor Load & Active Power */}
-        <div className="bg-[#0c1424] border border-slate-800 rounded-2xl p-5 shadow-lg">
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-lg">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-400 uppercase tracking-wider block font-mono">
+            <span className="text-xs font-medium text-slate-600 uppercase tracking-wider block font-mono">
               Fleet Cutting Load
             </span>
-            <div className="w-8 h-8 rounded-lg bg-purple-950/70 border border-purple-800/80 flex items-center justify-center text-purple-400">
+            <div className="w-8 h-8 rounded-lg bg-purple-50 border border-purple-200 flex items-center justify-center text-purple-700">
               <Zap className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-2.5 flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-extrabold text-purple-300 tabular-nums font-mono">
+            <span className="text-2xl sm:text-3xl font-extrabold text-purple-800 tabular-nums font-mono">
               56.4%
             </span>
-            <span className="text-xs text-slate-400 font-mono">
+            <span className="text-xs text-slate-600 font-mono">
               (2,410 kW Draw)
             </span>
           </div>
-          <p className="text-xs text-slate-400 mt-2.5 font-mono">
+          <p className="text-xs text-slate-600 mt-2.5 font-mono">
             Operating Envelope: &lt; 85% · 16 Operators On Station
           </p>
         </div>
@@ -347,47 +347,47 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
           return (
             <div
               key={p.id}
-              className={`rounded-2xl border p-4.5 transition-all bg-[#0c1424] ${
-                isElevated ? 'border-amber-700/80' : 'border-slate-800'
+              className={`rounded-2xl border p-4.5 transition-all bg-white ${
+                isElevated ? 'border-slate-200' : 'border-slate-200'
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="font-display font-bold text-sm text-white">{p.shortName}</span>
+                <span className="font-display font-bold text-sm text-slate-900">{p.shortName}</span>
                 <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-semibold ${
-                  p.critical > 0 ? 'bg-rose-950/80 text-rose-300 border border-rose-800' :
-                  isElevated ? 'bg-amber-950/80 text-amber-300 border border-amber-800' :
-                  'bg-emerald-950/80 text-emerald-300 border border-emerald-800'
+                  p.critical > 0 ? 'bg-rose-50 text-rose-800 border border-rose-200' :
+                  isElevated ? 'bg-amber-50 text-amber-800 border border-amber-200' :
+                  'bg-emerald-50 text-emerald-800 border border-emerald-200'
                 }`}>
                   {p.availPct}% Avail
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 mt-1 truncate">{p.focus}</p>
+              <p className="text-[11px] text-slate-600 mt-1 truncate">{p.focus}</p>
 
-              <div className="mt-3 grid grid-cols-3 gap-1.5 text-center font-mono text-[11px] bg-[#070d18] rounded-xl p-2 border border-slate-800/80">
+              <div className="mt-3 grid grid-cols-3 gap-1.5 text-center font-mono text-[11px] bg-slate-50 rounded-xl p-2 border border-slate-200">
                 <div>
-                  <div className="text-emerald-400 font-bold">{p.nominal}</div>
+                  <div className="text-emerald-700 font-bold">{p.nominal}</div>
                   <div className="text-[9px] text-slate-500 uppercase">Nominal</div>
                 </div>
                 <div>
-                  <div className="text-amber-400 font-bold">{p.warning}</div>
+                  <div className="text-amber-700 font-bold">{p.warning}</div>
                   <div className="text-[9px] text-slate-500 uppercase">Warn</div>
                 </div>
                 <div>
-                  <div className="text-rose-400 font-bold">{p.critical}</div>
+                  <div className="text-rose-700 font-bold">{p.critical}</div>
                   <div className="text-[9px] text-slate-500 uppercase">Crit</div>
                 </div>
               </div>
 
-              <div className="mt-3 flex items-center justify-between text-xs font-mono text-slate-400 pt-2 border-t border-slate-800/80">
+              <div className="mt-3 flex items-center justify-between text-xs font-mono text-slate-600 pt-2 border-t border-slate-200">
                 <span className="flex items-center gap-1">
-                  <Flame className="w-3 h-3 text-sky-400" />
-                  <span className={isElevated ? 'text-amber-400 font-bold' : 'text-slate-300'}>{p.tempAvg}°C</span>
+                  <Flame className="w-3 h-3 text-slate-700" />
+                  <span className={isElevated ? 'text-amber-700 font-bold' : 'text-slate-700'}>{p.tempAvg}°C</span>
                 </span>
                 <span className="flex items-center gap-1">
-                  <Zap className="w-3 h-3 text-purple-400" />
+                  <Zap className="w-3 h-3 text-purple-700" />
                   <span>{p.expectedKw} kW</span>
                 </span>
-                <span className="flex items-center gap-1 text-amber-400">
+                <span className="flex items-center gap-1 text-amber-700">
                   <AlertTriangle className="w-3 h-3" />
                   <span>{p.openIncs}</span>
                 </span>
@@ -400,19 +400,19 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
       {/* 3. Live Visualizations: Fleet Temperature & Spindle Load Distribution */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Chart 1: Coolant Temperature Across 4 Plants */}
-        <div className="bg-[#0c1424] border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <div>
-                <h3 className="text-sm font-bold text-white flex items-center gap-2 font-display">
-                  <Flame className="w-4 h-4 text-sky-400" />
+                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2 font-display">
+                  <Flame className="w-4 h-4 text-slate-700" />
                   <span>Plant Coolant Temperature vs. 35°C Threshold</span>
                 </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-slate-600 mt-0.5">
                   Chiller fluid temperature readings (°C) across the four manufacturing plants.
                 </p>
               </div>
-              <span className="text-xs font-semibold font-mono text-sky-300 bg-sky-950/70 border border-sky-800 px-2.5 py-0.5 rounded-full">
+              <span className="text-xs font-semibold font-mono text-slate-700 bg-slate-50 border border-slate-200 px-2.5 py-0.5 rounded-full">
                 Safe Limit: 35.0°C
               </span>
             </div>
@@ -426,7 +426,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
                   {/* Warning guideline (35°C) */}
                   <line x1="20" y1="50" x2="360" y2="50" stroke="#f59e0b" strokeWidth="1.5" strokeDasharray="3 3" />
                   {/* Base line (15°C) */}
-                  <line x1="20" y1="100" x2="360" y2="100" stroke="#334155" strokeWidth="1.5" />
+                  <line x1="20" y1="100" x2="360" y2="100" stroke="#94a3b8" strokeWidth="1.5" />
 
                   <text x="15" y="23" fill="#f43f5e" fontSize="8" fontWeight="bold" textAnchor="end" fontFamily="monospace">45°C Trip</text>
                   <text x="15" y="53" fill="#f59e0b" fontSize="8" fontWeight="bold" textAnchor="end" fontFamily="monospace">35°C Limit</text>
@@ -464,7 +464,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
                 </svg>
               </div>
 
-              <div className="flex items-center justify-center gap-5 mt-3 text-xs font-medium font-mono text-slate-400">
+              <div className="flex items-center justify-center gap-5 mt-3 text-xs font-medium font-mono text-slate-600">
                 <div className="flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded bg-sky-500" />
                   <span>&lt; 30°C: Nominal Chilling</span>
@@ -481,25 +481,25 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
             </div>
           </div>
 
-          <div className="mt-4 p-3 bg-[#070d18] border border-slate-800 rounded-xl text-xs text-slate-300 leading-relaxed font-mono">
-            <span className="font-bold text-teal-300">Operational Notice:</span> Plant C average coolant temp is elevated at 37.4°C exceeding the 35°C threshold due to heavy boring cycles, requiring chiller filter backwash.
+          <div className="mt-4 p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 leading-relaxed font-mono">
+            <span className="font-bold text-teal-800">Operational Notice:</span> Plant C average coolant temp is elevated at 37.4°C exceeding the 35°C threshold due to heavy boring cycles, requiring chiller filter backwash.
           </div>
         </div>
 
         {/* Chart 2: Fleet Motor Load & Active Power by Plant */}
-        <div className="bg-[#0c1424] border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <div>
-                <h3 className="text-sm font-bold text-white flex items-center gap-2 font-display">
-                  <Zap className="w-4 h-4 text-purple-400" />
+                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2 font-display">
+                  <Zap className="w-4 h-4 text-purple-700" />
                   <span>Spindle Motor Load (%) &amp; Active Power Draw (kW)</span>
                 </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-slate-600 mt-0.5">
                   Drive inverter cutting load comparison benchmarked against 85% operating envelope.
                 </p>
               </div>
-              <span className="text-xs font-semibold font-mono text-purple-300 bg-purple-950/70 border border-purple-800 px-2.5 py-0.5 rounded-full">
+              <span className="text-xs font-semibold font-mono text-purple-800 bg-purple-50 border border-purple-200 px-2.5 py-0.5 rounded-full">
                 Limit: 85% Load
               </span>
             </div>
@@ -513,12 +513,12 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
               ].map((p) => (
                 <div key={p.plant} className="space-y-1">
                   <div className="flex items-center justify-between text-xs font-mono">
-                    <span className="text-slate-200 font-semibold">{p.plant}</span>
-                    <span className="text-slate-100 font-bold">
+                    <span className="text-slate-800 font-semibold">{p.plant}</span>
+                    <span className="text-slate-900 font-bold">
                       {p.loadPct}% Load · {p.powerKw} kW ({p.rpmAvg} RPM)
                     </span>
                   </div>
-                  <div className="relative h-2.5 w-full bg-slate-900 rounded-full overflow-hidden border border-slate-800">
+                  <div className="relative h-2.5 w-full bg-slate-50 rounded-full overflow-hidden border border-slate-200">
                     <div
                       className="absolute top-0 bottom-0 w-0.5 bg-amber-400 z-10"
                       style={{ left: '85%' }}
@@ -540,27 +540,27 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
             </div>
           </div>
 
-          <div className="mt-4 p-3 bg-[#070d18] border border-slate-800 rounded-xl text-xs text-slate-300 leading-relaxed font-mono">
-            <span className="font-bold text-teal-300">Operational Notice:</span> All four plants are operating safely below the 85% inverter threshold, with Plant C operating at the highest cut load (69.5%, 760 kW) for heavy casting roughing passes.
+          <div className="mt-4 p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 leading-relaxed font-mono">
+            <span className="font-bold text-teal-800">Operational Notice:</span> All four plants are operating safely below the 85% inverter threshold, with Plant C operating at the highest cut load (69.5%, 760 kW) for heavy casting roughing passes.
           </div>
         </div>
       </div>
 
       {/* 4. Incidents Needing Immediate Attention (Supervisor Queue) */}
-      <div className="bg-[#0c1424] border border-slate-800 rounded-2xl p-6 shadow-xl">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200">
           <div>
-            <h3 className="text-base font-semibold text-white flex items-center gap-2 font-display">
-              <ShieldAlert className="w-4 h-4 text-amber-400" />
+            <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2 font-display">
+              <ShieldAlert className="w-4 h-4 text-amber-700" />
               <span>Incidents Requiring Supervisor Action &amp; Dispatch</span>
             </h3>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-slate-600 mt-0.5">
               Review open shop-floor issues, assign qualified maintenance personnel, or dispatch urgent work orders.
             </p>
           </div>
           <button
             onClick={() => onNavigate('incidents')}
-            className="text-xs text-teal-300 hover:text-teal-200 font-semibold flex items-center gap-1 font-mono"
+            className="text-xs text-teal-800 hover:text-slate-700 font-semibold flex items-center gap-1 font-mono"
           >
             <span>Open Incident Management</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -568,14 +568,14 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
         </div>
 
         {openIncidents.length === 0 ? (
-          <div className="py-8 text-center text-xs text-slate-400 font-mono flex items-center justify-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+          <div className="py-8 text-center text-xs text-slate-600 font-mono flex items-center justify-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-700" />
             <span>No active incidents requiring triage in this selection.</span>
           </div>
         ) : (
-          <div className="mt-4 overflow-x-auto border border-slate-800 rounded-xl">
+          <div className="mt-4 overflow-x-auto border border-slate-200 rounded-xl">
             <table className="w-full text-left text-xs">
-              <thead className="bg-[#070d18] border-b border-slate-800 text-slate-400 uppercase text-[10px] font-mono font-semibold">
+              <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase text-[10px] font-mono font-semibold">
                 <tr>
                   <th className="py-3 px-3.5">Ticket</th>
                   <th className="py-3 px-3.5">Machine</th>
@@ -588,40 +588,40 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
               </thead>
               <tbody className="divide-y divide-slate-800/80">
                 {openIncidents.slice(0, 6).map((inc) => (
-                  <tr key={inc.id} className="hover:bg-slate-900/50 transition-colors">
-                    <td className="py-3 px-3.5 font-bold font-mono text-teal-300">{inc.incidentCode}</td>
-                    <td className="py-3 px-3.5 text-white font-mono font-semibold">{inc.machineCode}</td>
+                  <tr key={inc.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="py-3 px-3.5 font-bold font-mono text-teal-800">{inc.incidentCode}</td>
+                    <td className="py-3 px-3.5 text-slate-900 font-mono font-semibold">{inc.machineCode}</td>
                     <td className="py-3 px-3.5">
                       <span
                         className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-semibold ${
                           inc.severity === 'Critical'
-                            ? 'bg-rose-950/80 text-rose-300 border border-rose-800'
+                            ? 'bg-rose-50 text-rose-800 border border-rose-200'
                             : inc.severity === 'High'
-                            ? 'bg-amber-950/80 text-amber-300 border border-amber-800'
-                            : 'bg-slate-800 text-slate-300 border border-slate-700'
+                            ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                            : 'bg-slate-100 text-slate-700 border border-slate-200'
                         }`}
                       >
                         {inc.severity}
                       </span>
                     </td>
-                    <td className="py-3 px-3.5 text-slate-300 truncate max-w-xs">
+                    <td className="py-3 px-3.5 text-slate-700 truncate max-w-xs">
                       {inc.symptomDescription}
                     </td>
-                    <td className="py-3 px-3.5 text-slate-400">
+                    <td className="py-3 px-3.5 text-slate-600">
                       {inc.reporterName} ({inc.reporterRole})
                     </td>
                     <td className="py-3 px-3.5">
                       {inc.assignedToName ? (
-                        <span className="text-teal-300 font-medium font-mono">{inc.assignedToName}</span>
+                        <span className="text-teal-800 font-medium font-mono">{inc.assignedToName}</span>
                       ) : (
-                        <span className="text-rose-400 font-medium font-mono">Unassigned</span>
+                        <span className="text-rose-700 font-medium font-mono">Unassigned</span>
                       )}
                     </td>
                     <td className="py-3 px-3.5 text-right">
                       <div className="flex items-center justify-end gap-1.5">
                         <button
                           onClick={() => setAssigningIncident(inc)}
-                          className="px-2.5 py-1 rounded bg-teal-950/80 hover:bg-teal-900 text-teal-300 text-[11px] font-mono font-semibold transition-colors border border-teal-800"
+                          className="px-2.5 py-1 rounded bg-teal-50 hover:bg-teal-50 text-teal-800 text-[11px] font-mono font-semibold transition-colors border border-teal-200"
                         >
                           {inc.assignedToName ? 'Reassign' : 'Assign'}
                         </button>
@@ -630,7 +630,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
                             onSelectMachine(inc.machineCode);
                             onNavigate('machines');
                           }}
-                          className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-mono transition-colors"
+                          className="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-mono transition-colors"
                           title="Inspect Telemetry"
                         >
                           <Eye className="w-3.5 h-3.5" />
@@ -646,14 +646,14 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
       </div>
 
       {/* 5. Interactive Fleet Browser with 4-Tier Filters */}
-      <div className="bg-[#0c1424] border border-slate-800 rounded-2xl p-6 shadow-xl">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-slate-800">
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xl">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-slate-200">
           <div>
-            <h3 className="text-base font-semibold text-white flex items-center gap-2 font-display">
-              <Layers className="w-4 h-4 text-teal-400" />
+            <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2 font-display">
+              <Layers className="w-4 h-4 text-teal-700" />
               <span>Fleet Inventory &amp; Live Machine Status ({machines.length} Machines)</span>
             </h3>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-slate-600 mt-0.5">
               Filter by plant, machine category, or current operational status. Showing {filteredMachines.length} matching units.
             </p>
           </div>
@@ -664,7 +664,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
               placeholder="Search by code, model, or ID..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-[#070d18] border border-slate-700 text-xs rounded-xl pl-9 pr-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 w-full sm:w-64 shadow-inner"
+              className="bg-slate-50 border border-slate-200 text-xs rounded-xl pl-9 pr-3 py-2 text-slate-900 placeholder-slate-500 focus:outline-none focus:border-teal-500 w-full sm:w-64 shadow-inner"
             />
           </div>
         </div>
@@ -672,11 +672,11 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
         {/* Filter Controls Row */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1 font-mono">Filter by Plant</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1 font-mono">Filter by Plant</label>
             <select
               value={plantFilter}
               onChange={(e) => setPlantFilter(e.target.value)}
-              className="w-full bg-[#070d18] border border-slate-700 text-xs text-slate-200 rounded-xl p-2.5 focus:border-teal-500 focus:outline-none"
+              className="w-full bg-slate-50 border border-slate-200 text-xs text-slate-800 rounded-xl p-2.5 focus:border-teal-500 focus:outline-none"
             >
               <option value="ALL">All Plants ({machines.length} Machines)</option>
               <option value="Plant A: Precision Machining">Plant A: Precision Machining ({machines.filter(m => m.plant === 'Plant A: Precision Machining' || m.plant === 'Plant A').length})</option>
@@ -687,11 +687,11 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1 font-mono">Filter by Machine Type</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1 font-mono">Filter by Machine Type</label>
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              className="w-full bg-[#070d18] border border-slate-700 text-xs text-slate-200 rounded-xl p-2.5 focus:border-teal-500 focus:outline-none"
+              className="w-full bg-slate-50 border border-slate-200 text-xs text-slate-800 rounded-xl p-2.5 focus:border-teal-500 focus:outline-none"
             >
               <option value="ALL">All Categories (7 Types)</option>
               {categories.map((cat) => (
@@ -703,11 +703,11 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1 font-mono">Filter by Operational Status</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1 font-mono">Filter by Operational Status</label>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full bg-[#070d18] border border-slate-700 text-xs text-slate-200 rounded-xl p-2.5 focus:border-teal-500 focus:outline-none"
+              className="w-full bg-slate-50 border border-slate-200 text-xs text-slate-800 rounded-xl p-2.5 focus:border-teal-500 focus:outline-none"
             >
               <option value="ALL">All Statuses</option>
               <option value="Nominal">Nominal / Running</option>
@@ -719,9 +719,9 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
         </div>
 
         {/* Machine Table with Dual Identification */}
-        <div className="mt-4 overflow-x-auto max-h-96 border border-slate-800 rounded-xl">
+        <div className="mt-4 overflow-x-auto max-h-96 border border-slate-200 rounded-xl">
           <table className="w-full text-left text-xs">
-            <thead className="sticky top-0 bg-[#070d18] border-b border-slate-800 text-slate-400 uppercase text-[10px] font-mono font-semibold">
+            <thead className="sticky top-0 bg-slate-50 border-b border-slate-200 text-slate-600 uppercase text-[10px] font-mono font-semibold">
               <tr>
                 <th className="py-3 px-3.5">Machine Identification</th>
                 <th className="py-3 px-3.5">Category</th>
@@ -735,15 +735,15 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
             </thead>
             <tbody className="divide-y divide-slate-800/80">
               {filteredMachines.slice(0, 40).map((m) => (
-                <tr key={m.machineId || m.code} className="hover:bg-slate-900/50 transition-colors">
+                <tr key={m.machineId || m.code} className="hover:bg-slate-50 transition-colors">
                   <td className="py-3 px-3.5">
-                    <div className="font-semibold text-white">{m.displayName || m.name}</div>
-                    <div className="text-[11px] font-mono text-teal-300">{m.machineId || m.code} · {m.machineCode || m.code}</div>
+                    <div className="font-semibold text-slate-900">{m.displayName || m.name}</div>
+                    <div className="text-[11px] font-mono text-teal-800">{m.machineId || m.code} · {m.machineCode || m.code}</div>
                   </td>
-                  <td className="py-3 px-3.5 text-slate-300 truncate max-w-[160px]">
+                  <td className="py-3 px-3.5 text-slate-700 truncate max-w-[160px]">
                     {m.machineType}
                   </td>
-                  <td className="py-3 px-3.5 text-slate-400">
+                  <td className="py-3 px-3.5 text-slate-600">
                     <div>{m.plant?.split(':')[0] || 'Plant A'}</div>
                     <div className="text-[10px] font-mono text-slate-500">{m.productionLine || 'Line 1'}</div>
                   </td>
@@ -751,10 +751,10 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
                     <span
                       className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold ${
                         m.status === 'Critical'
-                          ? 'bg-rose-950/80 text-rose-300 border border-rose-800'
+                          ? 'bg-rose-50 text-rose-800 border border-rose-200'
                           : m.status === 'Warning'
-                          ? 'bg-amber-950/80 text-amber-300 border border-amber-800'
-                          : 'bg-emerald-950/80 text-emerald-300 border border-emerald-800'
+                          ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                          : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
                       }`}
                     >
                       <span
@@ -765,13 +765,13 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
                       <span>{m.status || 'Nominal'}</span>
                     </span>
                   </td>
-                  <td className="py-3 px-3.5 text-slate-200 tabular-nums font-mono font-medium">
+                  <td className="py-3 px-3.5 text-slate-800 tabular-nums font-mono font-medium">
                     {m.spindleRpm || 4500} RPM
                   </td>
-                  <td className="py-3 px-3.5 text-slate-200 tabular-nums font-mono font-medium">
+                  <td className="py-3 px-3.5 text-slate-800 tabular-nums font-mono font-medium">
                     {(m.vibrationMmS || 1.85).toFixed(2)} mm/s
                   </td>
-                  <td className="py-3 px-3.5 text-slate-200 tabular-nums font-mono font-medium">
+                  <td className="py-3 px-3.5 text-slate-800 tabular-nums font-mono font-medium">
                     {(m.motorLoadPercent || 58).toFixed(1)}%
                   </td>
                   <td className="py-3 px-3.5 text-right">
@@ -780,7 +780,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
                         onSelectMachine(m.code);
                         onNavigate('machines');
                       }}
-                      className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-mono font-medium transition-colors border border-slate-700"
+                      className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-mono font-medium transition-colors border border-slate-200"
                     >
                       Inspect
                     </button>
@@ -793,18 +793,18 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
       </div>
 
       {/* 6. Shift Handover & Safety Notes Section */}
-      <div className="bg-[#0c1424] border border-slate-800 rounded-2xl p-6 shadow-xl">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xl">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-200">
           <div>
-            <h3 className="text-sm font-bold text-white flex items-center gap-2 font-display">
-              <FileText className="w-4 h-4 text-teal-400" />
+            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2 font-display">
+              <FileText className="w-4 h-4 text-teal-700" />
               <span>Shift Handover Log &amp; Safety Continuity</span>
             </h3>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-slate-600 mt-0.5">
               Live communications bridge between Shift A (Day) and incoming Shift B (Swing) supervisors.
             </p>
           </div>
-          <span className="text-xs font-mono text-emerald-400 bg-emerald-950/70 border border-emerald-800 px-2.5 py-0.5 rounded">
+          <span className="text-xs font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded">
             Pre-Shift Safety Briefing Verified
           </span>
         </div>
@@ -815,7 +815,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
             value={handoverNote}
             onChange={(e) => setHandoverNote(e.target.value)}
             placeholder="Record handover instruction or machine observation for incoming supervisor..."
-            className="flex-1 bg-[#070d18] border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-teal-500"
+            className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-500 focus:outline-none focus:border-teal-500"
           />
           <button
             type="submit"
@@ -826,15 +826,15 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
           </button>
         </form>
         {handoverSaved && (
-          <p className="mt-2 text-xs text-emerald-400 font-mono flex items-center gap-1">
+          <p className="mt-2 text-xs text-emerald-700 font-mono flex items-center gap-1">
             <CheckCircle2 className="w-3.5 h-3.5" /> Note appended to shift journal.
           </p>
         )}
 
         <div className="mt-3 space-y-2">
           {shiftNotes.map((note, idx) => (
-            <div key={idx} className="p-2.5 rounded-lg bg-[#070d18] border border-slate-800/80 text-xs text-slate-300 font-mono flex items-start gap-2">
-              <span className="text-teal-400 font-bold shrink-0">#{idx + 1}</span>
+            <div key={idx} className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-700 font-mono flex items-start gap-2">
+              <span className="text-teal-700 font-bold shrink-0">#{idx + 1}</span>
               <span>{note}</span>
             </div>
           ))}
@@ -845,16 +845,16 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
       {/* QUICK ASSIGN MODAL */}
       {/* ------------------------------------------------------------- */}
       {assigningIncident && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-[#0c1424] border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h3 className="font-semibold text-sm text-white flex items-center gap-2 font-display">
-                <Wrench className="w-4 h-4 text-teal-400" />
+        <div className="fixed inset-0 z-50 bg-slate-400/20 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+              <h3 className="font-semibold text-sm text-slate-900 flex items-center gap-2 font-display">
+                <Wrench className="w-4 h-4 text-teal-700" />
                 <span>Assign Ticket {assigningIncident.incidentCode}</span>
               </h3>
               <button
                 onClick={() => setAssigningIncident(null)}
-                className="text-slate-400 hover:text-white"
+                className="text-slate-600 hover:text-slate-900"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -862,27 +862,27 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
 
             <form onSubmit={handleConfirmAssign} className="mt-4 space-y-4 text-xs">
               <div>
-                <span className="text-slate-400 font-mono block mb-1">Target Machine:</span>
-                <div className="p-2.5 bg-[#070d18] border border-slate-800 rounded-lg text-teal-300 font-mono font-semibold">
+                <span className="text-slate-600 font-mono block mb-1">Target Machine:</span>
+                <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-teal-800 font-mono font-semibold">
                   {assigningIncident.machineCode} · {assigningIncident.componentArea}
                 </div>
               </div>
 
               <div>
-                <span className="text-slate-400 font-mono block mb-1">Reported Symptom:</span>
-                <div className="p-2.5 bg-[#070d18] border border-slate-800 rounded-lg text-slate-300">
+                <span className="text-slate-600 font-mono block mb-1">Reported Symptom:</span>
+                <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-700">
                   {assigningIncident.symptomDescription}
                 </div>
               </div>
 
               <div>
-                <label className="block text-slate-300 font-mono mb-1 font-semibold">
+                <label className="block text-slate-700 font-mono mb-1 font-semibold">
                   Select Maintenance Technician:
                 </label>
                 <select
                   value={selectedAssignee}
                   onChange={(e) => setSelectedAssignee(e.target.value)}
-                  className="w-full bg-[#070d18] border border-slate-700 text-white rounded-lg p-2.5 font-mono focus:border-teal-500 focus:outline-none"
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-lg p-2.5 font-mono focus:border-teal-500 focus:outline-none"
                 >
                   <option value="Frank Kowalski">Frank Kowalski (Lead Vibration Specialist · MNT-401)</option>
                   <option value="Elena Rostova">Elena Rostova (Mechanical Systems Supervisor)</option>
@@ -891,11 +891,11 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
                 </select>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setAssigningIncident(null)}
-                  className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono"
+                  className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-mono"
                 >
                   Cancel
                 </button>

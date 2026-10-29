@@ -64,7 +64,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5">
+    <div className="fixed inset-0 z-50 bg-slate-50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5">
       <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-fadeIn">
         {/* Header */}
         <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
@@ -91,7 +91,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+            className="p-1.5 rounded-lg text-slate-600 hover:text-slate-600 hover:bg-slate-100 transition-colors"
             aria-label="Close Notification Hub"
           >
             <X className="w-5 h-5" />
@@ -146,7 +146,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
 
             {/* Cloud delivery is deliberately disabled in this prototype. */}
             <div className="bg-white p-2.5 rounded-lg border border-slate-200 space-y-1.5">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 block">
                 Cloud subscription status:
               </span>
               <p className="font-mono text-[11px] text-amber-700">Disabled until MySQL transaction writes and server-enforced role/plant policies are implemented.</p>
@@ -161,7 +161,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
               )}
 
               <div className="flex items-center justify-between pt-1">
-                <span className="text-[10px] text-slate-400">
+                <span className="text-[10px] text-slate-600">
                   In-app and same-browser tab notifications continue locally.
                 </span>
                 <div className="flex items-center gap-2">
@@ -181,7 +181,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
         {/* Notification Stream Content */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5">
           {notifications.length === 0 ? (
-            <div className="py-12 text-center text-slate-400">
+            <div className="py-12 text-center text-slate-600">
               <CheckCircle2 className="w-12 h-12 text-emerald-500/60 mx-auto mb-2" />
               <p className="text-sm font-semibold text-slate-700">All clear on the factory floor</p>
               <p className="text-xs text-slate-500 mt-1">
@@ -234,7 +234,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
                     </div>
 
                     <div className="flex items-center gap-2 text-xs text-slate-500">
-                      <Clock className="w-3.5 h-3.5 text-slate-400" />
+                      <Clock className="w-3.5 h-3.5 text-slate-600" />
                       <span>{notif.deliveredAt}</span>
                     </div>
                   </div>
@@ -345,7 +345,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
               notificationService.markAllAsRead();
               onClose();
             }}
-            className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold transition-colors"
+            className="px-4 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-900 font-semibold transition-colors"
           >
             Mark All Read &amp; Close
           </button>

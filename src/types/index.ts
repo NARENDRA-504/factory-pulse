@@ -22,6 +22,8 @@ export interface UserProfile {
   email: string;
   shift?: 'Shift A' | 'Shift B' | 'Night Shift';
   department?: string;
+  /** UTC timestamp returned by the authenticated session endpoint. */
+  sessionStartedAt?: string;
   status?: 'Active' | 'On Duty' | 'Standby' | 'Offline';
   phone?: string;
 }

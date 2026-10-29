@@ -578,7 +578,7 @@ export const OperatorVibrationGraph: React.FC<OperatorVibrationGraphProps> = ({
                   cy={p.y}
                   r={hoverIndex === idx ? 5 : 2}
                   fill={hoverIndex === idx ? '#ffffff' : strokeColor}
-                  stroke="#0B111E"
+                  stroke="#ffffff"
                   strokeWidth="1.5"
                 />
                 <rect

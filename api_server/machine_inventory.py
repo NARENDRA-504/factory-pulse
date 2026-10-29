@@ -88,7 +88,8 @@ def build_inventory(catalog, registered, readings, now, stale_seconds=30, active
 
         # Connection status
         connection = 'RECEIVING' if timestamp and (now - timestamp).total_seconds() <= stale_seconds else 'STALE' if timestamp else 'WAITING'
-        rank = {'NORMAL': 0, 'MAINTENANCE': 1, 'WARNING': 2, 'CRITICAL': 3, 'STOPPED': 4}
+        # IDLE supersedes a recent NORMAL reading but cannot hide a concurrent alert.
+        rank = {'NORMAL': 0, 'IDLE': 1, 'MAINTENANCE': 1, 'WARNING': 2, 'CRITICAL': 3, 'STOPPED': 4}
         cohort = [row for row in sensors if timestamp and (timestamp - as_utc(row['timestamp'])).total_seconds() <= stale_seconds]
         status = max((row['machine_status'] for row in cohort), key=lambda value: rank.get(value, -1), default='UNKNOWN')
 
@@ -333,7 +334,7 @@ def register(app, api):
         # Dynamic KPI calculations
         active_count = len(active_recs)
         running_count = sum(1 for r in active_recs if r['operating_status'] in ('NORMAL', 'Nominal') and r['connection_status'] == 'RECEIVING')
-        idle_count = sum(1 for r in active_recs if r['operating_status'] in ('Idle', 'WAITING') or r['connection_status'] == 'WAITING')
+        idle_count = sum(1 for r in active_recs if r['operating_status'] in ('IDLE', 'Idle', 'WAITING') or r['connection_status'] == 'WAITING')
         down_count = sum(1 for r in active_recs if r['operating_status'] in ('STOPPED', 'CRITICAL', 'Critical', 'Down'))
         maintenance_count = sum(1 for r in active_recs if r['operating_status'] in ('MAINTENANCE', 'Maintenance'))
 

@@ -38,24 +38,24 @@ export const PersistedTelemetrySummary: React.FC<{ machine?: Machine; user: User
     .map((sensor) => readings.find((reading) => reading.sensor_name === sensor)!)
     .filter(Boolean);
 
-  return <section className="rounded-xl border border-cyan-900/70 bg-[#0c1424] p-4 shadow-sm sm:p-5" aria-live="polite">
+  return <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5" aria-live="polite">
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div>
-        <div className="flex items-center gap-2"><Radio className="h-4 w-4 text-cyan-400"/><h2 className="text-sm font-semibold text-slate-100">Saved simulator readings</h2><span className="rounded border border-cyan-800 bg-cyan-950/60 px-2 py-0.5 text-[10px] font-mono text-cyan-300">SIMULATED</span></div>
-        <p className="mt-1 text-xs text-slate-400">{machine ? `${machine.machineId} · ${machine.displayName || machine.name}` : 'Selected machine'} · refreshed every 10 seconds</p>
+        <div className="flex items-center gap-2"><Radio className="h-4 w-4 text-cyan-700"/><h2 className="text-sm font-semibold text-slate-900">Saved simulator readings</h2><span className="rounded border border-cyan-200 bg-cyan-50 px-2 py-0.5 text-[10px] font-mono text-cyan-800">SIMULATED</span></div>
+        <p className="mt-1 text-xs text-slate-600">{machine ? `${machine.machineId} · ${machine.displayName || machine.name}` : 'Selected machine'} · refreshed every 10 seconds</p>
       </div>
       <span className="inline-flex items-center gap-1 text-[10px] text-slate-500"><Activity className="h-3.5 w-3.5"/>{readings.length} saved readings</span>
     </div>
-    {loading && readings.length === 0 ? <p className="mt-3 rounded-lg bg-slate-900/70 p-3 text-xs text-slate-300">Connecting to the telemetry API…</p>
-      : error ? <p className="mt-3 rounded-lg border border-amber-800/70 bg-amber-950/30 p-3 text-xs text-amber-200">Saved telemetry unavailable: {error}</p>
-        : readings.length === 0 ? <p className="mt-3 rounded-lg border border-dashed border-slate-700 bg-slate-900/50 p-3 text-xs text-slate-400">No persisted simulator readings yet. New readings will appear here after the receiver stores them.</p>
+    {loading && readings.length === 0 ? <p className="mt-3 rounded-lg bg-slate-50/70 p-3 text-xs text-slate-700">Connecting to the telemetry API…</p>
+      : error ? <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-slate-700">Saved telemetry unavailable: {error}</p>
+        : readings.length === 0 ? <p className="mt-3 rounded-lg border border-dashed border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">No persisted simulator readings yet. New readings will appear here after the receiver stores them.</p>
           : <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
-            {latestBySensor.map((reading) => <div key={reading.reading_id} className="rounded-lg border border-slate-800 bg-slate-950/50 p-3">
-              <div className="flex items-center justify-between gap-2"><span className="truncate text-[11px] text-slate-400">{reading.sensor_name}</span><span className={`rounded px-1.5 py-0.5 text-[9px] ${reading.machine_status === 'CRITICAL' ? 'bg-rose-950 text-rose-300' : reading.machine_status === 'WARNING' ? 'bg-amber-950 text-amber-300' : 'bg-emerald-950 text-emerald-300'}`}>{reading.machine_status}</span></div>
-              <div className="mt-1 font-mono text-lg font-semibold text-cyan-300">{reading.sensor_value ?? '—'} <span className="text-xs font-normal text-slate-400">{reading.sensor_unit}</span></div>
+            {latestBySensor.map((reading) => <div key={reading.reading_id} className="rounded-lg border border-slate-200 bg-slate-100/50 p-3">
+              <div className="flex items-center justify-between gap-2"><span className="truncate text-[11px] text-slate-600">{reading.sensor_name}</span><span className={`rounded px-1.5 py-0.5 text-[9px] ${reading.machine_status === 'CRITICAL' ? 'bg-rose-50 text-rose-800' : reading.machine_status === 'WARNING' ? 'bg-amber-50 text-amber-800' : 'bg-emerald-50 text-emerald-800'}`}>{reading.machine_status}</span></div>
+              <div className="mt-1 font-mono text-lg font-semibold text-cyan-800">{reading.sensor_value ?? '—'} <span className="text-xs font-normal text-slate-600">{reading.sensor_unit}</span></div>
               <p className="mt-1 text-[10px] text-slate-500">{new Date(reading.timestamp).toLocaleString()} · {reading.data_quality}{reading.fault_mode ? ` · ${reading.fault_mode}` : ''}</p>
             </div>)}
           </div>}
-    {error && readings.length > 0 && <p className="mt-2 text-[10px] text-amber-300">Refresh warning: {error}</p>}
+    {error && readings.length > 0 && <p className="mt-2 text-[10px] text-amber-800">Refresh warning: {error}</p>}
   </section>;
 };

@@ -93,36 +93,36 @@ export const FactoryLineOverview: React.FC<FactoryLineOverviewProps> = ({
   const criticalCount = safeMachines.filter((m) => m.status === 'Critical').length;
 
   return (
-    <div className="bg-[#0b1220] border border-slate-800 rounded-xl p-5 shadow-sm space-y-5">
+    <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-5">
       {/* Top Header & Fleet Status Summary */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-200">
         <div>
           <div className="flex items-center gap-2">
-            <Layers className="w-5 h-5 text-cyan-400" />
-            <h2 className="font-display font-bold text-base text-white">
+            <Layers className="w-5 h-5 text-cyan-700" />
+            <h2 className="font-display font-bold text-base text-slate-900">
               Interactive Factory Floor &amp; Production Lines
             </h2>
           </div>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-xs text-slate-600 mt-0.5">
             Real-time machine cell topology across shop floor production lines
           </p>
         </div>
 
         {/* Fleet KPI Quick Strip */}
         <div className="flex flex-wrap items-center gap-3 font-mono text-xs">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800">
-            <span className="text-slate-400 uppercase text-[10px]">Fleet:</span>
-            <span className="text-white font-bold">{totalCount} Units</span>
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200">
+            <span className="text-slate-600 uppercase text-[10px]">Fleet:</span>
+            <span className="text-slate-900 font-bold">{totalCount} Units</span>
           </div>
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-950/40 border border-emerald-900/80 text-emerald-300">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 border border-slate-200 text-emerald-800">
             <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
             <span>{nominalCount} Nominal</span>
           </div>
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-950/40 border border-amber-900/80 text-amber-300">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 border border-slate-200 text-amber-800">
             <span className="w-2 h-2 rounded-full bg-amber-400"></span>
             <span>{warningCount} Warning</span>
           </div>
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-950/40 border border-rose-900/80 text-rose-300">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-50 border border-slate-200 text-rose-800">
             <span className="w-2 h-2 rounded-full bg-rose-400"></span>
             <span>{criticalCount} Critical</span>
           </div>
@@ -133,8 +133,8 @@ export const FactoryLineOverview: React.FC<FactoryLineOverviewProps> = ({
       <div className="flex flex-col gap-3 pt-1">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-1 text-slate-400 font-mono text-xs">
-              <Filter className="w-3.5 h-3.5 text-cyan-400" />
+            <div className="flex items-center gap-1 text-slate-600 font-mono text-xs">
+              <Filter className="w-3.5 h-3.5 text-cyan-700" />
               <span>Filters:</span>
             </div>
 
@@ -146,7 +146,7 @@ export const FactoryLineOverview: React.FC<FactoryLineOverviewProps> = ({
                 setSelectedFloor('ALL');
                 setDisplayLimit(32);
               }}
-              className="bg-slate-900 border border-slate-800 text-xs font-mono text-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-hidden focus:border-cyan-500"
+              className="bg-slate-50 border border-slate-200 text-xs font-mono text-slate-800 rounded-lg px-2.5 py-1.5 focus:outline-hidden focus:border-cyan-500"
               title="Filter by Plant"
             >
               <option value="ALL">All Plants (4)</option>
@@ -164,7 +164,7 @@ export const FactoryLineOverview: React.FC<FactoryLineOverviewProps> = ({
                 setSelectedFloor(e.target.value);
                 setDisplayLimit(32);
               }}
-              className="bg-slate-900 border border-slate-800 text-xs font-mono text-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-hidden focus:border-cyan-500"
+              className="bg-slate-50 border border-slate-200 text-xs font-mono text-slate-800 rounded-lg px-2.5 py-1.5 focus:outline-hidden focus:border-cyan-500"
               title="Filter by Shop Floor"
             >
               <option value="ALL">All Shop Floors ({uniqueFloors.length})</option>
@@ -182,7 +182,7 @@ export const FactoryLineOverview: React.FC<FactoryLineOverviewProps> = ({
                 setSelectedType(e.target.value);
                 setDisplayLimit(32);
               }}
-              className="bg-slate-900 border border-slate-800 text-xs font-mono text-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-hidden focus:border-cyan-500"
+              className="bg-slate-50 border border-slate-200 text-xs font-mono text-slate-800 rounded-lg px-2.5 py-1.5 focus:outline-hidden focus:border-cyan-500"
               title="Filter by Machine Type"
             >
               <option value="ALL">All Types (7)</option>
@@ -200,7 +200,7 @@ export const FactoryLineOverview: React.FC<FactoryLineOverviewProps> = ({
                 setSelectedStatus(e.target.value);
                 setDisplayLimit(32);
               }}
-              className="bg-slate-900 border border-slate-800 text-xs font-mono text-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-hidden focus:border-cyan-500"
+              className="bg-slate-50 border border-slate-200 text-xs font-mono text-slate-700 rounded-lg px-2.5 py-1.5 focus:outline-hidden focus:border-cyan-500"
             >
               <option value="ALL">All States</option>
               <option value="Nominal">Nominal</option>
@@ -217,8 +217,8 @@ export const FactoryLineOverview: React.FC<FactoryLineOverviewProps> = ({
               }}
               className={`px-3 py-1.5 rounded-lg text-xs font-mono font-medium flex items-center gap-1.5 transition-colors border ${
                 onlyWithIncidents
-                  ? 'bg-amber-950/80 border-amber-600 text-amber-300'
-                  : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                  ? 'bg-amber-50 border-amber-600 text-amber-800'
+                  : 'bg-slate-50 border-slate-200 text-slate-600 hover:text-slate-800'
               }`}
             >
               <AlertTriangle className="w-3.5 h-3.5" />
@@ -228,7 +228,7 @@ export const FactoryLineOverview: React.FC<FactoryLineOverviewProps> = ({
 
           {/* Search box & Count */}
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-mono text-slate-400">
+            <span className="text-[11px] font-mono text-slate-600">
               {filteredMachines.length} matches
             </span>
             <div className="relative">
@@ -241,7 +241,7 @@ export const FactoryLineOverview: React.FC<FactoryLineOverviewProps> = ({
                   setDisplayLimit(32);
                 }}
                 placeholder="Search ID, name, model..."
-                className="pl-8 pr-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs font-mono text-slate-200 placeholder-slate-500 focus:outline-hidden focus:border-cyan-500 w-40 sm:w-52"
+                className="pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-800 placeholder-slate-500 focus:outline-hidden focus:border-cyan-500 w-40 sm:w-52"
               />
             </div>
           </div>
@@ -264,20 +264,20 @@ export const FactoryLineOverview: React.FC<FactoryLineOverviewProps> = ({
               ? 'border-rose-600/80'
               : machine.status === 'Warning'
               ? 'border-amber-600/80'
-              : 'border-slate-800 hover:border-slate-700';
+              : 'border-slate-200 hover:border-slate-200';
 
           const statusBadge =
             machine.status === 'Nominal'
-              ? 'text-emerald-400 bg-emerald-950/60 border-emerald-800/80'
+              ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
               : machine.status === 'Warning'
-              ? 'text-amber-400 bg-amber-950/60 border-amber-800/80'
-              : 'text-rose-400 bg-rose-950/60 border-rose-800/80';
+              ? 'text-amber-700 bg-amber-50 border-amber-200'
+              : 'text-rose-700 bg-rose-50 border-rose-200';
 
           return (
             <div
               key={machine.machineId || machine.code}
-              className={`relative rounded-xl p-4 bg-slate-900/80 border transition-all duration-200 cursor-pointer flex flex-col justify-between ${statusBorder} ${
-                isSelected ? 'ring-2 ring-cyan-500 bg-slate-900 shadow-lg' : ''
+              className={`relative rounded-xl p-4 bg-slate-50 border transition-all duration-200 cursor-pointer flex flex-col justify-between ${statusBorder} ${
+                isSelected ? 'ring-2 ring-cyan-500 bg-slate-50 shadow-lg' : ''
               } ${hasAnomaly ? 'animate-pulse' : ''}`}
               onClick={() => {
                 onSelectMachine(machine.code || machine.machineCode);
@@ -297,10 +297,10 @@ export const FactoryLineOverview: React.FC<FactoryLineOverviewProps> = ({
                           : 'bg-rose-400'
                       }`}
                     />
-                    <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-950 border border-slate-800 text-teal-300 shrink-0">
+                    <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 text-teal-800 shrink-0">
                       {machine.machineId || 'MCH-001'}
                     </span>
-                    <span className="font-mono text-xs font-bold text-cyan-400 tracking-wide truncate">
+                    <span className="font-mono text-xs font-bold text-cyan-700 tracking-wide truncate">
                       {machine.machineCode || machine.code}
                     </span>
                   </div>
@@ -310,10 +310,10 @@ export const FactoryLineOverview: React.FC<FactoryLineOverviewProps> = ({
                   </span>
                 </div>
 
-                <h4 className="text-xs font-bold text-white truncate" title={machine.displayName || machine.name}>
+                <h4 className="text-xs font-bold text-slate-900 truncate" title={machine.displayName || machine.name}>
                   {machine.displayName || machine.name}
                 </h4>
-                <div className="text-[11px] text-slate-400 font-mono mt-0.5 truncate">
+                <div className="text-[11px] text-slate-600 font-mono mt-0.5 truncate">
                   {machine.plant || 'Precision Machining'} · {machine.shopFloor || machine.lineId}
                 </div>
                 <div className="text-[10px] text-slate-500 font-mono mt-0.5 truncate">
@@ -321,42 +321,42 @@ export const FactoryLineOverview: React.FC<FactoryLineOverviewProps> = ({
                 </div>
 
                 {/* Active Workpiece */}
-                <div className="mt-2.5 p-2 rounded bg-slate-950/70 border border-slate-800/80">
+                <div className="mt-2.5 p-2 rounded bg-slate-100/70 border border-slate-200">
                   <span className="text-[9px] font-mono text-slate-500 uppercase block">Active Workpiece</span>
-                  <span className="text-[11px] font-medium text-slate-200 truncate block">
+                  <span className="text-[11px] font-medium text-slate-800 truncate block">
                     {machine.activeWorkpiece || 'Standard Production Run'}
                   </span>
                 </div>
               </div>
 
               {/* Compact Metrics Strip */}
-              <div className="mt-3 pt-2.5 border-t border-slate-800/80 space-y-2">
+              <div className="mt-3 pt-2.5 border-t border-slate-200 space-y-2">
                 <div className="grid grid-cols-2 gap-2 text-[10px] font-mono">
                   <div>
                     <span className="text-slate-500 block">Spindle</span>
-                    <span className="text-slate-200 font-bold">{machine.spindleRpm?.toLocaleString() || 4500} RPM</span>
+                    <span className="text-slate-800 font-bold">{machine.spindleRpm?.toLocaleString() || 4500} RPM</span>
                   </div>
                   <div>
                     <span className="text-slate-500 block">Motor Load</span>
-                    <span className="text-cyan-400 font-bold">{machine.motorLoadPercent?.toFixed(1) || '42.0'}%</span>
+                    <span className="text-cyan-700 font-bold">{machine.motorLoadPercent?.toFixed(1) || '42.0'}%</span>
                   </div>
                 </div>
 
                 {/* Incident and Anomaly badges */}
                 <div className="flex items-center justify-between pt-1">
                   {machineIncidents.length > 0 ? (
-                    <span className="text-[10px] font-mono text-amber-400 flex items-center gap-1">
-                      <AlertTriangle className="w-3 h-3 text-amber-400" />
+                    <span className="text-[10px] font-mono text-amber-700 flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3 text-amber-700" />
                       {machineIncidents.length} Open Ticket{machineIncidents.length > 1 ? 's' : ''}
                     </span>
                   ) : (
-                    <span className="text-[10px] font-mono text-emerald-400 flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                    <span className="text-[10px] font-mono text-emerald-700 flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3 text-emerald-700" />
                       Zero Incidents
                     </span>
                   )}
 
-                  <span className="text-[10px] font-mono text-cyan-400 hover:text-cyan-300">
+                  <span className="text-[10px] font-mono text-cyan-700 hover:text-cyan-800">
                     Inspect &rarr;
                   </span>
                 </div>
@@ -371,13 +371,13 @@ export const FactoryLineOverview: React.FC<FactoryLineOverviewProps> = ({
         <div className="pt-2 flex items-center justify-center gap-3">
           <button
             onClick={() => setDisplayLimit((prev) => Math.min(prev + 32, filteredMachines.length))}
-            className="px-4 py-2 bg-slate-900 border border-slate-800 hover:border-slate-700 text-xs font-mono font-medium text-cyan-300 rounded-lg transition-colors"
+            className="px-4 py-2 bg-slate-50 border border-slate-200 hover:border-slate-200 text-xs font-mono font-medium text-cyan-800 rounded-lg transition-colors"
           >
             Load More (+32 Machines) · {filteredMachines.length - displayLimit} Remaining
           </button>
           <button
             onClick={() => setDisplayLimit(filteredMachines.length)}
-            className="px-4 py-2 bg-slate-900 border border-slate-800 hover:border-slate-700 text-xs font-mono text-slate-400 hover:text-white rounded-lg transition-colors"
+            className="px-4 py-2 bg-slate-50 border border-slate-200 hover:border-slate-200 text-xs font-mono text-slate-600 hover:text-slate-900 rounded-lg transition-colors"
           >
             Show All ({filteredMachines.length})
           </button>

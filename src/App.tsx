@@ -148,7 +148,7 @@ export default function App() {
 
   // If unauthenticated, show Screen 1: Login
   if (sessionRestoring) {
-    return <div className="min-h-screen bg-[#070d18] text-slate-300 flex items-center justify-center text-sm">Checking your FactoryPulse session…</div>;
+    return <div className="min-h-screen bg-slate-50 text-slate-700 flex items-center justify-center text-sm">Checking your FactoryPulse session…</div>;
   }
   if (!currentUser) {
     return <LoginView onLoginSuccess={handleLoginSuccess} />;
@@ -158,7 +158,7 @@ export default function App() {
   const currentFocusedMachine = machines.find((m) => m.code === selectedMachineCode) || machines[0] || SEED_MACHINES[0];
 
   return (
-    <div className="min-h-screen bg-[#0a0f1d] text-slate-100 flex font-sans antialiased selection:bg-teal-500/30 selection:text-teal-200">
+    <div className="fp-shell min-h-screen bg-slate-50 text-slate-900 flex font-sans antialiased selection:bg-teal-100 selection:text-teal-900">
       {/* 1. Left Navigation Sidebar (Deep Navy Industrial Look) */}
       <Sidebar
         currentUser={currentUser}
@@ -175,7 +175,7 @@ export default function App() {
         onCloseMobile={() => setIsMobileSidebarOpen(false)}
       />
 
-      {/* 2. Main Canvas (Slightly Lighter Dark Canvas) */}
+      {/* 2. Main Canvas (Light FactoryPulse dashboard theme) */}
       <div className="flex-1 flex flex-col min-w-0 lg:pl-64">
         {/* Top Context Bar with Breadcrumb, Title, and Action Controls */}
         <TopBar
@@ -190,7 +190,7 @@ export default function App() {
         />
 
         {/* Viewport Content */}
-        <main className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-5">
+        <main className="flex-1 w-full max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-8 py-5">
           <ErrorBoundary fallbackTitle="View Rendering Interrupted">
             {currentScreen === 'dashboard' && (
               <DashboardView
@@ -228,15 +228,15 @@ export default function App() {
 
             {currentScreen === 'analytics' && (
               currentUser.role === 'Operator' ? (
-                <div className="bg-[#0c1424] border border-rose-800/80 rounded-xl p-8 text-center space-y-4 max-w-xl mx-auto my-12">
-                  <ShieldAlert className="w-12 h-12 text-rose-400 mx-auto" />
-                  <h2 className="text-lg font-bold text-white font-display">Access Restricted</h2>
-                  <p className="text-xs text-slate-300 leading-relaxed">
+                <div className="bg-white border border-rose-200 rounded-xl p-8 text-center space-y-4 max-w-xl mx-auto my-12">
+                  <ShieldAlert className="w-12 h-12 text-rose-700 mx-auto" />
+                  <h2 className="text-lg font-bold text-slate-900 font-display">Access Restricted</h2>
+                  <p className="text-xs text-slate-700 leading-relaxed">
                     Operators are restricted to shop-floor telemetry and incident reporting. Full empirical data analytics and research datasets require Supervisor, Manager, or Maintenance authorization.
                   </p>
                   <button
                     onClick={() => setCurrentScreen('dashboard')}
-                    className="px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-xs font-semibold font-mono"
+                    className="px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-500 text-slate-900 text-xs font-semibold font-mono"
                   >
                     Return to My Machine Console
                   </button>
@@ -248,15 +248,15 @@ export default function App() {
 
             {currentScreen === 'users' && (
               currentUser.role !== 'Admin' ? (
-                <div className="bg-[#0c1424] border border-rose-800/80 rounded-xl p-8 text-center space-y-4 max-w-xl mx-auto my-12">
-                  <ShieldAlert className="w-12 h-12 text-rose-400 mx-auto" />
-                  <h2 className="text-lg font-bold text-white font-display">Administrative Authority Required</h2>
-                  <p className="text-xs text-slate-300 leading-relaxed">
+                <div className="bg-white border border-rose-200 rounded-xl p-8 text-center space-y-4 max-w-xl mx-auto my-12">
+                  <ShieldAlert className="w-12 h-12 text-rose-700 mx-auto" />
+                  <h2 className="text-lg font-bold text-slate-900 font-display">Administrative Authority Required</h2>
+                  <p className="text-xs text-slate-700 leading-relaxed">
                     Personnel administration and Role-Based Access Control (RBAC) governance is restricted exclusively to System Administrators.
                   </p>
                   <button
                     onClick={() => setCurrentScreen('dashboard')}
-                    className="px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-xs font-semibold font-mono"
+                    className="px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-500 text-slate-900 text-xs font-semibold font-mono"
                   >
                     Return to Dashboard
                   </button>
@@ -271,7 +271,7 @@ export default function App() {
             )}
             {currentScreen === 'inventory' && (currentUser.role === 'Admin'
               ? <MachineManagementView user={currentUser} machines={machines}/>
-              : <p className="rounded-lg border border-rose-900 p-5 text-rose-200">Machine management requires Admin access.</p>)}
+              : <p className="rounded-lg border border-rose-200 bg-rose-50 p-5 text-rose-800">Machine management requires Admin access.</p>)}
             {currentScreen === 'maintenance' && (
               <MaintenanceManagementView
                 currentUser={currentUser}
@@ -288,20 +288,20 @@ export default function App() {
             )}
             {currentScreen === 'activity' && (
               currentUser.role !== 'Admin' ? (
-                <div className="m-12 rounded-xl border border-rose-800 bg-[#0c1424] p-8 text-center"><h2 className="font-bold text-white">Admin access required</h2><p className="mt-2 text-sm text-slate-400">This activity log is restricted to administrators.</p></div>
+                <div className="m-12 rounded-xl border border-rose-200 bg-white p-8 text-center"><h2 className="font-bold text-slate-900">Admin access required</h2><p className="mt-2 text-sm text-slate-600">This activity log is restricted to administrators.</p></div>
               ) : <ActivityLogView />
             )}
           </ErrorBoundary>
         </main>
 
         {/* Industrial Platform Status Footer */}
-        <footer className="border-t border-slate-800/80 py-3.5 bg-[#070d18] text-center text-xs text-slate-400 font-mono">
+        <footer className="border-t border-slate-200 py-3.5 bg-slate-50 text-center text-xs text-slate-600 font-mono">
           <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
             <span className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
               <span>FactoryPulse · Manufacturing operations</span>
             </span>
-            <span className="text-slate-400">
+            <span className="text-slate-600">
               AI Simulator readings · persisted telemetry and history in MySQL
             </span>
           </div>

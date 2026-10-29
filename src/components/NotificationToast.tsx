@@ -59,7 +59,7 @@ export const NotificationToast: React.FC<NotificationToastProps> = ({
                 setVisible(false);
                 onClose();
               }}
-              className="text-slate-400 hover:text-slate-600 p-0.5 rounded"
+              className="text-slate-600 hover:text-slate-600 p-0.5 rounded"
             >
               <X className="w-4 h-4" />
             </button>
@@ -73,7 +73,7 @@ export const NotificationToast: React.FC<NotificationToastProps> = ({
           </p>
 
           <div className="mt-2.5 flex items-center justify-between pt-2 border-t border-slate-100">
-            <span className="text-[11px] text-slate-400 font-mono">Live Push · Instant</span>
+            <span className="text-[11px] text-slate-600 font-mono">Live Push · Instant</span>
             <button
               onClick={() => {
                 setVisible(false);

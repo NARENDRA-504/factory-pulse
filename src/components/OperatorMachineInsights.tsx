@@ -22,16 +22,16 @@ export const OperatorMachineInsights: React.FC<OperatorMachineInsightsProps> = (
 }) => {
   // 1. Current Condition: Stable, Changing, Elevated, or Unavailable
   let conditionStatus: 'Stable' | 'Changing' | 'Elevated' | 'Unavailable' = 'Stable';
-  let conditionColor = 'text-teal-400 bg-teal-950/40 border-teal-500/50';
+  let conditionColor = 'text-teal-700 bg-teal-50 border-teal-500/50';
   let conditionDesc = 'Vibration within nominal ISO tolerance';
 
   if (!isStreaming || !latestTelemetry) {
     conditionStatus = 'Unavailable';
-    conditionColor = 'text-slate-400 bg-slate-900 border-slate-800';
+    conditionColor = 'text-slate-600 bg-slate-50 border-slate-200';
     conditionDesc = 'Telemetry stream paused';
   } else if ((latestTelemetry.vibRms ?? 0) > 4.2) {
     conditionStatus = 'Elevated';
-    conditionColor = 'text-rose-400 bg-rose-950/60 border-rose-500/60';
+    conditionColor = 'text-rose-700 bg-rose-50 border-rose-500/60';
     conditionDesc = `Threshold breach: ${(latestTelemetry.vibRms ?? 0).toFixed(2)} m/s² > 4.20 limit`;
   } else {
     // Check variance in last 5 points
@@ -41,7 +41,7 @@ export const OperatorMachineInsights: React.FC<OperatorMachineInsightsProps> = (
       const diff = Math.max(...vals) - Math.min(...vals);
       if (diff > 0.6) {
         conditionStatus = 'Changing';
-        conditionColor = 'text-amber-400 bg-amber-950/50 border-amber-500/50';
+        conditionColor = 'text-amber-700 bg-amber-50 border-amber-500/50';
         conditionDesc = `Variance spike (${diff.toFixed(2)} m/s²) across recent cuts`;
       }
     }
@@ -88,9 +88,9 @@ export const OperatorMachineInsights: React.FC<OperatorMachineInsightsProps> = (
     <div className="w-full">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {/* Item 1: Current Condition */}
-        <div className="bg-[#0c1424] border border-slate-800/80 rounded-xl p-3.5 shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-800/70">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-medium">
+        <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-200/70">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-slate-600 font-medium">
               1. Current Condition
             </span>
             <div className="flex items-center gap-1.5">
@@ -106,11 +106,11 @@ export const OperatorMachineInsights: React.FC<OperatorMachineInsightsProps> = (
                 }`}
               />
               {conditionStatus === 'Stable' ? (
-                <CheckCircle className="w-3.5 h-3.5 text-teal-400" />
+                <CheckCircle className="w-3.5 h-3.5 text-teal-700" />
               ) : conditionStatus === 'Unavailable' ? (
                 <HelpCircle className="w-3.5 h-3.5 text-slate-500" />
               ) : (
-                <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
+                <AlertCircle className="w-3.5 h-3.5 text-amber-700" />
               )}
             </div>
           </div>
@@ -121,7 +121,7 @@ export const OperatorMachineInsights: React.FC<OperatorMachineInsightsProps> = (
               >
                 {conditionStatus}
               </span>
-              <span className="text-[10px] font-mono text-slate-400">
+              <span className="text-[10px] font-mono text-slate-600">
                 {conditionStatus === 'Stable'
                   ? 'RMS Nominal'
                   : conditionStatus === 'Unavailable'
@@ -129,16 +129,16 @@ export const OperatorMachineInsights: React.FC<OperatorMachineInsightsProps> = (
                   : 'Threshold check'}
               </span>
             </div>
-            <p className="text-[11px] font-mono text-slate-400 mt-1.5 line-clamp-1">
+            <p className="text-[11px] font-mono text-slate-600 mt-1.5 line-clamp-1">
               {conditionDesc}
             </p>
           </div>
         </div>
 
         {/* Item 2: Recent Abnormality */}
-        <div className="bg-[#0c1424] border border-slate-800/80 rounded-xl p-3.5 shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-800/70">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-medium">
+        <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-200/70">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-slate-600 font-medium">
               2. Recent Abnormality
             </span>
             <span className="text-[10px] font-mono text-slate-500">{abnormalityTime}</span>
@@ -152,28 +152,28 @@ export const OperatorMachineInsights: React.FC<OperatorMachineInsightsProps> = (
               />
               <span
                 className={`text-xs font-mono font-semibold truncate ${
-                  hasAbnormality ? 'text-amber-300' : 'text-slate-200'
+                  hasAbnormality ? 'text-amber-800' : 'text-slate-800'
                 }`}
                 title={recentAbnormalityText}
               >
                 {recentAbnormalityText}
               </span>
             </div>
-            <p className="text-[11px] font-mono text-slate-400 mt-1.5 line-clamp-1">
+            <p className="text-[11px] font-mono text-slate-600 mt-1.5 line-clamp-1">
               {hasAbnormality ? 'Flagged anomaly or surge' : 'No warnings recorded this shift'}
             </p>
           </div>
         </div>
 
         {/* Item 3: Recommended Next Action */}
-        <div className="bg-[#0c1424] border border-slate-800/80 rounded-xl p-3.5 shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-800/70">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-medium">
+        <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-200/70">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-slate-600 font-medium">
               3. Recommended Action
             </span>
             <span
               className={`text-[10px] font-mono ${
-                actionUrgent ? 'text-amber-400 font-semibold' : 'text-slate-500'
+                actionUrgent ? 'text-amber-700 font-semibold' : 'text-slate-500'
               }`}
             >
               {actionPrompt}
@@ -183,7 +183,7 @@ export const OperatorMachineInsights: React.FC<OperatorMachineInsightsProps> = (
             <div className="flex items-center justify-between gap-2">
               <span
                 className={`text-xs font-mono font-semibold truncate ${
-                  actionUrgent ? 'text-amber-300' : 'text-slate-200'
+                  actionUrgent ? 'text-amber-800' : 'text-slate-800'
                 }`}
                 title={recommendedActionText}
               >
@@ -192,13 +192,13 @@ export const OperatorMachineInsights: React.FC<OperatorMachineInsightsProps> = (
               {actionUrgent && (
                 <button
                   onClick={onRaiseAlert}
-                  className="shrink-0 text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-amber-600 hover:bg-amber-500 text-white transition-colors"
+                  className="shrink-0 text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-amber-600 hover:bg-amber-500 text-slate-900 transition-colors"
                 >
                   Alert &rarr;
                 </button>
               )}
             </div>
-            <p className="text-[11px] font-mono text-slate-400 mt-1.5 line-clamp-1">
+            <p className="text-[11px] font-mono text-slate-600 mt-1.5 line-clamp-1">
               {actionUrgent
                 ? 'Authorized action: notify maintenance'
                 : 'Follow standard machining protocol'}

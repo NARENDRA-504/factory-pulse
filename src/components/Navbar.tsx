@@ -27,27 +27,27 @@ export const Navbar: React.FC<NavbarProps> = ({
   const getRoleBadgeColor = (role: UserRole) => {
     switch (role) {
       case 'Operator':
-        return 'text-emerald-400 bg-emerald-950/60 border-emerald-800';
+        return 'text-emerald-700 bg-emerald-50 border-emerald-200';
       case 'Supervisor':
-        return 'text-cyan-400 bg-cyan-950/60 border-cyan-800';
+        return 'text-cyan-700 bg-cyan-50 border-cyan-200';
       case 'Manager':
-        return 'text-purple-400 bg-purple-950/60 border-purple-800';
+        return 'text-purple-700 bg-purple-50 border-purple-200';
       case 'Maintenance':
-        return 'text-amber-400 bg-amber-950/60 border-amber-800';
+        return 'text-amber-700 bg-amber-50 border-amber-200';
       case 'Admin':
-        return 'text-rose-400 bg-rose-950/60 border-rose-800';
+        return 'text-rose-700 bg-rose-50 border-rose-200';
     }
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-[#090e17]/95 backdrop-blur border-b border-slate-800/80">
+    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-slate-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-6">
         {/* Zone 1: Clean Brand Wordmark */}
         <div className="flex items-center gap-2.5 whitespace-nowrap shrink-0">
-          <div className="w-7 h-7 rounded bg-cyan-600 flex items-center justify-center text-white font-bold text-xs tracking-wider shadow-sm">
+          <div className="w-7 h-7 rounded bg-cyan-600 flex items-center justify-center text-slate-900 font-bold text-xs tracking-wider shadow-sm">
             ZI
           </div>
-          <span className="font-semibold text-sm text-slate-100 tracking-tight">
+          <span className="font-semibold text-sm text-slate-900 tracking-tight">
             ZIRO Operations
           </span>
         </div>
@@ -58,11 +58,11 @@ export const Navbar: React.FC<NavbarProps> = ({
             onClick={() => onNavigate('dashboard')}
             className={`flex items-center gap-2 px-3 py-1.5 rounded text-xs sm:text-sm font-medium transition-colors whitespace-nowrap shrink-0 ${
               currentScreen === 'dashboard'
-                ? 'bg-slate-800 text-white border border-slate-700'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+                ? 'bg-slate-100 text-slate-900 border border-slate-200'
+                : 'text-slate-600 hover:text-slate-800 hover:bg-slate-50'
             }`}
           >
-            <Activity className="w-4 h-4 text-cyan-400" />
+            <Activity className="w-4 h-4 text-cyan-700" />
             <span>Dashboard</span>
           </button>
 
@@ -70,11 +70,11 @@ export const Navbar: React.FC<NavbarProps> = ({
             onClick={() => onNavigate('machines')}
             className={`flex items-center gap-2 px-3 py-1.5 rounded text-xs sm:text-sm font-medium transition-colors whitespace-nowrap shrink-0 ${
               currentScreen === 'machines'
-                ? 'bg-slate-800 text-white border border-slate-700'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+                ? 'bg-slate-100 text-slate-900 border border-slate-200'
+                : 'text-slate-600 hover:text-slate-800 hover:bg-slate-50'
             }`}
           >
-            <Cpu className="w-4 h-4 text-blue-400" />
+            <Cpu className="w-4 h-4 text-blue-700" />
             <span>Machine Condition</span>
           </button>
 
@@ -82,11 +82,11 @@ export const Navbar: React.FC<NavbarProps> = ({
             onClick={() => onNavigate('incidents')}
             className={`flex items-center gap-2 px-3 py-1.5 rounded text-xs sm:text-sm font-medium transition-colors whitespace-nowrap shrink-0 ${
               currentScreen === 'incidents'
-                ? 'bg-slate-800 text-white border border-slate-700'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+                ? 'bg-slate-100 text-slate-900 border border-slate-200'
+                : 'text-slate-600 hover:text-slate-800 hover:bg-slate-50'
             }`}
           >
-            <AlertTriangle className="w-4 h-4 text-amber-400" />
+            <AlertTriangle className="w-4 h-4 text-amber-700" />
             <span>Incidents &amp; Issues</span>
           </button>
 
@@ -94,23 +94,23 @@ export const Navbar: React.FC<NavbarProps> = ({
             onClick={() => onNavigate('analytics')}
             className={`flex items-center gap-2 px-3 py-1.5 rounded text-xs sm:text-sm font-medium transition-colors whitespace-nowrap shrink-0 ${
               currentScreen === 'analytics'
-                ? 'bg-slate-800 text-white border border-slate-700'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+                ? 'bg-slate-100 text-slate-900 border border-slate-200'
+                : 'text-slate-600 hover:text-slate-800 hover:bg-slate-50'
             }`}
           >
-            <BarChart3 className="w-4 h-4 text-emerald-400" />
+            <BarChart3 className="w-4 h-4 text-emerald-700" />
             <span>Analytics &amp; Maintenance</span>
           </button>
         </nav>
 
         {/* Zone 3: Authenticated Profile */}
         <div className="flex items-center gap-3 shrink-0">
-          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded bg-slate-900/80 border border-slate-700 text-left">
+          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded bg-slate-50 border border-slate-200 text-left">
               <div className="flex flex-col">
-                <span className="text-xs font-semibold text-slate-200 leading-tight">
+                <span className="text-xs font-semibold text-slate-800 leading-tight">
                   {currentUser.fullName}
                 </span>
-                <span className="text-[10px] font-mono text-slate-400 leading-tight">
+                <span className="text-[10px] font-mono text-slate-600 leading-tight">
                   {currentUser.workId}
                 </span>
               </div>
@@ -125,7 +125,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           <button
             onClick={onLogout}
-            className="p-1.5 rounded text-slate-400 hover:text-rose-400 hover:bg-rose-950/30 transition-colors"
+            className="p-1.5 rounded text-slate-600 hover:text-rose-700 hover:bg-rose-50 transition-colors"
             title="Sign Out"
           >
             <LogOut className="w-4 h-4" />
