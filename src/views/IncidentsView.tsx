@@ -49,7 +49,7 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
   const [newSeverity, setNewSeverity] = useState<Incident['severity']>('Medium');
   const [newSymptom, setNewSymptom] = useState(
     initialSnapshotForReport?.injectedAnomalyType
-      ? `Simulated anomaly detected: ${initialSnapshotForReport.injectedAnomalyType}`
+      ? `Machine anomaly reported: ${initialSnapshotForReport.injectedAnomalyType}`
       : ''
   );
   const [newComponentArea, setNewComponentArea] = useState('Spindle & Toolholder');

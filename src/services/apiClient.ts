@@ -543,24 +543,15 @@ export const apiClient = {
     return this.getLocalMachineInventory();
   },
 
+  async getMyActivity(): Promise<{ events: Array<{id:number;event_type:string;occurred_at_utc:string;occurred_at_local:string;role:string}>; factory_time_zone:string }> {
+    const response = await fetch(`${API_BASE_URL}/api/v1/auth/me/activity`, { headers: authHeaders(), signal: AbortSignal.timeout(5000) });
+    if (!response.ok) throw new Error('Your activity history could not be loaded.');
+    return response.json();
+  },
   async getMachineDowntime(machineId: string, minutes = 60): Promise<any> {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/telemetry/downtime/${encodeURIComponent(machineId)}?minutes=${minutes}`, { headers: authHeaders(), signal: AbortSignal.timeout(5000) });
-      if (response.ok) {
-        return await response.json();
-      }
-    } catch {
-      // offline fallback
-    }
-    return {
-      machine_id: machineId,
-      current_downtime_seconds: 0,
-      total_seconds: 0,
-      intervals: [],
-      rounds: [],
-      round_definition: 'UTC-aligned 30-minute analysis windows',
-      basis: 'Explicit STOPPED telemetry only',
-    };
+    const response = await fetch(`${API_BASE_URL}/api/v1/telemetry/downtime/${encodeURIComponent(machineId)}?minutes=${minutes}`, { headers: authHeaders(), signal: AbortSignal.timeout(5000) });
+    if (!response.ok) throw new Error('Recorded downtime is temporarily unavailable.');
+    return response.json();
   },
   async queryFactoryIntelligence(question: string, machineId?: string, useAi = false, priorQuestions: string[] = []): Promise<any> {
     const response = await fetch(`${API_BASE_URL}/api/v1/intelligence/query`, { method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify({ question, machine_id: machineId, use_ai: useAi, prior_questions: priorQuestions }), signal: AbortSignal.timeout(useAi ? 45000 : 20000) });
@@ -581,7 +572,7 @@ export const apiClient = {
   ): Promise<PersistedSimulatorReading[]> {
     const query = new URLSearchParams({ limit: String(limit), data_source: 'AI_SIMULATOR' });
     const response = await fetch(`${API_BASE_URL}/api/v1/telemetry/latest/${encodeURIComponent(machineId)}?${query}`, {
-      headers: authHeaders(),
+      headers: authHeaders(), signal: AbortSignal.timeout(8000),
     });
     if (!response.ok) {
       let detail = `Telemetry API returned ${response.status}`;
@@ -596,7 +587,7 @@ export const apiClient = {
 
   async getLatestSimulatorFleetTelemetry(): Promise<PersistedSimulatorReading[]> {
     const response = await fetch(`${API_BASE_URL}/api/v1/telemetry/fleet/latest`, {
-      headers: authHeaders(),
+      headers: authHeaders(), signal: AbortSignal.timeout(8000),
     });
     if (!response.ok) {
       let detail = `Telemetry API returned ${response.status}`;

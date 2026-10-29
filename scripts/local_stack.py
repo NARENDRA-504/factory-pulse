@@ -42,11 +42,15 @@ headers = {'X-API-Key': key} if key else {}
 node = shutil.which('node.exe') or shutil.which('node')
 services = {
     'factorypulse-api': (ROOT, [str(ROOT/'.venv/Scripts/python.exe'), '-m', 'uvicorn', 'api_server.main:app', '--host', '127.0.0.1', '--port', '8001'], 'http://127.0.0.1:8001/health', {}),
-    'simulator-api': (SIM/'backend', [str(SIM/'backend/.venv/Scripts/python.exe'), '-m', 'uvicorn', 'app.main:app', '--host', '127.0.0.1', '--port', '8002'], 'http://127.0.0.1:8002/api/v1/health', headers),
+    # Liveness must not scan the historical outbox. Deep health includes queue
+    # aggregates and can be slow while delivery is catching up; restarting a
+    # responsive API in that case interrupts delivery and browser requests.
+    'simulator-api': (SIM/'backend', [str(SIM/'backend/.venv/Scripts/python.exe'), '-m', 'uvicorn', 'app.main:app', '--host', '127.0.0.1', '--port', '8002'], 'http://127.0.0.1:8002/api/v1/simulation/fleet', headers),
     'factorypulse-web': (ROOT, [node, 'node_modules/vite/bin/vite.js', '--host', '127.0.0.1', '--port', '3000', '--strictPort'], 'http://127.0.0.1:3000/', {}),
     'simulator-web': (SIM/'frontend', [node, 'node_modules/vite/bin/vite.js', '--host', '127.0.0.1', '--port', '5174', '--strictPort'], 'http://127.0.0.1:5174/', {}),
 }
 processes = {}
+process_started_at = {}
 failures = {name: 0 for name in services}
 started_simulation = False
 
@@ -62,6 +66,7 @@ def start(name):
     log = open(STATE / (name+'.log'), 'ab', buffering=0)
     processes[name] = subprocess.Popen(command, cwd=cwd, stdout=log, stderr=log,
         creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
+    process_started_at[name] = time.monotonic()
     print('Starting '+name, flush=True)
 
 def listening(url):
@@ -76,16 +81,18 @@ def start_streams():
     catalog = json.loads((ROOT/'public/machine-name.json').read_text())
     available=set(json.loads((ROOT/'public/available-machine-ids.json').read_text())['machine_ids'])
     catalog=[machine for machine in catalog if machine['machineId'] in available]
-    plants = {}
-    for machine in catalog:
-        plants.setdefault(machine['plant'], machine['machineId'])
-    for machine_id in plants.values():
-        request = urllib.request.Request('http://127.0.0.1:8002/api/v1/simulation/start',
-            data=json.dumps({'machine_id': machine_id}).encode(),
-            headers={**headers, 'Content-Type': 'application/json'}, method='POST')
-        with urllib.request.urlopen(request, timeout=10) as response:
-            if response.status != 200: raise RuntimeError('Simulation start failed')
-    print('Simulator streams active: '+', '.join(plants.values()), flush=True)
+    machine_ids = [machine['machineId'] for machine in catalog]
+    interval_request = urllib.request.Request('http://127.0.0.1:8002/api/v1/simulation/sampling-interval',
+        data=json.dumps({'seconds': 10}).encode(),
+        headers={**headers, 'Content-Type': 'application/json'}, method='POST')
+    with urllib.request.urlopen(interval_request, timeout=10):
+        pass
+    request = urllib.request.Request('http://127.0.0.1:8002/api/v1/simulation/fleet/start',
+        data=json.dumps({'machine_ids': machine_ids}).encode(),
+        headers={**headers, 'Content-Type': 'application/json'}, method='POST')
+    with urllib.request.urlopen(request, timeout=30) as response:
+        if response.status != 200: raise RuntimeError('Fleet start failed')
+    print(f'Simulator fleet active: {len(machine_ids)} roster machines', flush=True)
 
 if not node or not SIM.exists():
     raise SystemExit('Node.js or the separate AI Simulator folder is unavailable.')
@@ -102,7 +109,8 @@ try:
             if not ok and not listening(url) and (process is None or process.poll() is not None):
                 start(name)
                 if name == 'simulator-api': started_simulation = False
-            elif not ok and process and failures[name] >= 6:
+            elif (not ok and process and failures[name] >= 6
+                  and time.monotonic() - process_started_at.get(name, 0) >= 300):
                 # Stop only the child launched by this supervisor.
                 if os.name == 'nt':
                     subprocess.run(['taskkill', '/PID', str(process.pid), '/T', '/F'], capture_output=True)

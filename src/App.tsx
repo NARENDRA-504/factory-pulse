@@ -15,7 +15,8 @@ import { UserProfileModal } from './components/UserProfileModal';
 import { NotificationCenterModal } from './components/NotificationCenterModal';
 import { NotificationToast } from './components/NotificationToast';
 import { notificationService, LiveNotification } from './services/notificationService';
-import { ShieldAlert } from 'lucide-react';
+import { ShieldAlert, MessageSquare, X } from 'lucide-react';
+import { FactoryChat } from './components/FactoryChat';
 import { LoginView } from './views/LoginView';
 import { DashboardView } from './views/DashboardView';
 import { MachineConditionView } from './views/MachineConditionView';
@@ -25,13 +26,14 @@ import { UsersView } from './views/UsersView';
 import { ActivityLogView } from './views/ActivityLogView';
 import { MachineManagementView } from './views/MachineManagementView';
 import { MaintenanceManagementView } from './views/MaintenanceManagementView';
+import { RoleOperationsView } from './views/RoleOperationsView';
+import { AppScreen, canOpenScreen } from './roleNavigation';
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [sessionRestoring, setSessionRestoring] = useState(true);
-  const [currentScreen, setCurrentScreen] = useState<
-    'dashboard' | 'machines' | 'incidents' | 'analytics' | 'users' | 'activity' | 'inventory' | 'maintenance'
-  >('dashboard');
+  const [chatOpen, setChatOpen] = useState(false);
+  const [currentScreen, setCurrentScreen] = useState<AppScreen>('dashboard');
   const [machines, setMachines] = useState<Machine[]>(SEED_MACHINES);
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [workOrders, setWorkOrders] = useState<MaintenanceWorkOrder[]>([]);
@@ -132,6 +134,7 @@ export default function App() {
       console.error('Sign-out could not be confirmed by the server.', error);
     } finally {
       setCurrentUser(null);
+      setChatOpen(false);
       setCurrentScreen('dashboard');
     }
   };
@@ -166,7 +169,7 @@ export default function App() {
         onNavigate={(screen) => {
           setHandoffSnapshot(undefined);
           setHandoffMachine(undefined);
-          setCurrentScreen(screen);
+          if (canOpenScreen(currentUser.role, screen)) setCurrentScreen(screen);
         }}
         onLogout={handleLogout}
         onOpenProfile={() => setIsProfileModalOpen(true)}
@@ -192,6 +195,7 @@ export default function App() {
         {/* Viewport Content */}
         <main className="flex-1 w-full max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-8 py-5">
           <ErrorBoundary fallbackTitle="View Rendering Interrupted">
+            {(['production', 'coverage', 'downtime', 'quality', 'reports'] as const).map(page => currentScreen === page && (canOpenScreen(currentUser.role, page) ? <RoleOperationsView key={page} screen={page} user={currentUser} machines={machines} incidents={incidents} workOrders={workOrders} onNavigate={setCurrentScreen} /> : <p key={page} role="alert" className="rounded-lg bg-rose-50 p-4 text-rose-800">This page is unavailable for your role.</p>))}
             {currentScreen === 'dashboard' && (
               <DashboardView
                 currentUser={currentUser}
@@ -302,7 +306,7 @@ export default function App() {
               <span>FactoryPulse · Manufacturing operations</span>
             </span>
             <span className="text-slate-600">
-              AI Simulator readings · persisted telemetry and history in MySQL
+              Machine telemetry · readings and history stored in MySQL
             </span>
           </div>
         </footer>
@@ -354,6 +358,14 @@ export default function App() {
           refreshData();
         }}
       />
+
+      <div className="fixed bottom-5 right-4 z-40 sm:right-6">
+        {chatOpen && <div id="factory-chat-panel" role="region" aria-label="Machine and production assistant" onKeyDown={event => { if(event.key === 'Escape') setChatOpen(false); }} className="mb-3 max-h-[78dvh] w-[min(25rem,calc(100vw-2rem))] overflow-y-auto rounded-xl border border-teal-200 bg-white shadow-xl">
+          <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2"><span className="text-xs font-semibold text-teal-800">{currentUser.role} assistant</span><button type="button" aria-label="Close assistant" onClick={() => setChatOpen(false)} className="rounded p-2 text-slate-600"><X size={16} /></button></div>
+          <FactoryChat machineId={(currentUser.role === 'Operator' ? machines.find(machine => machine.machineCode === currentUser.assignedMachine || machine.code === currentUser.assignedMachine) : machines.find(machine => machine.machineCode === selectedMachineCode || machine.code === selectedMachineCode))?.machineId} />
+        </div>}
+        <button type="button" aria-expanded={chatOpen} aria-controls="factory-chat-panel" aria-label={chatOpen ? 'Close machine assistant' : 'Open machine assistant'} onClick={() => setChatOpen(open => !open)} className="ml-auto flex items-center gap-2 rounded-full bg-teal-700 px-4 py-3 text-xs font-semibold text-white shadow-lg hover:bg-teal-800"><MessageSquare size={19} />Machine assistant</button>
+      </div>
 
       {/* User Profile & Permissions Modal */}
       <UserProfileModal

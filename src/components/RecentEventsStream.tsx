@@ -104,7 +104,7 @@ export const RecentEventsStream: React.FC<RecentEventsStreamProps> = ({
                             : 'text-cyan-700 bg-cyan-50 border-cyan-200'
                         }`}
                       >
-                        {ev.provenance}
+                        {ev.provenance === 'SIMULATED' ? 'MACHINE FEED' : ev.provenance}
                       </span>
                     </div>
 

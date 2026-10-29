@@ -383,7 +383,7 @@ export const MachineDetailsModal: React.FC<MachineDetailsModalProps> = ({
                   </div>
                   <p className="mt-2 text-[10px] text-emerald-800 flex items-center gap-1">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    Synchronized with AI Simulator
+                    Connected machine feed
                   </p>
                 </div>
               </div>
@@ -530,7 +530,7 @@ export const MachineDetailsModal: React.FC<MachineDetailsModalProps> = ({
 
               <div className="rounded-xl border border-slate-200 bg-white p-5">
                 <h3 className="text-sm font-semibold text-slate-900">Downtime Interval History</h3>
-                <p className="mt-1 text-xs text-slate-600">Audit record of machine stoppage events received from simulator telemetry.</p>
+                <p className="mt-1 text-xs text-slate-600">Audit record of machine stoppage events from recorded telemetry.</p>
 
                 <div className="mt-4 overflow-x-auto">
                   <table className="w-full text-left text-xs">

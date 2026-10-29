@@ -515,7 +515,7 @@ export const AnalyticsView: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-7 gap-2 text-center text-xs font-mono">
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
                 <div className="text-[10px] text-teal-700 font-bold uppercase">1. Sources</div>
-                <div className="text-slate-800 mt-1 font-semibold">4 Datasets + Simulator</div>
+                <div className="text-slate-800 mt-1 font-semibold">4 Datasets + Live Feed</div>
                 <div className="text-[10px] text-slate-500 mt-1">CSV &amp; Telemetry</div>
               </div>
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">

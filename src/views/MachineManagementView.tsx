@@ -171,7 +171,7 @@ export function MachineManagementView({ user, machines }: MachineManagementViewP
           </span>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Machine Management</h1>
           <p className="mt-1 text-xs text-slate-600 max-w-2xl leading-relaxed">
-            Manage the synchronized machine catalog, active AI Simulator telemetry population, downtime tracking, and live SQL machine registrations.
+            Manage the synchronized machine catalog, live machine readings, downtime tracking, and SQL machine registrations.
           </p>
         </div>
 

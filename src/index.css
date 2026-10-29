@@ -105,12 +105,12 @@ h1, h2, h3, h4, h5, h6 {
   color: #71838d;
 }
 
-.fp-shell button[class*="bg-"][class*="-600"] {
+.fp-shell button:is([class~="bg-teal-600"], [class~="bg-cyan-600"], [class~="bg-rose-600"], [class~="bg-teal-700"]) {
   color: #fff !important;
 }
 
-.fp-shell button[class*="bg-"][class*="-600"] svg,
-.fp-shell [class*="bg-cyan-600"] {
+.fp-shell button:is([class~="bg-teal-600"], [class~="bg-cyan-600"], [class~="bg-rose-600"], [class~="bg-teal-700"]) svg,
+.fp-shell [class~="bg-cyan-600"] {
   color: #fff !important;
 }
 

@@ -26,10 +26,10 @@ export const ProvenanceBadge: React.FC<ProvenanceBadgeProps> = ({ provenance, si
     return (
       <span
         className={`inline-flex items-center gap-1 font-mono tracking-wider font-semibold uppercase rounded text-amber-700 bg-amber-50 border border-amber-200 ${sizeClasses}`}
-        title="Generated or injected via AI Manufacturing Simulator"
+        title="Reading received through the connected machine data feed"
       >
         <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
-        SIMULATED
+        MACHINE FEED
       </span>
     );
   }

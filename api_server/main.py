@@ -603,6 +603,29 @@ def get_me(user: Dict[str, Any] = Depends(get_current_user)):
         session_started_at_utc=user.get("session_started_at_utc")
     )
 
+@app.get("/api/v1/auth/me/activity")
+def get_my_activity(user: Dict[str, Any] = Depends(get_current_user)):
+    """Personal event history only; the employee identity comes from the session."""
+    if DEMO_AUTH_ENABLED:
+        return {"events": [], "demo_mode": True, "factory_time_zone": FACTORY_TIMEZONE}
+    try:
+        with get_telemetry_engine().connect() as connection:
+            rows = connection.execute(_sql_text("""
+                SELECT id, event_type, occurred_at_utc, role_at_event
+                FROM activity_log WHERE employee_id = :employee_id
+                ORDER BY occurred_at_utc DESC, id DESC LIMIT 30
+            """), {"employee_id": user["id"]}).mappings().all()
+        events = []
+        for row in rows:
+            local_timestamp, zone_name = _factory_time(row["occurred_at_utc"])
+            events.append({"id": row["id"], "event_type": row["event_type"],
+                "occurred_at_utc": _iso_utc(row["occurred_at_utc"]),
+                "occurred_at_local": local_timestamp, "role": row["role_at_event"]})
+        return {"events": events, "factory_time_zone": FACTORY_TIMEZONE, "demo_mode": False}
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail="Your activity history is temporarily unavailable") from exc
+
+
 @app.post("/api/v1/auth/logout")
 def logout(request: Request, user: Dict[str, Any] = Depends(get_current_user), authorization: Optional[str] = Header(None)):
     if DEMO_AUTH_ENABLED:

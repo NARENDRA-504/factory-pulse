@@ -1,5 +1,6 @@
 import React from 'react';
 import { UserProfile } from '../types';
+import { AppScreen, roleOperations } from '../roleNavigation';
 import {
   Menu,
   RotateCcw,
@@ -13,7 +14,7 @@ import {
 
 interface TopBarProps {
   currentUser: UserProfile;
-  currentScreen: 'dashboard' | 'machines' | 'incidents' | 'analytics' | 'users' | 'activity' | 'inventory' | 'maintenance';
+  currentScreen: AppScreen;
   onOpenMobileSidebar: () => void;
   onRefreshData?: () => void;
   onRaiseAlert?: () => void;
@@ -33,6 +34,8 @@ export const TopBar: React.FC<TopBarProps> = ({
   onOpenNotifications,
 }) => {
   const getBreadcrumb = () => {
+    const rolePage = roleOperations[currentUser.role].find(item => item.screen === currentScreen);
+    if (rolePage) return { parent: `${currentUser.role} operations`, current: rolePage.label, subtitle: 'Your authorized machine records and operational actions' };
     switch (currentScreen) {
       case 'dashboard':
         if (currentUser.role === 'Admin') {
@@ -51,7 +54,7 @@ export const TopBar: React.FC<TopBarProps> = ({
         return {
           parent: 'Operations',
           current: 'Machine Condition',
-          subtitle: 'Saved simulator readings, roster values & reference limits',
+          subtitle: 'Saved machine readings, roster values & reference limits',
         };
       case 'incidents':
         return {
@@ -84,7 +87,7 @@ export const TopBar: React.FC<TopBarProps> = ({
     }
   };
 
-  const info = getBreadcrumb();
+  const info = getBreadcrumb() || { parent: 'Operations', current: 'Operations', subtitle: 'Machine records' };
 
   return (
     <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm px-4 sm:px-6 lg:px-8 py-3.5">
