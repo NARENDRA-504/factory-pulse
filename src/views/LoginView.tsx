@@ -38,8 +38,8 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
               <div><p className="font-bold text-slate-900">FactoryPulse</p><p className="text-xs text-slate-600">Manufacturing operations</p></div>
             </div>
             <p className="mt-12 inline-flex items-center gap-2 rounded-full border border-teal-200 bg-teal-50 px-3 py-1.5 text-xs text-teal-800"><Factory className="h-3.5 w-3.5"/> Workforce sign-in</p>
-            <h1 className="mt-5 max-w-lg text-3xl sm:text-4xl font-bold tracking-tight text-slate-900">From machine to dispatch, every part is checked.</h1>
-            <p className="mt-3 max-w-lg text-sm leading-6 text-slate-600">Follow one component through production, quality inspection, digital logging, and delivery.</p>
+            <h1 className="mt-5 max-w-lg text-3xl sm:text-4xl font-bold tracking-tight text-slate-900">Precision manufacturing, monitored in real time.</h1>
+            <p className="mt-3 max-w-lg text-sm leading-6 text-slate-600">Continuous telemetry, active CNC spindle analytics, and automated incident response.</p>
           </div>
           <LoginProcessAnimation />
           <div className="relative mt-10 grid sm:grid-cols-2 gap-3">

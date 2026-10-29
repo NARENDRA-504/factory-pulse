@@ -1,109 +1,383 @@
 import React from 'react';
 
-/** Decorative, accessible-by-context production story on the sign-in screen. */
+/**
+ * Animated CNC Machining Center illustration for the sign-in screen.
+ * Displays only the active CNC machine operating at high precision with running spindle,
+ * tool cutter motion, coolant spray, live HMI telemetry readouts, and status beacon.
+ */
 export const LoginProcessAnimation: React.FC = () => (
   <div className="fp-login-process" aria-hidden="true">
     <svg className="fp-login-process__scene" viewBox="0 0 760 220" role="presentation">
       <defs>
-        <linearGradient id="fp-machine-shell" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#fff"/><stop offset="1" stopColor="#e4efed"/></linearGradient>
-        <linearGradient id="fp-machine-window" x1="0" y1="0" x2="0.9" y2="1"><stop stopColor="#d9f1eb"/><stop offset="1" stopColor="#a9d3c9"/></linearGradient>
-        <linearGradient id="fp-belt" x1="0" x2="1"><stop stopColor="#b8cbc7"/><stop offset=".5" stopColor="#edf3f1"/><stop offset="1" stopColor="#baccc8"/></linearGradient>
-        <linearGradient id="fp-truck-body" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#d5eee7"/><stop offset="1" stopColor="#a9d7cb"/></linearGradient>
-        <radialGradient id="fp-scene-glow"><stop stopColor="#a7e0d3" stopOpacity=".4"/><stop offset="1" stopColor="#a7e0d3" stopOpacity="0"/></radialGradient>
-        <filter id="fp-soft-shadow" x="-30%" y="-30%" width="160%" height="180%"><feDropShadow dx="0" dy="5" stdDeviation="5" floodColor="#254e48" floodOpacity=".13"/></filter>
-        <filter id="fp-part-shadow" x="-40%" y="-40%" width="180%" height="200%"><feDropShadow dx="0" dy="3" stdDeviation="2" floodColor="#6b4c17" floodOpacity=".2"/></filter>
+        {/* Machine body & enclosure gradients */}
+        <linearGradient id="fp-mach-shell" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#ffffff" />
+          <stop offset="60%" stopColor="#f4f8f7" />
+          <stop offset="100%" stopColor="#e2eeea" />
+        </linearGradient>
+
+        <linearGradient id="fp-mach-accent" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#1e584f" />
+          <stop offset="100%" stopColor="#2c7a6e" />
+        </linearGradient>
+
+        <linearGradient id="fp-mach-window" x1="0" y1="0" x2="0.8" y2="1">
+          <stop offset="0%" stopColor="#e1f5ef" stopOpacity="0.95" />
+          <stop offset="50%" stopColor="#c5e7de" stopOpacity="0.85" />
+          <stop offset="100%" stopColor="#a3d5c9" stopOpacity="0.9" />
+        </linearGradient>
+
+        <linearGradient id="fp-spindle-metal" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#8ba59f" />
+          <stop offset="50%" stopColor="#e9f3f0" />
+          <stop offset="100%" stopColor="#69857f" />
+        </linearGradient>
+
+        <linearGradient id="fp-cutter-gold" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#ffd875" />
+          <stop offset="100%" stopColor="#d89620" />
+        </linearGradient>
+
+        <linearGradient id="fp-hmi-screen" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#142e2a" />
+          <stop offset="100%" stopColor="#0b1e1b" />
+        </linearGradient>
+
+        <radialGradient id="fp-floor-glow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#10b981" stopOpacity="0.22" />
+          <stop offset="60%" stopColor="#14b8a6" stopOpacity="0.08" />
+          <stop offset="100%" stopColor="#14b8a6" stopOpacity="0" />
+        </radialGradient>
+
+        <radialGradient id="fp-chamber-light" cx="45%" cy="30%" r="70%">
+          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.7" />
+          <stop offset="50%" stopColor="#d5eee7" stopOpacity="0.3" />
+          <stop offset="100%" stopColor="#a7d6cb" stopOpacity="0.05" />
+        </radialGradient>
+
+        <filter id="fp-mach-shadow" x="-15%" y="-15%" width="130%" height="140%">
+          <feDropShadow dx="0" dy="7" stdDeviation="7" floodColor="#1a423b" floodOpacity="0.14" />
+        </filter>
+
+        <filter id="fp-beacon-glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="#10b981" floodOpacity="0.6" />
+        </filter>
       </defs>
 
-      <ellipse cx="380" cy="183" rx="354" ry="19" fill="url(#fp-scene-glow)"/>
-      <path d="M24 181h711" stroke="#d7e4e1" strokeWidth="2" strokeLinecap="round"/>
-      <path d="M40 190h30m14 0h30m14 0h30m14 0h30m14 0h30m14 0h30m14 0h30m14 0h30m14 0h30m14 0h30m14 0h30m14 0h30m14 0h30m14 0h30m14 0h30" stroke="#e2ece9" strokeWidth="2" strokeLinecap="round"/>
+      {/* Ground plane & subtle floor glow */}
+      <ellipse cx="380" cy="192" rx="280" ry="16" fill="url(#fp-floor-glow)" />
+      <path d="M120 191h520" stroke="#d5e4e0" strokeWidth="2" strokeLinecap="round" />
+      <path
+        d="M140 198h36m16 0h36m16 0h36m16 0h36m16 0h36m16 0h36m16 0h36m16 0h36m16 0h36m16 0h36"
+        stroke="#e4eeec"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
 
-      {/* Machining station */}
-      <g filter="url(#fp-soft-shadow)">
-        <rect x="23" y="30" width="166" height="131" rx="15" fill="url(#fp-machine-shell)" stroke="#c8dad6" strokeWidth="1.5"/>
-        <path d="M23 57h166" stroke="#dce8e5" strokeWidth="1.5"/>
-        <circle cx="39" cy="44" r="3" fill="#8dcab9"/><circle cx="50" cy="44" r="3" fill="#f1c56f"/>
-        <text x="66" y="47" className="fp-process-label">CNC CELL 01</text>
-        <rect x="34" y="69" width="98" height="75" rx="9" fill="url(#fp-machine-window)" stroke="#aac9c2"/>
-        <path d="M41 132h83M50 76v60" stroke="#c4e2db" strokeWidth="2" opacity=".8"/>
-        <rect x="139" y="69" width="38" height="75" rx="7" fill="#f5f9f8" stroke="#d3e1de"/>
-        <circle cx="151" cy="83" r="3.5" fill="#2da487"/><circle cx="163" cy="83" r="3.5" fill="#b8d4ce"/>
-        <rect x="148" y="96" width="20" height="5" rx="2.5" fill="#d7e5e1"/><rect x="148" y="106" width="14" height="5" rx="2.5" fill="#d7e5e1"/>
-        <path d="M76 122v-23h12l5 7h13v16z" fill="#e8b955" stroke="#c99537" strokeWidth="1.5" strokeLinejoin="round"/>
-        <path d="M92 99v7h14" fill="none" stroke="#fff4d7" strokeWidth="2"/>
-        <path d="M85 92h27" stroke="#7d9992" strokeWidth="4" strokeLinecap="round"/>
-        <g transform="translate(99 91)">
-          <g className="fp-process-gear">
-            <path d="M-4-18h8l1.5 5.2 4 1.7 4.7-2.8 5.6 5.6-2.8 4.7 1.7 4L24 2v8l-5.3 1.5-1.7 4 2.8 4.7-5.6 5.6-4.7-2.8-4 1.7L4 30h-8l-1.5-5.3-4-1.7-4.7 2.8-5.6-5.6 2.8-4.7-1.7-4L-24 10V2l5.3-1.5 1.7-4-2.8-4.7 5.6-5.6 4.7 2.8 4-1.7z" transform="scale(.68)" fill="#fff" stroke="#398f81" strokeWidth="2.4" strokeLinejoin="round"/>
-            <circle r="6" fill="#d9f0ea" stroke="#398f81" strokeWidth="2"/><circle r="2" fill="#398f81"/>
+      {/* Heavy Machine Leveling Feet (Anchored into floor) */}
+      <g stroke="#7b9992" strokeWidth="6" strokeLinecap="round">
+        <path d="M195 183v9" />
+        <path d="M295 183v9" />
+        <path d="M465 183v9" />
+        <path d="M565 183v9" />
+      </g>
+      {/* Vibration damping footpads */}
+      <rect x="183" y="190" width="24" height="4" rx="2" fill="#4d6963" />
+      <rect x="283" y="190" width="24" height="4" rx="2" fill="#4d6963" />
+      <rect x="453" y="190" width="24" height="4" rx="2" fill="#4d6963" />
+      <rect x="553" y="190" width="24" height="4" rx="2" fill="#4d6963" />
+
+      {/* Main CNC Machining Center Structure */}
+      <g filter="url(#fp-mach-shadow)">
+        {/* Machine Outer Enclosure */}
+        <rect
+          x="152"
+          y="28"
+          width="456"
+          height="156"
+          rx="18"
+          fill="url(#fp-mach-shell)"
+          stroke="#bcd3cd"
+          strokeWidth="1.8"
+        />
+
+        {/* Top Accent Stripe / Brand Band */}
+        <path
+          d="M153 28h454c9.94 0 18 8.06 18 18v12H135V46c0-9.94 8.06-18 18-18z"
+          fill="url(#fp-mach-accent)"
+        />
+
+        {/* Stack Light Beacon (Signal Tower) */}
+        <g transform="translate(178, 11)">
+          <rect x="-2" y="10" width="16" height="8" rx="2" fill="#2d524b" />
+          <rect x="4" y="2" width="4" height="8" fill="#587972" />
+          {/* Signal tiers: Red off, Amber off, Green ACTIVE RUNNING */}
+          <circle cx="6" cy="-2" r="3" fill="#697f7a" />
+          <circle cx="6" cy="-10" r="3" fill="#697f7a" />
+          <circle
+            className="fp-process-beacon"
+            cx="6"
+            cy="-18"
+            r="4.5"
+            fill="#10b981"
+            filter="url(#fp-beacon-glow)"
+          />
+        </g>
+
+        {/* Machine Header & Identification */}
+        <circle cx="218" cy="45" r="3.5" fill="#34d399" className="fp-process-beacon" />
+        <circle cx="230" cy="45" r="3" fill="#fbbf24" />
+        <circle cx="241" cy="45" r="3" fill="#93c5fd" />
+
+        <text x="256" y="49" fill="#ffffff" font-size="11" font-weight="800" letter-spacing="1.5" fontFamily="'Public Sans', system-ui, sans-serif">
+          CNC CELL 01
+        </text>
+
+        <text x="360" y="49" fill="#a4d7cb" font-size="8.5" font-weight="600" letter-spacing="1.2" fontFamily="'Public Sans', system-ui, sans-serif">
+          5-AXIS PRECISION MACHINING CENTER
+        </text>
+
+        {/* Cycle Active Badge */}
+        <g transform="translate(528, 38)">
+          <rect x="0" y="0" width="66" height="15" rx="7.5" fill="#0d3b33" stroke="#22c55e" strokeWidth="1" />
+          <circle cx="9" cy="7.5" r="3" fill="#22c55e" className="fp-process-beacon" />
+          <text x="17" y="10.5" fill="#86efac" font-size="7.5" font-weight="700" letter-spacing="0.8" fontFamily="'Public Sans', system-ui, sans-serif">
+            RUNNING
+          </text>
+        </g>
+
+        {/* ======================================================== */}
+        {/* MACHINING CHAMBER (Left / Center Enclosure)              */}
+        {/* ======================================================== */}
+        {/* Chamber Outer Cutout Frame */}
+        <rect
+          x="168"
+          y="62"
+          width="322"
+          height="112"
+          rx="12"
+          fill="#17312d"
+          stroke="#254d46"
+          strokeWidth="1.5"
+        />
+
+        {/* Interior Chamber Backdrop & Lighting */}
+        <rect x="172" y="66" width="314" height="104" rx="8" fill="url(#fp-chamber-light)" />
+
+        {/* X-Axis Linear Guideway Rails */}
+        <path d="M180 94h298" stroke="#375d56" strokeWidth="3" />
+        <path d="M180 102h298" stroke="#284842" strokeWidth="2" />
+        <path d="M180 94h298" stroke="#52837a" strokeWidth="1" strokeDasharray="6 8" />
+
+        {/* T-Slot Heavy Milling Worktable */}
+        <rect x="210" y="148" width="238" height="18" rx="4" fill="#32544e" stroke="#48756d" strokeWidth="1.5" />
+        <path d="M220 154h218M220 159h218" stroke="#213d38" strokeWidth="1.5" />
+
+        {/* Precision Hydraulic Clamping Vise */}
+        <rect x="270" y="137" width="118" height="14" rx="3" fill="#50706a" stroke="#719890" strokeWidth="1.2" />
+        <rect x="264" y="134" width="10" height="18" rx="2" fill="#86a8a1" />
+        <rect x="384" y="134" width="10" height="18" rx="2" fill="#86a8a1" />
+        <circle cx="269" cy="143" r="2.5" fill="#364e49" />
+        <circle cx="389" cy="143" r="2.5" fill="#364e49" />
+
+        {/* Workpiece Billet (Machined Alloy Component) */}
+        <g transform="translate(290, 116)">
+          <path
+            d="M0 8h18l10-10h34l12 12v14H0z"
+            fill="url(#fp-cutter-gold)"
+            stroke="#a97618"
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+          />
+          {/* Internal machined grooves & finish highlights */}
+          <path d="M18 8v16M28 -2v26M62 10v14" stroke="#fff8dd" strokeWidth="1.5" opacity="0.9" />
+          <path d="M6 14h62" stroke="#b67f1a" strokeWidth="1.2" />
+        </g>
+
+        {/* Dual Flexible Coolant Nozzles */}
+        <path
+          d="M260 88q25 8 36 24"
+          fill="none"
+          stroke="#41736b"
+          strokeWidth="3.5"
+          strokeLinecap="round"
+        />
+        <circle cx="297" cy="113" r="3" fill="#71b5a8" />
+        <path
+          d="M396 88q-25 8 -36 24"
+          fill="none"
+          stroke="#41736b"
+          strokeWidth="3.5"
+          strokeLinecap="round"
+        />
+        <circle cx="359" cy="113" r="3" fill="#71b5a8" />
+
+        {/* Coolant fluid micro-jet streaming toward cutter contact zone */}
+        <path
+          className="fp-process-coolant"
+          d="M298 114l22 10M358 114l-22 10"
+          stroke="#5eead4"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeDasharray="4 3"
+        />
+
+        {/* Vertical Spindle Head & Z-Axis Column */}
+        <g className="fp-process-spindle" transform="translate(328, 62)">
+          {/* Spindle Quill Housing */}
+          <rect x="-18" y="0" width="36" height="34" rx="4" fill="url(#fp-spindle-metal)" stroke="#55756e" strokeWidth="1.5" />
+          <rect x="-14" y="6" width="28" height="4" rx="1.5" fill="#32524b" />
+          <rect x="-14" y="14" width="28" height="4" rx="1.5" fill="#32524b" />
+          <circle cx="0" cy="25" r="3" fill="#10b981" className="fp-process-beacon" />
+
+          {/* High-Precision Toolholder & Collet Chuck */}
+          <path d="M-10 34h20l-4 12h-12z" fill="#3a5852" stroke="#5a7e77" strokeWidth="1.2" />
+          <rect x="-6" y="46" width="12" height="7" rx="1" fill="#789c94" stroke="#4a6d65" strokeWidth="1" />
+
+          {/* Rotating Cutter Tool / Endmill with active rotation */}
+          <g transform="translate(0, 56)">
+            <g className="fp-process-gear">
+              {/* Spinning tool profile with cutting flutes */}
+              <path
+                d="M-5-7h10l2 4 3-1 2 4-2 3 3 2-1 4-4 1-1 4h-4l-1-4-4-1-1-4 3-2-2-3 2-4 3 1z"
+                fill="#ffffff"
+                stroke="#1b5a50"
+                strokeWidth="1.6"
+                strokeLinejoin="round"
+              />
+              <circle r="4" fill="#a7f3d0" stroke="#047857" strokeWidth="1.5" />
+              <circle r="1.5" fill="#047857" />
+            </g>
+          </g>
+
+          {/* Chip ejection / sparks fluttering away from cutting zone */}
+          <g className="fp-process-chips" transform="translate(0, 62)">
+            <circle cx="-14" cy="2" r="1.5" fill="#fde047" />
+            <circle cx="-18" cy="-5" r="1.2" fill="#fbbf24" />
+            <circle cx="15" cy="1" r="1.5" fill="#fde047" />
+            <circle cx="19" cy="-4" r="1.2" fill="#fbbf24" />
           </g>
         </g>
-        <path d="M49 161v8m114-8v8" stroke="#8ca9a2" strokeWidth="5" strokeLinecap="round"/>
-      </g>
 
-      {/* Worker in simple safety gear carrying a finished piece */}
-      <g className="fp-process-worker">
-        <circle cx="221" cy="77" r="14" fill="#eebf9c"/>
-        <path d="M207 76q1-17 15-17 12 0 14 13l-4 2q-5-6-12-6-6 0-13 8z" fill="#36505b"/>
-        <path d="M205 73q16-11 34 0l-2-7q-5-9-15-9-12 0-17 10z" fill="#f0bd59"/>
-        <path d="M198 99q23-14 45 0l8 48h-61z" fill="#398f81"/>
-        <path className="fp-process-arm" d="M206 105l-18 15-8 5M237 105l16 14" fill="none" stroke="#eebf9c" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M207 147l-3 19m28-19 5 19" stroke="#405761" strokeWidth="8" strokeLinecap="round"/>
-        <path d="M197 166h13m24 0h13" stroke="#293f49" strokeWidth="5" strokeLinecap="round"/>
-        <path d="M212 102l6 17h13l6-17" fill="#d9f0e9" stroke="#2c786d" strokeWidth="1.5"/>
-        <circle cx="178" cy="125" r="4" fill="#eebf9c"/>
-      </g>
+        {/* Safety Glass Glare / Chamber Reflection Highlight */}
+        <path
+          d="M172 66l60 104h28l-60-104z"
+          fill="#ffffff"
+          opacity="0.12"
+        />
+        <path
+          d="M268 66l60 104h16l-60-104z"
+          fill="#ffffff"
+          opacity="0.08"
+        />
 
-      {/* Inspection gate */}
-      <text x="306" y="44" className="fp-process-label">QUALITY CHECK</text>
-      <g>
-        <path d="M298 136V79q0-13 13-13h79q13 0 13 13v57" fill="none" stroke="#72b7a7" strokeWidth="7" strokeLinecap="round"/>
-        <path d="M305 82v48m89-48v48" stroke="#d1e8e2" strokeWidth="2"/>
-        <circle className="fp-process-check" cx="350" cy="78" r="13" fill="#f3fbf8" stroke="#45a48f" strokeWidth="2"/>
-        <path d="m344 78 4 4 8-9" fill="none" stroke="#27806f" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M310 96v31m80-31v31" stroke="#8dd0be" strokeWidth="2" strokeDasharray="3 5"/>
-      </g>
+        {/* Chamber Glass Safety Border Frame */}
+        <rect
+          x="168"
+          y="62"
+          width="322"
+          height="112"
+          rx="12"
+          fill="none"
+          stroke="#6ea79b"
+          strokeWidth="2.5"
+          opacity="0.6"
+        />
 
-      {/* Roller conveyor */}
-      <g>
-        <rect x="278" y="145" width="331" height="16" rx="8" fill="url(#fp-belt)" stroke="#bacdc8"/>
-        <path d="M291 162l-6 15m292-15 6 15" stroke="#9eb7b0" strokeWidth="5" strokeLinecap="round"/>
-        <g className="fp-process-rollers" fill="#90aaa3">
-          <circle cx="296" cy="153" r="4"/><circle cx="324" cy="153" r="4"/><circle cx="352" cy="153" r="4"/><circle cx="380" cy="153" r="4"/><circle cx="408" cy="153" r="4"/><circle cx="436" cy="153" r="4"/><circle cx="464" cy="153" r="4"/><circle cx="492" cy="153" r="4"/><circle cx="520" cy="153" r="4"/><circle cx="548" cy="153" r="4"/><circle cx="576" cy="153" r="4"/>
+        {/* ======================================================== */}
+        {/* CNC HMI OPERATOR CONTROL STATION (Right side)           */}
+        {/* ======================================================== */}
+        {/* Control Enclosure Bay */}
+        <rect
+          x="498"
+          y="62"
+          width="98"
+          height="112"
+          rx="10"
+          fill="#edf5f3"
+          stroke="#c2d8d2"
+          strokeWidth="1.5"
+        />
+
+        {/* Digital Touchscreen Display */}
+        <rect
+          x="506"
+          y="70"
+          width="82"
+          height="50"
+          rx="6"
+          fill="url(#fp-hmi-screen)"
+          stroke="#204c44"
+          strokeWidth="1.5"
+        />
+
+        {/* Screen Header & Live Readings */}
+        <text x="512" y="80" fill="#34d399" font-size="7" font-weight="700" fontFamily="monospace">
+          12,000 RPM
+        </text>
+        <text x="556" y="80" fill="#93c5fd" font-size="6.5" font-weight="600" fontFamily="monospace">
+          LOAD 68%
+        </text>
+
+        {/* Animated Oscilloscope / Tool Vibration Waveform */}
+        <g className="fp-process-wave">
+          <path
+            d="M512 94q6 -8 12 0t12 0t12 -6t12 6t12 -3t10 3"
+            fill="none"
+            stroke="#2dd4bf"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+          />
+        </g>
+
+        {/* Feed rate & Vibration metrics */}
+        <text x="512" y="106" fill="#a7f3d0" font-size="6" font-weight="600" fontFamily="monospace">
+          F: 450 mm/m
+        </text>
+        <text x="554" y="106" fill="#fde047" font-size="6" font-weight="600" fontFamily="monospace">
+          1.24 mm/s
+        </text>
+
+        <path d="M512 112h70" stroke="#1c473f" strokeWidth="1" />
+
+        {/* Operator Controls & Buttons */}
+        <g transform="translate(508, 126)">
+          {/* Cycle Start (Green Button) */}
+          <circle cx="9" cy="8" r="6" fill="#059669" stroke="#34d399" strokeWidth="1.2" />
+          <polygon points="7,5 12,8 7,11" fill="#ffffff" />
+
+          {/* Feed Hold (Amber Button) */}
+          <circle cx="27" cy="8" r="5" fill="#d97706" stroke="#fbbf24" strokeWidth="1" />
+          <rect x="25" y="6" width="4" height="4" fill="#ffffff" />
+
+          {/* Emergency Stop (Safety Red Mushroom Button) */}
+          <circle cx="49" cy="8" r="7.5" fill="#dc2626" stroke="#fca5a5" strokeWidth="1.5" />
+          <circle cx="49" cy="8" r="4.5" fill="#b91c1c" />
+          <circle cx="49" cy="8" r="2" fill="#ef4444" />
+        </g>
+
+        {/* Ventilation Louvers (Lower Right) */}
+        <g stroke="#9bbbb4" strokeWidth="1.5" strokeLinecap="round">
+          <path d="M514 148h66" />
+          <path d="M514 154h66" />
+          <path d="M514 160h66" />
+          <path d="M514 166h66" />
         </g>
       </g>
-
-      {/* PDA scan point */}
-      <text x="466" y="44" className="fp-process-label">SCAN &amp; LOG</text>
-      <g className="fp-process-scanner">
-        <path d="M480 74q0-5 5-5h28q5 0 5 5v37q0 5-5 5h-28q-5 0-5-5z" fill="#fff" stroke="#789b93" strokeWidth="2"/>
-        <rect x="485" y="75" width="18" height="22" rx="3" fill="#e1f4ed"/>
-        <path d="M489 81h10m-10 4h10m-10 4h7" stroke="#398f81" strokeWidth="1.6" strokeLinecap="round"/>
-        <path d="M501 100l6 17q1 4-3 5l-5 2q-4 1-5-3l-5-15" fill="#d4e6e1" stroke="#789b93" strokeWidth="1.5" strokeLinejoin="round"/>
-        <circle cx="499" cy="106" r="2" fill="#39ac92"/>
-        <path className="fp-process-scanline" d="M468 130h65" stroke="#35b596" strokeWidth="2.5" strokeDasharray="5 4"/>
-      </g>
-
-      {/* Dispatch truck */}
-      <text x="630" y="44" className="fp-process-label">DISPATCH</text>
-      <g className="fp-process-truck" filter="url(#fp-soft-shadow)">
-        <path d="M613 94q0-5 5-5h67q5 0 8 4l15 20v28h-95z" fill="url(#fp-truck-body)" stroke="#729c91" strokeWidth="1.8" strokeLinejoin="round"/>
-        <path d="M682 96h4l12 16h-16z" fill="#f6fbfa" stroke="#8eaaa3" strokeWidth="1.5"/>
-        <rect x="622" y="99" width="48" height="33" rx="3" fill="#f7fbfa" stroke="#b5cdc6"/>
-        <path d="M628 106h36m-36 7h36m-36 7h24" stroke="#c8ded8" strokeWidth="2" strokeLinecap="round"/>
-        <path d="M700 121h8" stroke="#eab958" strokeWidth="4" strokeLinecap="round"/>
-        <circle cx="635" cy="143" r="10" fill="#344e58"/><circle cx="635" cy="143" r="4" fill="#edf5f2"/>
-        <circle cx="690" cy="143" r="10" fill="#344e58"/><circle cx="690" cy="143" r="4" fill="#edf5f2"/>
-      </g>
-
-      {/* The same finished part travels through each stage. */}
-      <g className="fp-process-part" filter="url(#fp-part-shadow)">
-        <path d="M0 0h22l8 8v16H0z" fill="#f2c15e" stroke="#bd8c31" strokeWidth="1.5" strokeLinejoin="round"/>
-        <path d="M22 0v8h8M6 8h10M6 14h16" fill="none" stroke="#fff8e6" strokeWidth="2"/>
-      </g>
-      <text x="27" y="202" className="fp-process-caption">ONE PART · CHECKED · TRACEABLE · READY TO SHIP</text>
     </svg>
-    <div className="fp-login-process__foot"><span>Machine</span><i/><span>Quality</span><i/><span>Scan</span><i/><span>Dispatch</span></div>
+
+    {/* Live CNC Machine Running Status Strip */}
+    <div className="fp-login-process__foot">
+      <span className="flex items-center gap-1.5 text-emerald-700 font-bold">
+        <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+        CNC CELL 01 · SPINDLE RUNNING
+      </span>
+      <i />
+      <span>12,000 RPM</span>
+      <i />
+      <span>FEED: 450 mm/min</span>
+      <i />
+      <span>VIBRATION: 1.24 mm/s NOMINAL</span>
+    </div>
   </div>
 );
-
