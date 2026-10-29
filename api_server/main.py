@@ -925,6 +925,9 @@ SIMULATOR_SENSOR_UNITS = {
     "Shift Target": "parts",
     "Cycle Time": "s/cycle",
     "Target Cycle Time": "s/cycle",
+    # Explicitly modeled Simulator ratios; not certified plant OEE.
+    "Simulated Quality": "%",
+    "Simulated Performance": "%",
 }
 
 def validate_simulator_sensor_unit(payload: SimulatorTelemetryIngest) -> None:

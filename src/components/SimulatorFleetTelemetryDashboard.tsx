@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Activity, AlertTriangle, Cpu, Gauge, Radio, Thermometer, Wrench, Zap } from 'lucide-react';
+import { Activity, AlertTriangle, Cpu, Gauge, Radio, TrendingUp, Zap } from 'lucide-react';
 import { Machine, UserProfile } from '../types';
 import { apiClient, PersistedSimulatorReading } from '../services/apiClient';
 import { OperationalInsights } from './OperationalInsights';
@@ -17,6 +17,93 @@ const formatValue = (value: number | string | null, unit: string) => {
 
 const formatTime = (value?: string) => value ? new Date(value).toLocaleString() : 'No Simulator readings yet';
 const toPlantLabel = (plant?: string) => plant?.includes(':') ? plant.split(':').slice(1).join(':').trim() : plant || 'Unassigned plant';
+const sensorPriority = ['RPM', 'Temperature', 'Motor Temperature', 'Vibration', 'Pressure', 'Coolant Flow', 'Motor Load', 'Motor Power', 'Current', 'Torque', 'Cycle Time', 'Good Parts', 'Scrap Parts', 'Shift Target'];
+
+type ChartPoint = { value: number; timestamp: string };
+
+const estimatePartsPerHour = (history: PersistedSimulatorReading[], sensorName: string) => {
+  const byTimestamp = new Map<number, number>();
+  for (const reading of history) {
+    if (reading.sensor_name.toLowerCase() !== sensorName.toLowerCase()) continue;
+    const timestamp = new Date(reading.timestamp).getTime();
+    const value = typeof reading.sensor_value === 'number'
+      ? reading.sensor_value
+      : typeof reading.sensor_value === 'string' && reading.sensor_value.trim() !== ''
+        ? Number(reading.sensor_value)
+        : Number.NaN;
+    if (Number.isFinite(timestamp) && Number.isFinite(value)) byTimestamp.set(timestamp, value);
+  }
+  const allPoints = Array.from(byTimestamp, ([timestamp, value]) => ({ timestamp, value })).sort((a, b) => a.timestamp - b.timestamp);
+  if (allPoints.length < 2) return null;
+
+  const latestTimestamp = allPoints[allPoints.length - 1].timestamp;
+  const cutoff = latestTimestamp - 15 * 60 * 1000;
+  const points = allPoints.filter((point) => point.timestamp >= cutoff);
+  let elapsedMs = 0;
+  let producedParts = 0;
+  for (let index = 1; index < points.length; index += 1) {
+    const previous = points[index - 1];
+    const current = points[index];
+    const interval = current.timestamp - previous.timestamp;
+    const delta = current.value - previous.value;
+    // A falling cumulative counter marks a reset; ignore that interval instead of
+    // turning the reset into negative production or a misleading hourly rate.
+    if (interval <= 0 || delta < 0) continue;
+    elapsedMs += interval;
+    producedParts += delta;
+  }
+  if (elapsedMs < 60 * 1000) return null;
+  return { partsPerHour: Math.round(producedParts / elapsedMs * 60 * 60 * 1000), minutesObserved: Math.round(elapsedMs / 60000) };
+};
+
+const Donut: React.FC<{ segments: Array<{ label: string; value: number; color: string }>; center: string; caption: string }> = ({ segments, center, caption }) => {
+  const total = segments.reduce((sum, segment) => sum + segment.value, 0);
+  const radius = 39;
+  const circumference = 2 * Math.PI * radius;
+  let offset = 0;
+  return <div className="flex items-center gap-4">
+    <div className="relative h-28 w-28 shrink-0">
+      <svg viewBox="0 0 100 100" role="img" aria-label={`${caption}: ${segments.filter(segment => segment.value > 0).map(segment => `${segment.label} ${segment.value}`).join(', ') || 'no data'}`} className="h-full w-full -rotate-90">
+        <circle cx="50" cy="50" r={radius} fill="none" stroke="#e2e8f0" strokeWidth="12" />
+        {total > 0 && segments.filter(segment => segment.value > 0).map(segment => {
+          const length = segment.value / total * circumference;
+          const circle = <circle key={segment.label} cx="50" cy="50" r={radius} fill="none" stroke={segment.color} strokeWidth="12" strokeDasharray={`${length} ${circumference - length}`} strokeDashoffset={-offset} />;
+          offset += length;
+          return circle;
+        })}
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center"><strong className="text-lg leading-tight tabular-nums text-slate-900">{center}</strong><span className="text-[9px] text-slate-500">{caption}</span></div>
+    </div>
+    <div className="min-w-0 flex-1 space-y-1.5">{segments.map(segment => <div key={segment.label} className="flex items-center justify-between gap-2 text-[11px]"><span className="flex min-w-0 items-center gap-2 text-slate-600"><i className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: segment.color }}/><span className="truncate">{segment.label}</span></span><strong className="tabular-nums text-slate-800">{segment.value}</strong></div>)}</div>
+  </div>;
+};
+
+const SensorMiniChart: React.FC<{ name: string; unit: string; points: ChartPoint[]; min: number; max: number; type: 'area' | 'line' | 'columns' | 'bullet' }> = ({ name, unit, points, min, max, type }) => {
+  const values = points.slice(-10).map(point => point.value);
+  const latest = values.at(-1);
+  const low = Math.min(...values, min);
+  const high = Math.max(...values, max);
+  const span = high - low || 1;
+  const x = (index: number) => values.length < 2 ? 150 : 12 + index / (values.length - 1) * 276;
+  const y = (value: number) => 62 - (value - low) / span * 48;
+  const path = values.map((value, index) => `${index ? 'L' : 'M'} ${x(index)} ${y(value)}`).join(' ');
+  const range = Math.max(max - min, 1);
+  const position = latest === undefined ? 0 : Math.max(0, Math.min(100, (latest - min) / range * 100));
+  return <div className="mt-3 h-[76px] rounded-lg bg-slate-50 px-2 py-1.5">
+    {values.length > 1 && type !== 'bullet' ? <svg viewBox="0 0 300 72" role="img" aria-label={`${name} ${type} chart for ${values.length} saved readings, in ${unit}`} className="h-full w-full">
+      <line x1="8" x2="292" y1="62" y2="62" stroke="#cbd5e1" />
+      {type === 'columns' ? values.map((value, index) => { const height = Math.max(3, (value - low) / span * 48); return <rect key={index} x={x(index) - 6} y={62 - height} width="12" height={height} rx="3" fill={index === values.length - 1 ? '#0f766e' : '#7dd3c7'}><title>{`${value.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${unit}`}</title></rect>; }) : <>
+        {type === 'area' && <path d={`${path} L ${x(values.length - 1)} 62 L ${x(0)} 62 Z`} fill="#99f6e4" opacity=".6"/>}
+        <path d={path} fill="none" stroke={type === 'area' ? '#0f766e' : '#2563eb'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx={x(values.length - 1)} cy={y(values.at(-1)!)} r="3.5" fill="#0f766e" />
+      </>}
+    </svg> : latest !== undefined ? <div className="flex h-full flex-col justify-center">
+      <div className="relative h-3 rounded-full bg-slate-200"><div className="h-full rounded-full bg-gradient-to-r from-teal-400 to-teal-700" style={{ width: `${position}%` }}/><span className="absolute -top-1 h-5 w-1 -translate-x-1/2 rounded bg-slate-800" style={{ left: `${position}%` }}/></div>
+      <div className="mt-2 flex justify-between text-[9px] text-slate-500"><span>{min} {unit}</span><span>{max} {unit}</span></div>
+      <span className="mt-1 text-center text-[9px] text-slate-500">{points.length > 1 ? 'Current vs configured range' : 'One saved reading · history forming'}</span>
+    </div> : <div className="flex h-full items-center justify-center text-[10px] text-slate-500">Waiting for saved history</div>}
+  </div>;
+};
 
 const Card: React.FC<{ title: string; children: React.ReactNode; hint?: string; className?: string; action?: React.ReactNode }> = ({ title, children, hint, className = '', action }) => (
   <section className={`min-w-0 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 ${className}`}>
@@ -135,6 +222,7 @@ export const SimulatorFleetTelemetryDashboard: React.FC<SimulatorFleetTelemetryD
   const latestTime = visibleReadings.reduce<string | undefined>((latest, reading) => !latest || new Date(reading.timestamp).getTime() > new Date(latest).getTime() ? reading.timestamp : latest, undefined);
   const selectedCurrent = visibleReadings.filter((reading) => reading.machine_id === selectedMachine?.machineId).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   const selectedHistory = machineHistory.filter((reading) => reading.sensor_name === selectedSensor).slice().reverse();
+  const observedProductionRate = useMemo(() => estimatePartsPerHour(machineHistory, 'Good Parts'), [machineHistory]);
   const numericHistory = selectedHistory.filter((reading): reading is PersistedSimulatorReading & { sensor_value: number } => typeof reading.sensor_value === 'number' && Number.isFinite(reading.sensor_value));
   const currentSensorReading = selectedCurrent.find((reading) => reading.sensor_name === selectedSensor)
     || selectedHistory.find((reading) => reading.sensor_name === selectedSensor);
@@ -178,6 +266,20 @@ export const SimulatorFleetTelemetryDashboard: React.FC<SimulatorFleetTelemetryD
   const maxComparison = Math.max(...comparisonRows.map((row) => row.mean), 1);
   const isFresh = Boolean(latestTime && Date.now() - new Date(latestTime).getTime() < 30000);
   const sourceState = error ? 'UNAVAILABLE' : fleetLoading && fleetReadings.length === 0 ? 'CONNECTING' : fleetReadings.length ? isFresh ? 'LIVE · MYSQL' : 'SAVED DATA · STREAM IDLE' : 'WAITING FOR READINGS';
+  const signalChartTypes: Record<string, 'area' | 'line' | 'columns' | 'bullet'> = {
+    'temperature': 'area', 'motor temperature': 'area', 'vibration': 'line', pressure: 'line',
+    rpm: 'columns', 'cycle time': 'columns', 'motor load': 'bullet', current: 'bullet',
+    'motor power': 'area', torque: 'area', 'coolant flow': 'line',
+  };
+  const signalCharts = selectedCurrent
+    .filter((reading) => typeof reading.sensor_value === 'number' && signalChartTypes[reading.sensor_name.toLowerCase()])
+    .sort((a, b) => sensorPriority.indexOf(a.sensor_name) - sensorPriority.indexOf(b.sensor_name))
+    .map((reading) => ({
+      reading,
+      points: machineHistory.filter((point) => point.sensor_name === reading.sensor_name && typeof point.sensor_value === 'number')
+        .slice().sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+        .map((point) => ({ value: point.sensor_value as number, timestamp: point.timestamp })),
+    }));
 
   return <div className="space-y-4">
     <Card title="Live machine telemetry" hint="Simulator readings saved in FactoryPulse MySQL · current values refresh every second; detailed history refreshes every two seconds." className="border-slate-200">
@@ -203,27 +305,6 @@ export const SimulatorFleetTelemetryDashboard: React.FC<SimulatorFleetTelemetryD
       {!error && !fleetLoading && fleetReadings.length === 0 && !(user.role === 'Operator' && roleMachines.length === 0) && <p className="mt-3 rounded-lg border border-dashed border-slate-200 bg-slate-100 p-3 text-xs text-slate-700">No AI Simulator readings are available for this view yet. When a reading is stored for the selected machine, it will appear here.</p>}
     </Card>
 
-    {selectedCurrent.length > 0 && <section aria-label="Current machine sensor meters" className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
-      {selectedCurrent.filter(reading => typeof reading.sensor_value === 'number').map(reading => {
-        const value = reading.sensor_value as number;
-        const scale = Math.max(reading.expected_max * 1.2, value, 1);
-        const fraction = Math.max(0, Math.min(value / scale, 1));
-        const outside = value < reading.expected_min || value > reading.expected_max;
-        const color = reading.machine_status === 'CRITICAL' ? '#fb7185' : outside ? '#fbbf24' : '#2dd4bf';
-        return <button key={reading.sensor_name} onClick={() => setSelectedSensor(reading.sensor_name)} className={`min-w-0 rounded-xl border bg-white p-3 text-left ${selectedSensor === reading.sensor_name ? 'border-slate-200' : 'border-slate-200'}`}>
-          <h2 className="truncate text-xs font-semibold text-slate-700">{reading.sensor_name}</h2>
-          <svg viewBox="0 0 160 100" role="img" aria-label={`${reading.sensor_name}: ${formatValue(value, reading.sensor_unit)}`} className="mx-auto mt-2 w-full max-w-[180px]">
-            <path d="M 15 80 A 65 65 0 0 1 145 80" pathLength="100" fill="none" stroke="#e2e8f0" strokeWidth="12" strokeLinecap="round"/>
-            <path d="M 15 80 A 65 65 0 0 1 145 80" pathLength="100" fill="none" stroke={color} strokeWidth="12" strokeLinecap="round" strokeDasharray={`${fraction * 100} 100`}/>
-            <text x="80" y="70" textAnchor="middle" fill="#0f172a" fontSize="21" fontWeight="600">{value.toLocaleString(undefined, { maximumFractionDigits: 2 })}</text>
-            <text x="80" y="91" textAnchor="middle" fill="#475569" fontSize="11">{reading.sensor_unit}</text>
-          </svg>
-          <p className="text-[10px]" style={{ color }}>{outside ? 'Outside expected range' : 'Within expected range'}</p>
-          <p className="mt-1 text-[10px] text-slate-500">Expected {reading.expected_min}–{reading.expected_max} {reading.sensor_unit}</p>
-        </button>;
-      })}
-    </section>}
-
     <div className="grid grid-cols-2 gap-2.5 xl:grid-cols-4">
       <Kpi label="Machines reporting" value={`${reportingCount} / ${selectedMachineCount}`} note="Machines with a saved Simulator reading" icon={<Cpu className="h-4 w-4"/>}/>
       <Kpi label="Latest sensor streams" value={String(visibleReadings.length)} note="One newest saved value per machine and sensor" icon={<Activity className="h-4 w-4"/>} tone="text-slate-700"/>
@@ -231,13 +312,57 @@ export const SimulatorFleetTelemetryDashboard: React.FC<SimulatorFleetTelemetryD
       <Kpi label="Good quality" value={visibleReadings.length ? `${Math.round(visibleReadings.filter((reading) => reading.data_quality === 'GOOD').length / visibleReadings.length * 100)}%` : '—'} note="Of latest stored sensor readings" icon={<Gauge className="h-4 w-4"/>} tone="text-teal-800"/>
     </div>
 
+    <Card title={`${selectedMachine?.machineCode || 'Machine'} · signal gallery`} hint="Each signal uses a chart suited to its shape: pressure and temperature trends, RPM and cycle-time columns, and range bullets for load and current. Charts use saved history only.">
+      {signalCharts.length ? <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+        {signalCharts.map(({ reading, points }) => {
+          const chartType = signalChartTypes[reading.sensor_name.toLowerCase()];
+          const latest = reading.sensor_value as number;
+          const outside = latest < reading.expected_min || latest > reading.expected_max;
+          return <button key={reading.sensor_name} type="button" onClick={() => setSelectedSensor(reading.sensor_name)} aria-pressed={selectedSensor === reading.sensor_name} className={`min-w-0 rounded-xl border bg-white p-3.5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${selectedSensor === reading.sensor_name ? 'border-teal-300 ring-2 ring-teal-100' : 'border-slate-200'}`}>
+            <div className="flex items-start justify-between gap-2"><div className="min-w-0"><p className="truncate text-xs font-semibold text-slate-800">{reading.sensor_name}</p><p className="mt-1 text-xl font-semibold tabular-nums text-slate-900">{formatValue(latest, reading.sensor_unit)}</p></div><span className={`rounded-full px-2 py-1 text-[9px] font-semibold ${outside ? 'bg-amber-100 text-amber-800' : 'bg-teal-50 text-teal-800'}`}>{outside ? 'Out of range' : 'In range'}</span></div>
+            <SensorMiniChart name={reading.sensor_name} unit={reading.sensor_unit} points={points} min={reading.expected_min} max={reading.expected_max} type={chartType}/>
+            <div className="mt-2 flex items-center justify-between gap-2 text-[10px] text-slate-500"><span className="capitalize">{points.length < 2 ? 'Range position · history forming' : chartType === 'columns' ? 'Recent samples' : chartType === 'bullet' ? 'Range position' : `${chartType} trend`}</span><span className="truncate">{points.length ? `${points.length} saved points` : 'Current reading only'}</span></div>
+          </button>;
+        })}
+      </div> : <p className="py-8 text-center text-xs text-slate-600">Signal charts appear after numeric Simulator readings are saved.</p>}
+    </Card>
+
+    {(() => {
+      const findValue = (name: string) => selectedCurrent.find((reading) => reading.sensor_name.toLowerCase() === name.toLowerCase() && typeof reading.sensor_value === 'number');
+      const good = findValue('Good Parts'); const scrap = findValue('Scrap Parts'); const target = findValue('Shift Target');
+      if (!good && !scrap && !target) return null;
+      const goodValue = Number(good?.sensor_value ?? 0); const scrapValue = Number(scrap?.sensor_value ?? 0); const targetValue = Number(target?.sensor_value ?? 0);
+      const progress = targetValue > 0 ? Math.min(100, (goodValue + scrapValue) / targetValue * 100) : 0;
+      return <section className="rounded-xl border border-slate-200 bg-gradient-to-r from-white via-white to-teal-50 p-4 shadow-sm sm:p-5" aria-label="Simulator production practice model">
+        <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-teal-800">Production progress · Simulator model</p><h2 className="mt-1 text-base font-semibold text-slate-900">Shift output against target</h2><p className="mt-1 text-xs text-slate-600">Training counters emitted by the Simulator; these are not verified factory production totals.</p></div><span className="rounded-full bg-teal-100 px-2.5 py-1 text-xs font-semibold text-teal-800">{targetValue > 0 ? `${progress.toFixed(0)}% of target` : 'Target unavailable'}</span></div>
+        <div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(260px,0.8fr)] md:items-center">
+          <div>
+            <div className="flex justify-between text-xs"><span className="font-medium text-slate-700">{(goodValue + scrapValue).toLocaleString()} of {targetValue.toLocaleString()} parts</span><span className="text-slate-500">{Math.max(0, targetValue - goodValue - scrapValue).toLocaleString()} remaining</span></div>
+            <div className="mt-2 h-3 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 transition-all" style={{ width: `${progress}%` }} /></div>
+            <p className="mt-2 text-[11px] text-slate-500">Progress to the Simulator practice target</p>
+          </div>
+          <div className="grid gap-3 rounded-lg border border-slate-200 bg-white/80 p-3 sm:grid-cols-3 sm:items-center">
+            <Donut segments={[{ label: 'Good', value: goodValue, color: '#0f766e' }, { label: 'Scrap', value: scrapValue, color: '#f59e0b' }]} center={`${(goodValue + scrapValue).toLocaleString()}`} caption="parts"/>
+            <div className="rounded-lg bg-slate-50 p-3">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Average observed rate</p>
+              <p className="mt-1 text-xl font-semibold tabular-nums text-slate-900">{observedProductionRate ? observedProductionRate.partsPerHour.toLocaleString() : 'Collecting history'}</p>
+              <p className="mt-1 text-[10px] text-slate-500">{observedProductionRate ? `parts/hour · ${observedProductionRate.minutesObserved} min of saved Good Parts readings` : 'Needs at least 1 minute of saved Good Parts history'}</p>
+              <p className="mt-1 text-[10px] text-slate-500">Simulator model average; not verified plant output.</p>
+            </div>
+            <div className="rounded-lg bg-slate-50 p-3">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Cycle time</p>
+              <p className="mt-1 text-xl font-semibold tabular-nums text-slate-900">{findValue('Cycle Time') ? formatValue(findValue('Cycle Time')!.sensor_value, findValue('Cycle Time')!.sensor_unit) : '—'}</p>
+              <p className="mt-1 text-[10px] text-slate-500">{findValue('Target Cycle Time') ? `Target ${formatValue(findValue('Target Cycle Time')!.sensor_value, findValue('Target Cycle Time')!.sensor_unit)}` : 'No target reading saved'}</p>
+            </div>
+          </div>
+        </div>
+      </section>;
+    })()}
+
     <div className="grid grid-cols-1 gap-3.5 xl:grid-cols-12">
       <Card title="Machine status from latest readings" hint="Each reporting machine is counted once using its most recently received sensor status." className="xl:col-span-4">
         {reportingCount ? <>
-          <div className="flex h-4 overflow-hidden rounded-full bg-slate-100" aria-label="Latest Simulator machine status breakdown">
-            {[['NORMAL', statusCounts.normal, '#10b981'], ['IDLE', statusCounts.idle, '#94a3b8'], ['WARNING', statusCounts.warning, '#f59e0b'], ['CRITICAL', statusCounts.critical, '#f43f5e'], ['STOPPED / MAINTENANCE', statusCounts.stopped, '#64748b']].map(([label, count, color]) => Number(count) ? <span key={String(label)} title={`${label}: ${count}`} style={{ width: `${Number(count) / reportingCount * 100}%`, backgroundColor: String(color) }}/> : null)}
-          </div>
-          <div className="mt-4 grid grid-cols-2 gap-2 text-xs">{[['Normal', statusCounts.normal, 'text-emerald-800'], ['Idle', statusCounts.idle, 'text-slate-700'], ['Warning', statusCounts.warning, 'text-amber-800'], ['Critical', statusCounts.critical, 'text-rose-800'], ['Stopped / Maintenance', statusCounts.stopped, 'text-slate-700']].map(([label, count, tone]) => <div key={String(label)} className="flex items-center justify-between rounded-lg bg-slate-100 px-3 py-2"><span className={String(tone)}>{label}</span><strong className="tabular-nums text-slate-900">{count}</strong></div>)}</div>
+          <Donut segments={[{ label: 'Normal', value: statusCounts.normal, color: '#0f9f79' }, { label: 'Idle', value: statusCounts.idle, color: '#94a3b8' }, { label: 'Warning', value: statusCounts.warning, color: '#f59e0b' }, { label: 'Critical', value: statusCounts.critical, color: '#e11d48' }, { label: 'Stopped / maintenance', value: statusCounts.stopped, color: '#475569' }]} center={String(reportingCount)} caption="machines" />
         </> : <p className="py-8 text-center text-xs text-slate-600">Status will appear after Simulator readings are stored.</p>}
       </Card>
 
@@ -245,10 +370,20 @@ export const SimulatorFleetTelemetryDashboard: React.FC<SimulatorFleetTelemetryD
         <label className="sr-only" htmlFor="simulator-sensor-select">Sensor</label><select id="simulator-sensor-select" value={selectedSensor} onChange={(event) => setSelectedSensor(event.target.value)} className="max-w-[200px] rounded-lg border border-slate-200 bg-slate-100 px-2.5 py-1.5 text-xs text-slate-800" disabled={!sensorNames.length}><option value="">No sensor data</option>{sensorNames.map((sensor) => <option key={sensor} value={sensor}>{sensor}</option>)}</select>
         <div className="inline-flex rounded-lg border border-slate-200 bg-slate-100 p-0.5"><button onClick={() => setCompareBy('plant')} className={`rounded px-2 py-1 text-[11px] ${compareBy === 'plant' ? 'bg-slate-100 text-slate-900' : 'text-slate-600'}`}>Plant</button><button onClick={() => setCompareBy('machineType')} className={`rounded px-2 py-1 text-[11px] ${compareBy === 'machineType' ? 'bg-slate-100 text-slate-900' : 'text-slate-600'}`}>Type</button></div>
       </div>}>
-        {comparisonRows.length ? <div className="space-y-3">{comparisonRows.map((row) => <div key={row.name}>
-          <div className="mb-1 flex items-center justify-between gap-3 text-xs"><span className="truncate text-slate-700">{row.name}</span><span className="shrink-0 font-semibold tabular-nums text-slate-900">{formatValue(row.mean, visibleReadings.find((record) => record.sensor_name === selectedSensor)?.sensor_unit || '')}<span className="ml-2 text-[10px] font-normal text-slate-500">{row.machines} machines</span></span></div>
-          <div className="h-2.5 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-cyan-500" style={{ width: `${Math.max(1, row.mean / maxComparison * 100)}%` }}/></div>
-        </div>)}</div> : <p className="py-8 text-center text-xs text-slate-600">No numeric {selectedSensor || 'sensor'} readings in this selection yet.</p>}
+        {comparisonRows.length ? <>
+          <div className="mt-4 overflow-x-auto rounded-lg bg-gradient-to-b from-slate-50 to-white px-2 pt-3">
+            <svg viewBox="0 0 720 250" role="img" aria-label={`Bar chart of latest ${selectedSensor} snapshots by ${compareBy === 'plant' ? 'plant' : 'machine type'}`} className="h-[245px] min-w-[560px] w-full">
+              <defs><linearGradient id="plantBars" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#14b8a6"/><stop offset="100%" stopColor="#0f766e"/></linearGradient></defs>
+              {[0, 1, 2, 3].map((tick) => { const y = 190 - tick * 52; const value = maxComparison * tick / 3; return <g key={tick}><line x1="58" x2="704" y1={y} y2={y} stroke="#e2e8f0" strokeDasharray={tick === 0 ? '0' : '4 5'}/><text x="48" y={y + 4} textAnchor="end" fontSize="10" fill="#64748b">{value.toLocaleString(undefined, { maximumFractionDigits: 1 })}</text></g>; })}
+              {comparisonRows.map((row, index) => {
+                const slot = 646 / comparisonRows.length; const width = Math.min(48, slot * 0.54); const x = 58 + index * slot + (slot - width) / 2; const height = row.mean / maxComparison * 156; const label = row.name.length > 13 ? `${row.name.slice(0, 12)}…` : row.name;
+                return <g key={row.name}><rect x={x} y={190 - height} width={width} height={height} rx="6" fill="url(#plantBars)"><title>{`${row.name}: ${formatValue(row.mean, visibleReadings.find((record) => record.sensor_name === selectedSensor)?.sensor_unit || '')} · ${row.machines} machines`}</title></rect><circle cx={x + width / 2} cy={190 - height} r="3" fill="#0f766e"/><text x={x + width / 2} y="210" textAnchor="middle" fontSize="10" fill="#475569">{label}</text><text x={x + width / 2} y={Math.max(24, 190 - height - 10)} textAnchor="middle" fontSize="10" fontWeight="600" fill="#0f172a">{row.mean.toLocaleString(undefined, { maximumFractionDigits: 1 })}</text><text x={x + width / 2} y="229" textAnchor="middle" fontSize="9" fill="#94a3b8">{row.machines} machine{row.machines === 1 ? '' : 's'}</text></g>;
+              })}
+              <text x="58" y="15" fontSize="10" fill="#64748b">Mean {selectedSensor} · {visibleReadings.find((record) => record.sensor_name === selectedSensor)?.sensor_unit || ''}</text>
+            </svg>
+          </div>
+          <p className="mt-2 text-[10px] text-slate-500">Each bar uses the average of the latest saved value per reporting machine in that group. This compares snapshots; it is not a historical plant trend.</p>
+        </> : <p className="py-8 text-center text-xs text-slate-600">No numeric {selectedSensor || 'sensor'} readings in this selection yet.</p>}
       </Card>
     </div>
 

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { UserProfile } from '../types';
 import { apiClient } from '../services/apiClient';
 import { Activity, AlertCircle, ArrowRight, Eye, EyeOff, Factory, KeyRound, LockKeyhole, ShieldCheck } from 'lucide-react';
+import { LoginProcessAnimation } from '../components/LoginProcessAnimation';
 
 interface LoginViewProps { onLoginSuccess: (user: UserProfile) => void; }
 
@@ -37,9 +38,10 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
               <div><p className="font-bold text-slate-900">FactoryPulse</p><p className="text-xs text-slate-600">Manufacturing operations</p></div>
             </div>
             <p className="mt-12 inline-flex items-center gap-2 rounded-full border border-teal-200 bg-teal-50 px-3 py-1.5 text-xs text-teal-800"><Factory className="h-3.5 w-3.5"/> Workforce sign-in</p>
-            <h1 className="mt-5 max-w-lg text-3xl sm:text-4xl font-bold tracking-tight text-slate-900">One trusted account for your shift.</h1>
-            <p className="mt-4 max-w-lg text-sm leading-6 text-slate-600">Your role, employee identity, and machine assignment come from the FactoryPulse authentication service.</p>
+            <h1 className="mt-5 max-w-lg text-3xl sm:text-4xl font-bold tracking-tight text-slate-900">From machine to dispatch, every part is checked.</h1>
+            <p className="mt-3 max-w-lg text-sm leading-6 text-slate-600">Follow one component through production, quality inspection, digital logging, and delivery.</p>
           </div>
+          <LoginProcessAnimation />
           <div className="relative mt-10 grid sm:grid-cols-2 gap-3">
             <div className="rounded-xl border border-slate-200 bg-slate-100/50 p-4"><ShieldCheck className="h-5 w-5 text-teal-800"/><p className="mt-3 text-sm font-semibold text-slate-800">Server verified access</p><p className="mt-1 text-xs text-slate-500">No role or employee picker on this screen.</p></div>
             <div className="rounded-xl border border-slate-200 bg-slate-100/50 p-4"><Activity className="h-5 w-5 text-slate-700"/><p className="mt-3 text-sm font-semibold text-slate-800">Auditable sessions</p><p className="mt-1 text-xs text-slate-500">Sign-in activity is recorded by the backend.</p></div>
