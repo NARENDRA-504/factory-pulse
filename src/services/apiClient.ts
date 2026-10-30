@@ -218,143 +218,17 @@ export const apiClient = {
   },
 
   async createMachine(payload: NewMachineInput): Promise<any> {
-    const dynamic = this.getLocalDynamicMachines();
-    const existingIds = new Set<string>([
-      ...SEED_MACHINES.map((m) => m.machineId),
-      ...dynamic.map((d: any) => d.machineId || d.machine_id),
-    ]);
-
-    // Find next sequential ID (e.g. MCH-051 if 50 active machines)
-    let nextNum = 51;
-    while (existingIds.has(`MCH-${String(nextNum).padStart(3, '0')}`)) {
-      nextNum++;
-    }
-    const newMachineId = `MCH-${String(nextNum).padStart(3, '0')}`;
-    const newCode = `CNC-${payload.machine_type.includes('5-Axis') ? '5AX' : payload.machine_type.includes('Turning') ? 'TURN' : 'VMC'}-${String(nextNum).padStart(3, '0')}`;
-
-    const newRecord: MachineInventoryRecord = {
-      machine_id: newMachineId,
-      machine_code: newCode,
-      name: payload.name.trim(),
-      model: payload.manufacturer ? `${payload.manufacturer} ${payload.name}` : payload.name,
-      machine_type: payload.machine_type,
-      production_line: 'Line 5AX-01',
-      plant: 'Plant A: Precision Machining',
-      location: payload.location,
-      manufacturer: payload.manufacturer || 'Mazak',
-      registry_source: 'MYSQL',
-      registered_in_sql: true,
-      description: payload.description || '',
-      last_inspection_date: payload.installation_date,
-      installation_date: payload.installation_date,
-      is_active: payload.is_active,
-      operating_status: payload.status,
-      connection_status: 'RECEIVING',
-      current_round_downtime_seconds: 0,
-      total_downtime_seconds: 0,
-      latest_timestamp: new Date().toISOString(),
-      sensors: [],
-    };
-
-    // Attempt backend persistence
-    let backendConfirmed = false;
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/admin/machines`, {
-        method: 'POST',
-        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-        signal: AbortSignal.timeout(8000),
-      });
-      if (response.ok) {
-        backendConfirmed = true;
-      }
-    } catch {
-      // Backend unavailable; local persistence handles zero-interruption workflow
-    }
-
-    // Save in local storage
-    dynamic.push({
-      ...newRecord,
-      machineId: newMachineId,
-      machineCode: newCode,
-      displayName: payload.name.trim(),
-      shopFloor: payload.department,
-      productionLine: 'Line 5AX-01',
-      status: payload.status,
-      spindleRpm: 10000,
-      coolantTemperatureC: 24.5,
-      motorLoadPercent: 55.0,
-      vibrationMmS: 1.25,
-      powerKw: 15.0,
-      workingTimeMinutes: 0,
-      jobsProducedThisShift: 0,
-      shiftJobsTarget: 200,
-      coolantLevelPercent: 95,
-      activeAlertCount: 0,
-      lastMaintenanceDate: payload.installation_date,
-      nextMaintenanceDate: '2026-12-01',
-      code: newCode,
-      lineId: 'Line 5AX-01',
-      lastInspectionDate: payload.installation_date,
-      cutHours: 0,
-      currentToolCuts: 0,
-      activeWorkpiece: 'Initial Calibration Workpiece',
-    });
-    safeSetItem(STORAGE_KEYS.DYNAMIC_MACHINES, JSON.stringify(dynamic));
-
-    // Register dynamically with simulator
-    try {
-      window.dispatchEvent(
-        new CustomEvent('factorypulse:simulator', {
-          detail: {
-            machine_id: newMachineId,
-            machineCode: newCode,
-            status: payload.status,
-            spindleRpm: 10000,
-            temperature: 24.5,
-            vibration: 1.25,
-          },
-        })
-      );
-    } catch {
-      // ignore
-    }
-
-    return {
-      success: true,
-      machine: newRecord,
-      machine_id: newMachineId,
-      machine_code: newCode,
-      backend_confirmed: backendConfirmed,
-      simulator_registered: true,
-      message: `Machine ${newMachineId} (${newCode}) created and registered for live telemetry simulation.`,
-    };
+    const response = await fetch(`${API_BASE_URL}/api/v1/admin/machines`, {method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(payload),signal:AbortSignal.timeout(15000)});
+    const body = await response.json();
+    if (!response.ok) throw new Error(body.detail || 'Machine could not be saved in MySQL');
+    return body;
   },
 
   async toggleMachineActivation(machineId: string, isActive: boolean): Promise<any> {
-    try {
-      await fetch(`${API_BASE_URL}/api/v1/admin/machines/${encodeURIComponent(machineId)}/activation`, {
-        method: 'PATCH',
-        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ is_active: isActive }),
-        signal: AbortSignal.timeout(5000),
-      });
-    } catch {
-      // offline fallback
-    }
-
-    const overrides = this.getLocalActiveOverrides();
-    overrides[machineId] = isActive;
-    safeSetItem(STORAGE_KEYS.ACTIVE_OVERRIDES, JSON.stringify(overrides));
-
-    // Also update dynamic machines if applicable
-    const dynamic = this.getLocalDynamicMachines();
-    const updated = dynamic.map((d: any) =>
-      (d.machineId === machineId || d.machine_id === machineId) ? { ...d, is_active: isActive } : d
-    );
-    safeSetItem(STORAGE_KEYS.DYNAMIC_MACHINES, JSON.stringify(updated));
-
-    return { machine_id: machineId, is_active: isActive };
+    const response = await fetch(`${API_BASE_URL}/api/v1/admin/machines/${encodeURIComponent(machineId)}/activation`, {method:'PATCH',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({is_active:isActive}),signal:AbortSignal.timeout(10000)});
+    const body = await response.json();
+    if (!response.ok) throw new Error(body.detail || 'Machine activation could not be saved');
+    return body;
   },
 
   getLocalMachineInventory(): any {
@@ -521,26 +395,16 @@ export const apiClient = {
   },
 
   async saveMachineRegistration(machineId: string, payload: any): Promise<any> {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/admin/machine-inventory/${encodeURIComponent(machineId)}`, { method: 'PUT', headers: { ...authHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify(payload), signal: AbortSignal.timeout(20000) });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body.detail || 'Machine registration could not be saved');
-      return body;
-    } catch {
-      return { saved: true, machine_id: machineId, storage: 'Local & MySQL Pending' };
-    }
+    const response = await fetch(`${API_BASE_URL}/api/v1/admin/machine-inventory/${encodeURIComponent(machineId)}`, {method:'PUT',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(payload),signal:AbortSignal.timeout(20000)});
+    const body=await response.json();
+    if(!response.ok) throw new Error(body.detail || 'Machine registration could not be saved');
+    return body;
   },
-
   async getMachineInventory(): Promise<any> {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/admin/machine-inventory`, { headers: authHeaders(), signal: AbortSignal.timeout(5000) });
-      if (response.ok) {
-        return await response.json();
-      }
-    } catch {
-      // offline fallback
-    }
-    return this.getLocalMachineInventory();
+    const response=await fetch(`${API_BASE_URL}/api/v1/admin/machine-inventory`,{headers:authHeaders(),signal:AbortSignal.timeout(8000)});
+    const body=await response.json();
+    if(!response.ok) throw new Error(body.detail || 'SQL inventory is unavailable');
+    return body;
   },
 
   async getMyActivity(): Promise<{ events: Array<{id:number;event_type:string;occurred_at_utc:string;occurred_at_local:string;role:string}>; factory_time_zone:string }> {
@@ -679,10 +543,13 @@ export const apiClient = {
   // Machines & Floor Status
   // -------------------------------------------------------------
   async getMachines(): Promise<Machine[]> {
-    const dynamic = this.getLocalDynamicMachines();
-    const overrides = this.getLocalActiveOverrides();
-    const activeSeed = SEED_MACHINES.slice(0, 50).filter((m) => overrides[m.machineId] !== false);
-    return [...activeSeed, ...dynamic.filter((d: any) => d.is_active !== false)];
+    const response=await fetch(`${API_BASE_URL}/api/v1/machines`,{headers:authHeaders(),signal:AbortSignal.timeout(8000)});
+    if(!response.ok) throw new Error('Authorized machine roster is unavailable');
+    const rows=await response.json();
+    return rows.map((row:any)=>{
+      const metadata=SEED_MACHINES.find(m=>m.machineId===row.machine_id || m.machineCode===row.machine_code);
+      return {...metadata,...row,machineId:row.machine_id,machineCode:row.machine_code,code:row.machine_code,name:row.name,displayName:row.name,plant:row.plant,lineId:row.line_id,productionLine:row.line_id,status:row.status} as Machine;
+    });
   },
 
   async getMachineByCode(code: string): Promise<Machine | undefined> {
@@ -895,16 +762,7 @@ export const apiClient = {
   },
 
   async createWorkOrder(payload: { machine_code: string; technician_name?: string; priority?: string; action_notes?: string }): Promise<any> {
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/work-orders`, {
-        method: 'POST',
-        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-        signal: AbortSignal.timeout(10000),
-      });
-      if (res.ok) return await res.json();
-    } catch { /* offline fallback */ }
-    return { order_code: `WO-${Date.now()}`, machine_code: payload.machine_code, status: 'Pending' };
+    return this.incidentRequest('work-orders','POST',payload);
   },
 
   async getFleetStatistics(): Promise<any> {

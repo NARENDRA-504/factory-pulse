@@ -423,7 +423,6 @@ def register(app, api):
             'is_active': payload.is_active,
             'registered_in_sql': True
         }
-        DYNAMIC_REGISTERED_MACHINES[new_machine_id] = machine_record
 
         # Persist to MySQL
         try:
@@ -471,24 +470,23 @@ def register(app, api):
                     details=f"Created new machine {new_machine_id} ({new_machine_code}: {payload.name}); active={payload.is_active}"
                 )
         except Exception as e:
-            # If MySQL is temporarily offline, dynamic registration ensures zero breakage
-            pass
+            raise HTTPException(503, 'Machine was not saved in MySQL') from e
+
+        DYNAMIC_REGISTERED_MACHINES[new_machine_id] = machine_record
 
         return {
             'success': True,
             'machine': machine_record,
             'machine_id': new_machine_id,
             'machine_code': new_machine_code,
-            'simulator_registered': True,
-            'message': f"Machine {new_machine_id} registered successfully in FactoryPulse and AI Simulator roster."
+            'simulator_registered': False,
+            'message': f"Machine {new_machine_id} saved in FactoryPulse MySQL. Configure its sender before expecting readings."
         }
 
     @app.patch('/api/v1/admin/machines/{machine_id}/activation')
     def toggle_activation(machine_id: str, payload: Dict[str, bool], request: Request, user=Depends(require_admin)):
         """Toggle active simulation state of a machine."""
         is_active = bool(payload.get('is_active', True))
-        if machine_id in DYNAMIC_REGISTERED_MACHINES:
-            DYNAMIC_REGISTERED_MACHINES[machine_id]['is_active'] = is_active
 
         try:
             engine = api['get_telemetry_engine']()
@@ -507,9 +505,11 @@ def register(app, api):
                     event_type='machine_activation_toggled',
                     details=f"Machine {machine_id} activation set to {is_active}"
                 )
-        except Exception:
-            pass
+        except Exception as e:
+            raise HTTPException(503, 'Activation was not saved in MySQL') from e
 
+        if machine_id in DYNAMIC_REGISTERED_MACHINES:
+            DYNAMIC_REGISTERED_MACHINES[machine_id]['is_active'] = is_active
         return {'machine_id': machine_id, 'is_active': is_active, 'status': 'updated'}
 
     @app.get('/api/v1/machines/{machine_id}/ai-health')

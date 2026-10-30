@@ -61,10 +61,10 @@ def register(app, api):
         fresh=sum((now-as_utc(t)).total_seconds()<=threshold for t in latest.values())
         with engine().connect() as connection:
             summary=connection.execute(sql('''SELECT COUNT(*) AS recent_events, MAX(created_at) AS latest_ingestion
-                FROM simulator_sensor_readings WHERE created_at>=UTC_TIMESTAMP()-INTERVAL 15 MINUTE''')).mappings().first()
+                FROM (SELECT created_at FROM simulator_sensor_readings ORDER BY id DESC LIMIT 1001) recent WHERE created_at>=UTC_TIMESTAMP()-INTERVAL 15 MINUTE''')).mappings().first()
         return {'backend':'reachable','mysql':'reachable','receiver_configured':bool(os.getenv('SIMULATOR_API_KEY')),
             'latest_ingestion':api['_iso_utc'](summary['latest_ingestion']) if summary['latest_ingestion'] else None,
-            'events_last_15_minutes':summary['recent_events'],'machines_receiving':fresh,
+            'events_last_15_minutes':('1000+ (bounded)' if summary['recent_events']>1000 else summary['recent_events']),'machines_receiving':fresh,
             'machines_with_saved_data':len(latest),'stale_machines':len(latest)-fresh,'stale_after_seconds':threshold,
             'ai':{'status':'configured_not_verified' if not provider_configuration()[2] else 'unconfigured',
                   'missing_settings':provider_configuration()[2]},
