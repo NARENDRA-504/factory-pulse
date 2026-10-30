@@ -59,16 +59,17 @@ class TelemetryRequestSizeLimitMiddleware:
         if not (
             scope.get("type") == "http"
             and scope.get("method") == "POST"
-            and scope.get("path") == "/api/v1/telemetry"
+            and scope.get("path") in {"/api/v1/telemetry", "/api/v1/telemetry/batch"}
         ):
             await self.application(scope, receive, send)
             return
 
+        body_limit = 128 * 1024 if scope.get("path").endswith('/batch') else MAX_TELEMETRY_REQUEST_BYTES
         headers = dict(scope.get("headers", []))
         content_length = headers.get(b"content-length")
         if content_length:
             try:
-                if int(content_length) > MAX_TELEMETRY_REQUEST_BYTES:
+                if int(content_length) > body_limit:
                     await self._too_large(send)
                     return
             except ValueError:
@@ -82,7 +83,7 @@ class TelemetryRequestSizeLimitMiddleware:
             message = await receive()
             if message.get("type") == "http.request":
                 bytes_received += len(message.get("body", b""))
-                if bytes_received > MAX_TELEMETRY_REQUEST_BYTES:
+                if bytes_received > body_limit:
                     raise _TelemetryRequestTooLarge()
             return message
 
@@ -1631,3 +1632,6 @@ from api_server.sql_incidents import register as register_sql_incidents
 _sql_incident_paths={'/api/v1/incidents','/api/v1/incidents/{incident_id}','/api/v1/incidents/{incident_id}/assign','/api/v1/incidents/{incident_id}/progress','/api/v1/incidents/{incident_id}/close'}
 app.router.routes[:]=[route for route in app.router.routes if getattr(route,'path',None) not in _sql_incident_paths]
 register_sql_incidents(app,globals())
+
+from .telemetry_batch import register as register_telemetry_batch
+register_telemetry_batch(app, globals())

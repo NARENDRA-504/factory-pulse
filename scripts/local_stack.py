@@ -41,11 +41,11 @@ key = sim_env.get('SIMULATOR_API_KEY', '')
 headers = {'X-API-Key': key} if key else {}
 node = shutil.which('node.exe') or shutil.which('node')
 services = {
-    'factorypulse-api': (ROOT, [str(ROOT/'.venv/Scripts/python.exe'), '-m', 'uvicorn', 'api_server.main:app', '--host', '127.0.0.1', '--port', '8001'], 'http://127.0.0.1:8001/health', {}),
+    'factorypulse-api': (ROOT, [str(ROOT/'.venv/Scripts/python.exe'), '-m', 'uvicorn', 'api_server.main:app', '--host', '127.0.0.1', '--port', '8001', '--no-access-log', '--loop', 'asyncio:SelectorEventLoop'], 'http://127.0.0.1:8001/health', {}),
     # Liveness must not scan the historical outbox. Deep health includes queue
     # aggregates and can be slow while delivery is catching up; restarting a
     # responsive API in that case interrupts delivery and browser requests.
-    'simulator-api': (SIM/'backend', [str(SIM/'backend/.venv/Scripts/python.exe'), '-m', 'uvicorn', 'app.main:app', '--host', '127.0.0.1', '--port', '8002'], 'http://127.0.0.1:8002/api/v1/simulation/fleet', headers),
+    'simulator-api': (SIM/'backend', [str(SIM/'backend/.venv/Scripts/python.exe'), '-m', 'uvicorn', 'app.main:app', '--host', '127.0.0.1', '--port', '8002', '--no-access-log', '--loop', 'asyncio:SelectorEventLoop'], 'http://127.0.0.1:8002/api/v1/simulation/fleet', headers),
     'factorypulse-web': (ROOT, [node, 'node_modules/vite/bin/vite.js', '--host', '127.0.0.1', '--port', '3000', '--strictPort'], 'http://127.0.0.1:3000/', {}),
     'simulator-web': (SIM/'frontend', [node, 'node_modules/vite/bin/vite.js', '--host', '127.0.0.1', '--port', '5174', '--strictPort'], 'http://127.0.0.1:5174/', {}),
 }

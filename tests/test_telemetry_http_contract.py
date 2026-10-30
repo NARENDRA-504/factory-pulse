@@ -111,14 +111,18 @@ class TelemetryHttpContractTests(unittest.TestCase):
 
     def test_retrieval_requires_user_auth_and_limits_operator_to_assignment(self):
         self.assertEqual(self.client.get("/api/v1/telemetry/latest/MCH-001").status_code, 401)
-        headers = {"Authorization": "Bearer OP-101"}
-        forbidden = self.client.get("/api/v1/telemetry/latest/MCH-002", headers=headers)
-        self.assertEqual(forbidden.status_code, 403)
-        bad_range = self.client.get(
-            "/api/v1/telemetry/latest/MCH-001?since=2026-10-26T10:30:00&until=2026-10-26T10:00:00Z",
-            headers=headers,
-        )
-        self.assertEqual(bad_range.status_code, 422)
+        # Employee IDs are not session tokens. Supply an authenticated account
+        # through FastAPI's test dependency to exercise route authorization.
+        api.app.dependency_overrides[api.get_current_user] = lambda: {
+            'role': 'Operator', 'assigned_machine': 'CNC-5AX-001', 'work_id': 'OP-101'}
+        try:
+            forbidden = self.client.get("/api/v1/telemetry/latest/MCH-002")
+            self.assertEqual(forbidden.status_code, 403)
+            bad_range = self.client.get(
+                "/api/v1/telemetry/latest/MCH-001?since=2026-10-26T10:30:00&until=2026-10-26T10:00:00Z")
+            self.assertEqual(bad_range.status_code, 422)
+        finally:
+            api.app.dependency_overrides.pop(api.get_current_user, None)
 
 
 if __name__ == "__main__":
