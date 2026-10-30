@@ -26,8 +26,8 @@ if os.name == 'nt':
     import ctypes
     import msvcrt
     monitor_lock = open(STATE/'monitor.lock', 'a+b')
-    monitor_lock.seek(0)
-    if not monitor_lock.read(1):
+    monitor_lock.seek(0, os.SEEK_END)
+    if monitor_lock.tell() == 0:
         monitor_lock.write(b'1')
         monitor_lock.flush()
     monitor_lock.seek(0)
@@ -82,11 +82,6 @@ def start_streams():
     available=set(json.loads((ROOT/'public/available-machine-ids.json').read_text())['machine_ids'])
     catalog=[machine for machine in catalog if machine['machineId'] in available]
     machine_ids = [machine['machineId'] for machine in catalog]
-    interval_request = urllib.request.Request('http://127.0.0.1:8002/api/v1/simulation/sampling-interval',
-        data=json.dumps({'seconds': 10}).encode(),
-        headers={**headers, 'Content-Type': 'application/json'}, method='POST')
-    with urllib.request.urlopen(interval_request, timeout=10):
-        pass
     request = urllib.request.Request('http://127.0.0.1:8002/api/v1/simulation/fleet/start',
         data=json.dumps({'machine_ids': machine_ids}).encode(),
         headers={**headers, 'Content-Type': 'application/json'}, method='POST')
