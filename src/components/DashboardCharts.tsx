@@ -1,4 +1,5 @@
 import React, { useId } from 'react';
+import { chartTimeline } from '../utils/chartTimeline';
 
 export type ChartSlice = { label: string; value: number; color: string };
 export type ComparisonRow = { label: string; actual: number; target: number };
@@ -104,13 +105,12 @@ export function HorizontalBarChart({ title, description, rows, color = '#1687b8'
 export function SensorTrendChart({ title, description, rows, unit, color = '#138b84' }: {
   title: string; description: string; rows: TrendPoint[]; unit: string; color?: string;
 }) {
-  const points = [...rows].filter((row) => Number.isFinite(row.value) && Number.isFinite(Date.parse(row.timestamp))).sort((a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp)).slice(-60);
+  const points = chartTimeline(rows);
   const values = points.map((row) => row.value);
   const low = Math.min(...values), high = Math.max(...values);
   const spread = high - low || Math.max(Math.abs(high) * 0.08, 1);
-  const chartPoints = points.map((row, index) => ({
+  const chartPoints = points.map((row) => ({
     ...row,
-    x: points.length < 2 ? 270 : 72 + index / (points.length - 1) * 396,
     y: 142 - (row.value - (low - spread * 0.12)) / (spread * 1.24) * 116,
   }));
   const path = chartPoints.map((point, index) => `${index ? 'L' : 'M'} ${point.x} ${point.y}`).join(' ');

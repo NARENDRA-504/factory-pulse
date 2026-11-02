@@ -783,39 +783,6 @@ export const AnalyticsView: React.FC = () => {
             </div>
           </div>
 
-          {/* 4. SQL Reports & Power BI Analytical Views Reference */}
-          <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-3">
-            <h4 className="font-display font-bold text-xs text-slate-900 uppercase tracking-wider flex items-center gap-2">
-              <Database className="w-4 h-4 text-purple-700" />
-              SQL Analytical &amp; Power BI Reporting Views (Verified in DDL)
-            </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 font-mono text-xs">
-              <div className="p-2.5 rounded bg-slate-50 border border-slate-200">
-                <code className="text-teal-800 font-bold">v_factorypulse_active_machines</code>
-                <p className="text-[11px] text-slate-600 mt-1">Filters exactly active fleet (50 default) with specs</p>
-              </div>
-              <div className="p-2.5 rounded bg-slate-50 border border-slate-200">
-                <code className="text-teal-800 font-bold">v_factorypulse_downtime_summary</code>
-                <p className="text-[11px] text-slate-600 mt-1">Tracks total stopped events &amp; last stoppage timestamps</p>
-              </div>
-              <div className="p-2.5 rounded bg-slate-50 border border-slate-200">
-                <code className="text-teal-800 font-bold">v_factorypulse_fleet_utilization</code>
-                <p className="text-[11px] text-slate-600 mt-1">Calculates machine utilization % and operating cut hours</p>
-              </div>
-              <div className="p-2.5 rounded bg-slate-50 border border-slate-200">
-                <code className="text-teal-800 font-bold">v_factorypulse_incident_frequency</code>
-                <p className="text-[11px] text-slate-600 mt-1">Severity distribution and Mean Time to Resolution (MTTR)</p>
-              </div>
-              <div className="p-2.5 rounded bg-slate-50 border border-slate-200">
-                <code className="text-teal-800 font-bold">v_factorypulse_maintenance_backlog</code>
-                <p className="text-[11px] text-slate-600 mt-1">Pending and in-progress work orders by technician</p>
-              </div>
-              <div className="p-2.5 rounded bg-slate-50 border border-slate-200">
-                <code className="text-teal-800 font-bold">v_factorypulse_sensor_trends</code>
-                <p className="text-[11px] text-slate-600 mt-1">Statistical min/max/avg sensor values and anomaly counts</p>
-              </div>
-            </div>
-          </div>
         </div>
       )}
     </div>

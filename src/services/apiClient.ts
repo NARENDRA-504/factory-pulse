@@ -433,8 +433,10 @@ export const apiClient = {
     machineId: string,
     workId: string,
     limit = 100,
+    range?: { since: string; until: string },
   ): Promise<PersistedSimulatorReading[]> {
     const query = new URLSearchParams({ limit: String(limit), data_source: 'AI_SIMULATOR' });
+    if (range) { query.set('since', range.since); query.set('until', range.until); }
     const response = await fetch(`${API_BASE_URL}/api/v1/telemetry/latest/${encodeURIComponent(machineId)}?${query}`, {
       headers: authHeaders(), signal: AbortSignal.timeout(8000),
     });

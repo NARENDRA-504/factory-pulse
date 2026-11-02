@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS simulator_sensor_readings (
   sensor_value_json TEXT NOT NULL COMMENT 'JSON scalar preserves numeric, string, and null simulator values',
   expected_min DOUBLE NOT NULL,
   expected_max DOUBLE NOT NULL,
-  machine_status ENUM('NORMAL', 'WARNING', 'CRITICAL', 'MAINTENANCE', 'STOPPED') NOT NULL,
+  machine_status ENUM('NORMAL', 'WARNING', 'CRITICAL', 'MAINTENANCE', 'STOPPED', 'IDLE') NOT NULL,
   data_quality ENUM('GOOD', 'NOISY') NOT NULL,
   fault_mode VARCHAR(128) NULL,
   data_provenance VARCHAR(16) NOT NULL DEFAULT 'SIMULATED',

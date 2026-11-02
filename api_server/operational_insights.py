@@ -60,9 +60,13 @@ def register(app, api):
         now=api['_utcnow'](); threshold=max(2,int(os.getenv('TELEMETRY_STALE_SECONDS','30')))
         fresh=sum((now-as_utc(t)).total_seconds()<=threshold for t in latest.values())
         with engine().connect() as connection:
+            status_column = connection.execute(sql("""SELECT COLUMN_TYPE FROM information_schema.columns
+                WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='simulator_sensor_readings'
+                  AND COLUMN_NAME='machine_status'""")).scalar()
             summary=connection.execute(sql('''SELECT COUNT(*) AS recent_events, MAX(created_at) AS latest_ingestion
                 FROM (SELECT created_at FROM simulator_sensor_readings ORDER BY id DESC LIMIT 1001) recent WHERE created_at>=UTC_TIMESTAMP()-INTERVAL 15 MINUTE''')).mappings().first()
         return {'backend':'reachable','mysql':'reachable','receiver_configured':bool(os.getenv('SIMULATOR_API_KEY')),
+            'pause_state_storage': 'ready' if status_column and "'IDLE'" in status_column else 'database_update_required',
             'latest_ingestion':api['_iso_utc'](summary['latest_ingestion']) if summary['latest_ingestion'] else None,
             'events_last_15_minutes':('1000+ (bounded)' if summary['recent_events']>1000 else summary['recent_events']),'machines_receiving':fresh,
             'machines_with_saved_data':len(latest),'stale_machines':len(latest)-fresh,'stale_after_seconds':threshold,

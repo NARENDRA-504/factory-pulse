@@ -3,13 +3,15 @@ import { Activity, AlertTriangle, BarChart3, CheckCircle2, ClipboardList, Factor
 import { Incident, Machine, MaintenanceWorkOrder, UserProfile, UserRole } from '../types';
 import { apiClient, PersistedSimulatorReading } from '../services/apiClient';
 import { estimatePartsPerHour } from '../utils/productionRate';
+import { OperationsModelPanel } from './OperationsModelPanel';
+import { numericReading, buildRoleReport } from '../utils/roleReportData';
 import { OperatorSessionPanel } from './OperatorSessionPanel';
 import { ComparisonBars, DonutChart, HorizontalBarChart, RangeBars, SensorTrendChart, SplitBars } from './DashboardCharts';
 
 const roleHeading: Record<UserRole, { title: string; sub: string }> = {
   Operator: { title: 'Shift at a glance', sub: 'Your assigned station, live machine condition and the issues that need your attention.' },
   Supervisor: { title: 'Line and shift overview', sub: 'Fleet condition and response queues from saved machine readings and FactoryPulse records.' },
-  Maintenance: { title: 'Equipment health and response', sub: 'Saved sensor readings, active faults and work awaiting maintenance action.' },
+  Maintenance: { title: 'Diagnostic workbench', sub: 'Saved sensor readings, active faults and work awaiting maintenance action.' },
   Manager: { title: 'Plant performance overview', sub: 'Compare reported machine condition across plants. Production and cost measures require production and finance sources.' },
   Admin: { title: 'System and access overview', sub: 'Review service status, audit activity and machine data coverage.' },
 };
@@ -121,14 +123,9 @@ export function RoleDashboardHighlights({ user, machines, incidents, workOrders,
   }, [scopedReadings]);
   const productionValue = (machineId: string, sensor: string) => {
     const raw = productionByMachine.get(machineId)?.get(sensor.toLowerCase())?.sensor_value;
-    const value = raw === null || raw === undefined ? NaN : Number(raw);
-    return Number.isFinite(value) ? value : undefined;
+    const value = numericReading(raw);
+    return value !== undefined && value >= 0 ? value : undefined;
   };
-  const productionTotals = (sensor: string) => [...productionByMachine.values()].reduce((sum, sensors) => {
-    const value = sensors.get(sensor.toLowerCase())?.sensor_value;
-    const number = value === null || value === undefined ? NaN : Number(value);
-    return sum + (Number.isFinite(number) ? number : 0);
-  }, 0);
   const selectedGood = productionValue(effectiveMachineId, 'Good Parts');
   const selectedScrap = productionValue(effectiveMachineId, 'Scrap Parts');
   const selectedTarget = productionValue(effectiveMachineId, 'Shift Target');
@@ -139,12 +136,13 @@ export function RoleDashboardHighlights({ user, machines, incidents, workOrders,
   const hasSelectedProduction = selectedGood !== undefined && selectedScrap !== undefined && selectedTarget !== undefined;
   const selectedActual = selectedGood !== undefined && selectedScrap !== undefined ? selectedGood + selectedScrap : undefined;
   const observedGoodRate = estimatePartsPerHour(historyRows, 'Good Parts');
-  const selectedProgress = selectedActual !== undefined && selectedTarget !== undefined && selectedTarget > 0 ? Math.min(100, selectedActual / selectedTarget! * 100) : undefined;
-  const fleetGood = productionTotals('Good Parts');
-  const fleetScrap = productionTotals('Scrap Parts');
-  const fleetTarget = productionTotals('Shift Target');
+  const selectedProgress = selectedActual !== undefined && selectedTarget !== undefined && selectedTarget > 0 ? selectedActual / selectedTarget * 100 : undefined;
+  const productionReport = buildRoleReport(scopedMachines, scopedReadings, []);
+  const fleetGood = productionReport.good;
+  const fleetScrap = productionReport.scrap;
+  const fleetTarget = productionReport.target;
   const fleetActual = fleetGood + fleetScrap;
-  const hasFleetProduction = productionByMachine.size > 0 && fleetTarget > 0;
+  const hasFleetProduction = productionReport.productionMachines > 0 && fleetTarget > 0 && productionReport.lines.every(line => line.productionMachines === line.targetMachines);
   const physicalRowsForSelected = latestForSelected.filter((r) => !PRODUCTION_SENSORS.has(r.sensor_name.toLowerCase()));
   const scopedMachineCodes = new Set(scopedMachines.flatMap((machine) => [machine.machineCode, machine.code].filter(Boolean)));
   const scopedIncidents = incidents.filter((incident) => scopedMachineCodes.has(incident.machineCode));
@@ -172,11 +170,7 @@ export function RoleDashboardHighlights({ user, machines, incidents, workOrders,
       ? { label: `${machine.productionLine || 'Unassigned line'} · ${machine.machineCode}`, actual: good + scrap, target }
       : undefined;
   }).filter((row): row is { label: string; actual: number; target: number } => Boolean(row)).sort((a, b) => b.actual - a.actual).slice(0, 6);
-  const managerProductionRows = managerLineGroups.map(({ label, machines: group }) => {
-    const actual = group.reduce((sum, machine) => sum + (productionValue(machine.machineId, 'Good Parts') || 0) + (productionValue(machine.machineId, 'Scrap Parts') || 0), 0);
-    const target = group.reduce((sum, machine) => sum + (productionValue(machine.machineId, 'Shift Target') || 0), 0);
-    return { label, actual, target };
-  }).filter((row) => row.target > 0).sort((a, b) => b.actual - a.actual).slice(0, 8);
+  const managerProductionRows = productionReport.lines.filter(line => line.productionMachines > 0 && line.productionMachines === line.targetMachines).map(line => ({ label: line.label, actual: line.actual, target: line.target })).sort((a, b) => b.actual - a.actual).slice(0, 8);
   const modelRows = (sensor: 'Simulated Quality' | 'Simulated Performance', subset = scopedMachines) => subset.flatMap((machine) => {
     const value = productionValue(machine.machineId, sensor);
     return value === undefined ? [] : [{ label: machine.machineCode, actual: value, target: 100 }];
@@ -186,8 +180,8 @@ export function RoleDashboardHighlights({ user, machines, incidents, workOrders,
     return values.length ? [{ label, actual: values.reduce((sum, value) => sum + value, 0) / values.length, target: 100 }] : [];
   }).slice(0, 8);
   const selectedRangeRows = physicalRowsForSelected.flatMap((row) => {
-    const value = Number(row.sensor_value), min = Number(row.expected_min), max = Number(row.expected_max);
-    return Number.isFinite(value) && Number.isFinite(min) && Number.isFinite(max) && max > min
+    const value = numericReading(row.sensor_value), min = row.expected_min, max = row.expected_max;
+    return value !== undefined && Number.isFinite(min) && Number.isFinite(max) && max > min
       ? [{ label: row.sensor_name, value, min, max, unit: row.sensor_unit }]
       : [];
   }).slice(0, 8);
@@ -208,7 +202,7 @@ export function RoleDashboardHighlights({ user, machines, incidents, workOrders,
     return good === undefined || scrap === undefined ? [] : [{ label: machine.machineCode, first: good, second: scrap }];
   }).sort((a, b) => b.first + b.second - (a.first + a.second)).slice(0, 8);
   // Sensor identity and chart position never depend on the incoming row order.
-  const sensorOrder = ['Temperature', 'Motor Temperature', 'Vibration', 'Pressure', 'RPM', 'Coolant Flow', 'Torque', 'Current', 'Voltage', 'Motor Power', 'Motor Load', 'Battery SOC', 'Battery SOH'];
+  const sensorOrder = ['Temperature', 'Motor Temperature', 'Coolant Temperature', 'Vibration', 'Pressure', 'RPM', 'Coolant Flow', 'Torque', 'Current', 'Voltage', 'Motor Power', 'Motor Load', 'Battery SOC', 'Battery SOH'];
   const sensorCharts = [...new Set([...latestForSelected, ...historyRows]
     .filter(row => !PRODUCTION_SENSORS.has(row.sensor_name.toLowerCase()))
     .map(row => row.sensor_name))]
@@ -242,7 +236,8 @@ export function RoleDashboardHighlights({ user, machines, incidents, workOrders,
     return !machineSearch.trim() || `${machine.machineId} ${machine.machineCode} ${machine.displayName} ${machine.machineType || ''}`.toLowerCase().includes(machineSearch.trim().toLowerCase());
   });
 
-  return <section className={`${panel} space-y-4`} aria-label={`${user.role} dashboard summary`}>
+  return <section className={`${panel} space-y-4 ${user.role === 'Maintenance' ? 'border-t-4 border-t-violet-400 bg-gradient-to-br from-violet-50/50 to-white' : ''}`} aria-label={`${user.role} dashboard summary`}>
+    {user.role !== 'Admin' && <OperationsModelPanel rows={scopedReadings} ids={scopedMachines.map(m => m.machineId)} />}
     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div><p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-teal-800">{user.role} · live operations</p><h1 className="mt-1 text-xl font-semibold text-slate-900 sm:text-2xl">{title.title}</h1><p className={`mt-1 max-w-3xl ${muted}`}>{title.sub}</p></div>
       <div className="flex flex-wrap gap-3">{(user.role === 'Supervisor' || user.role === 'Manager' || user.role === 'Admin') && <label className="text-xs font-medium text-slate-600">Plant <select className="ml-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800" value={plant} onChange={(e) => setPlant(e.target.value)}><option value="ALL">All plants</option>{plants.map((p) => <option key={p} value={p}>{p}</option>)}</select></label>}{user.role === 'Supervisor' && <label className="text-xs font-medium text-slate-600">Line / bay <select className="ml-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800" value={effectiveLine} onChange={(e) => setLine(e.target.value)}><option value="ALL">All lines</option>{lineOptions.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>}</div>
@@ -274,7 +269,7 @@ export function RoleDashboardHighlights({ user, machines, incidents, workOrders,
         ['RPM', ['rpm', 'spindle speed']], ['Machine temperature', ['motor temperature']], ['Vibration', ['vibration']], ['Pressure', ['pressure']], ['Coolant flow', ['coolant flow']], ['Shaft power · derived', ['motor power']], ['Motor load · proxy', ['motor load']],
       ].map(([label, names]) => { const row = sensorValue(names as string[]); const labelText = label as string; const powerNote = labelText.startsWith('Shaft power') ? 'Derived from Torque × RPM · not electrical energy' : labelText.startsWith('Motor load') ? 'Torque-range estimate · not a VFD measurement' : ''; return <Metric key={labelText} label={labelText} value={row ? display(row.sensor_value, row.sensor_unit) : 'Unavailable'} foot={row ? `${powerNote ? `${powerNote} · ` : ''}Expected ${row.expected_min}–${row.expected_max} ${row.sensor_unit} · ${row.data_quality}` : labelText.startsWith('Shaft power') || labelText.startsWith('Motor load') ? 'Waiting for valid torque and RPM readings' : 'No matching saved sensor stream'} icon={<Gauge size={16} />} />; })}</div>
       <div className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-xl border border-slate-200 p-4"><div className="flex items-center justify-between gap-2"><div><h2 className="text-sm font-semibold text-slate-900">Shift production progress</h2><p className={`mt-1 ${muted}`}>Part counts are estimates from available production data, not verified factory-counter totals.</p></div><BarChart3 size={17} className="text-teal-700" /></div><div className="mt-3 grid grid-cols-3 gap-2"><Metric label="Actual parts" value={display(selectedActual, 'parts')} foot="Good + scrap · estimated" icon={<CheckCircle2 size={15} />} /><Metric label="Shift target" value={display(selectedTarget, 'parts')} foot="Estimated shift target" icon={<Gauge size={15} />} /><Metric label="Good · scrap" value={hasSelectedProduction ? `${display(selectedGood)} · ${display(selectedScrap)}` : 'Waiting'} foot="Estimated counts" icon={<ClipboardList size={15} />} /></div>{selectedProgress !== undefined ? <div className="mt-4"><div className="mb-1 flex justify-between text-xs text-slate-600"><span>Target progress</span><strong>{Math.round(selectedProgress)}%</strong></div><div className="h-3 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-teal-600 transition-all" style={{ width: `${selectedProgress}%` }} /></div></div> : <div className="mt-3"><Unavailable title="Waiting for production data" reason="Part counts and targets will appear when that data is available." /></div>}{selectedCycle !== undefined && <p className="mt-3 text-xs text-slate-600">Latest cycle estimate: <strong>{display(selectedCycle, 's')}</strong> · target {display(selectedCycleTarget, 's/cycle')}</p>}</div>
+        <div className="rounded-xl border border-slate-200 p-4"><div className="flex items-center justify-between gap-2"><div><h2 className="text-sm font-semibold text-slate-900">Shift production progress</h2><p className={`mt-1 ${muted}`}>Part counts are estimates from available production data, not verified factory-counter totals.</p></div><BarChart3 size={17} className="text-teal-700" /></div><div className="mt-3 grid grid-cols-3 gap-2"><Metric label="Actual parts" value={display(selectedActual, 'parts')} foot="Good + scrap · estimated" icon={<CheckCircle2 size={15} />} /><Metric label="Shift target" value={display(selectedTarget, 'parts')} foot="Estimated shift target" icon={<Gauge size={15} />} /><Metric label="Good · scrap" value={hasSelectedProduction ? `${display(selectedGood)} · ${display(selectedScrap)}` : 'Waiting'} foot="Estimated counts" icon={<ClipboardList size={15} />} /></div>{selectedProgress !== undefined ? <div className="mt-4"><div className="mb-1 flex justify-between text-xs text-slate-600"><span>Target progress</span><strong>{Math.round(selectedProgress)}%</strong></div><div className="h-3 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-teal-600 transition-all" style={{ width: `${Math.min(100, selectedProgress)}%` }} /></div></div> : <div className="mt-3"><Unavailable title="Waiting for production data" reason="Part counts and targets will appear when that data is available." /></div>}{selectedCycle !== undefined && <p className="mt-3 text-xs text-slate-600">Latest cycle estimate: <strong>{display(selectedCycle, 's')}</strong> · target {display(selectedCycleTarget, 's/cycle')}</p>}</div>
         <div className="rounded-xl border border-slate-200 p-4"><div className="flex items-center justify-between gap-2"><div><h2 className="text-sm font-semibold text-slate-900">Recent machine alarms</h2><p className={`mt-1 ${muted}`}>Open incident reports for your assigned station.</p></div><AlertTriangle size={17} className="text-amber-700" /></div><div className="mt-3 space-y-2">{assignedIncidents.slice(0, 5).map((incident) => <div key={incident.id} className="flex items-start justify-between gap-3 rounded-lg bg-slate-50 p-3"><div className="min-w-0"><div className="truncate text-xs font-semibold text-slate-900">{incident.incidentCode} · {incident.machineCode}</div><p className="mt-1 line-clamp-2 text-[11px] text-slate-600">{incident.symptomDescription}</p><span className="mt-1 inline-flex items-center gap-1 text-[10px] text-slate-500"><Clock3 size={11} />{localTime(incident.createdAt)}</span></div><StatusBadge status={incident.severity.toUpperCase()} /></div>)}{!assignedIncidents.length && <p className="rounded-lg bg-emerald-50 p-3 text-xs text-emerald-800">No open incident reports for this station.</p>}</div><p className="mt-3 text-[11px] text-slate-500">Recorded STOPPED time is shown above. Use Report Problem to log an issue; downtime reason codes are not captured by the telemetry feed.</p></div>
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
@@ -316,7 +311,7 @@ export function RoleDashboardHighlights({ user, machines, incidents, workOrders,
       <div className="grid gap-4 lg:grid-cols-2"><div className="rounded-xl border border-slate-200 p-3"><h2 className="text-sm font-semibold text-slate-900">Line condition heatmap</h2><p className={`mt-1 ${muted}`}>Latest saved machine state · machines without readings remain unreported.</p><div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">{scopedMachines.map((m) => { const r = latestByMachine.find((row) => row.machine_id === m.machineId); const state = r?.machine_status || 'No data'; const color = state === 'CRITICAL' || state === 'STOPPED' ? 'border-rose-300 bg-rose-50 text-rose-800' : state === 'WARNING' ? 'border-amber-300 bg-amber-50 text-amber-900' : state === 'NORMAL' ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-slate-200 bg-slate-50 text-slate-600'; return <div key={m.machineId} className={`rounded-lg border px-2.5 py-2 ${color}`}><div className="truncate font-mono text-xs font-semibold">{m.machineCode}</div><div className="mt-1 text-[10px]">{state}</div></div>; })}</div></div><div className="rounded-xl border border-slate-200 p-3"><h2 className="text-sm font-semibold text-slate-900">Response queue · highest priority first</h2><p className={`mt-1 ${muted}`}>Open issues and uncompleted work orders from FactoryPulse.</p><div className="mt-3 space-y-2">{prioritizedIncidents.slice(0, 5).map((i) => <div key={i.id} className="flex justify-between gap-3 rounded-lg bg-slate-50 p-2.5 text-xs"><span className="truncate text-slate-800">{i.machineCode} · {i.symptomDescription}</span><b className="shrink-0 text-amber-800">{i.severity}</b></div>)}{prioritizedOrders.slice(0, 4).map((w) => <div key={w.id} className="flex justify-between gap-3 rounded-lg border border-slate-200 p-2.5 text-xs"><span className="truncate text-slate-700">{w.machineCode} · {w.orderCode} · {w.actionTaken || w.incidentCode}</span><b className="shrink-0 text-teal-800">{w.status}</b></div>)}{!openIncidents.length && !openOrders.length && <p className={`py-4 ${muted}`}>No open incident or work-order records.</p>}</div></div></div>
       <div className="grid gap-4 lg:grid-cols-2"><DonutChart title="Current machine status" description="One newest saved status per machine in the selected plant and line." slices={statusSlices} centerValue={`${latestByMachine.length}/${scopedMachines.length}`} centerLabel="reporting" /><ComparisonBars title="Shift output by machine" description="Estimated part counts (good + scrap) compared with each machine’s shift target. Counts are not verified production totals." rows={productionRows} actualLabel="Actual parts" targetLabel="Shift target" /></div>
       <div className="grid gap-4 lg:grid-cols-2"><ComparisonBars title="Estimated quality by machine" description="Estimated good-part share compared with a 100% reference; not a validated factory quality KPI." rows={modelRows('Simulated Quality')} actualLabel="Estimated quality %" targetLabel="100% reference" /><ComparisonBars title="Cycle pace by machine" description="Estimated cycle pace relative to the configured target cycle time. Not plant OEE performance." rows={modelRows('Simulated Performance')} actualLabel="Estimated pace %" targetLabel="100% reference" /></div>
-      <div className="grid gap-3 md:grid-cols-3"><div className="rounded-xl border border-slate-200 p-4"><h3 className="text-xs font-semibold text-slate-800">Estimated shift output vs. target</h3><p className="mt-1 text-[11px] text-slate-600">An estimated counter view; not a verified production/OEE record.</p>{hasFleetProduction ? <><div className="mt-3 flex justify-between text-sm"><span>{display(fleetActual)} parts</span><strong>{fleetTarget ? Math.min(100, Math.round(fleetActual / fleetTarget * 100)) : 0}%</strong></div><div className="mt-2 h-3 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-sky-600" style={{ width: `${Math.min(100, fleetActual / fleetTarget * 100)}%` }} /></div><p className="mt-2 text-[11px] text-slate-600">{display(fleetGood)} good · {display(fleetScrap)} scrap · target {display(fleetTarget)}</p></> : <p className="mt-3 text-xs text-slate-500">Waiting for production data.</p>}</div><Unavailable title="Shift OEE" reason="Requires planned shift time and validated availability, quality and cycle-time definitions. These estimates alone do not establish plant OEE." /><Unavailable title="Downtime Pareto and operator allocation" reason="Reason-coded stop intervals and verified shift attendance are not recorded yet." /></div>
+      <div className="grid gap-3 md:grid-cols-3"><div className="rounded-xl border border-slate-200 p-4"><h3 className="text-xs font-semibold text-slate-800">Estimated shift output vs. target</h3><p className="mt-1 text-[11px] text-slate-600">An estimated counter view; not a verified production/OEE record.</p>{hasFleetProduction ? <><div className="mt-3 flex justify-between text-sm"><span>{display(fleetActual)} parts</span><strong>{fleetTarget ? Math.round(fleetActual / fleetTarget * 100) : 0}%</strong></div><div className="mt-2 h-3 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-sky-600" style={{ width: `${Math.min(100, fleetActual / fleetTarget * 100)}%` }} /></div><p className="mt-2 text-[11px] text-slate-600">{display(fleetGood)} good · {display(fleetScrap)} scrap · target {display(fleetTarget)}</p></> : <p className="mt-3 text-xs text-slate-500">Waiting for production data.</p>}</div><Unavailable title="Shift OEE" reason="Requires planned shift time and validated availability, quality and cycle-time definitions. These estimates alone do not establish plant OEE." /><Unavailable title="Downtime Pareto and operator allocation" reason="Reason-coded stop intervals and verified shift attendance are not recorded yet." /></div>
     </>}
 
     {user.role === 'Maintenance' && <>

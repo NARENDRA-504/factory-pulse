@@ -1,4 +1,4 @@
-import { PersistedSimulatorReading } from '../services/apiClient';
+import type { PersistedSimulatorReading } from '../services/apiClient';
 
 export const estimatePartsPerHour = (history: PersistedSimulatorReading[], sensorName: string) => {
   const byTimestamp = new Map<number, number>();
@@ -10,7 +10,7 @@ export const estimatePartsPerHour = (history: PersistedSimulatorReading[], senso
       : typeof reading.sensor_value === 'string' && reading.sensor_value.trim() !== ''
         ? Number(reading.sensor_value)
         : Number.NaN;
-    if (Number.isFinite(timestamp) && Number.isFinite(value)) byTimestamp.set(timestamp, value);
+    if (Number.isFinite(timestamp) && Number.isFinite(value) && value >= 0 && reading.data_quality === 'GOOD') byTimestamp.set(timestamp, value);
   }
   const allPoints = Array.from(byTimestamp, ([timestamp, value]) => ({ timestamp, value })).sort((a, b) => a.timestamp - b.timestamp);
   if (allPoints.length < 2) return null;

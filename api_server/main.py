@@ -929,6 +929,19 @@ def resolve_canonical_machine(machine_id: str) -> Dict[str, Any]:
     return machine
 
 SIMULATOR_SENSOR_UNITS = {
+    "Model Planned Time": "s",
+    "Model Run Time": "s",
+    "Model Down Time": "s",
+    "Model Ideal Time": "s",
+    "Model Window Good": "parts",
+    "Model Window Scrap": "parts",
+    "Model Electrical Power": "kW",
+    "Model Electrical Energy": "kWh",
+    "Model Scrap Cost": "INR",
+    "Model Downtime Loss": "INR",
+    "Model Motor Efficiency": "%",
+    "Model Scrap Unit Cost": "INR/part",
+    "Model Downtime Hour Cost": "INR/h",
     "Motor Temperature": "°C",
     "Temperature": "°C",
     "Vibration": "mm/s",
@@ -942,6 +955,7 @@ SIMULATOR_SENSOR_UNITS = {
     "Voltage": "V",
     "Pressure": "bar",
     "Coolant Flow": "L/min",
+    "Coolant Temperature": "°C",
     "Battery SOC": "%",
     "Battery SOH": "%",
     "Good Parts": "parts",

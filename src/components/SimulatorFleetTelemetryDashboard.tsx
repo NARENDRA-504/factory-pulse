@@ -183,7 +183,7 @@ export const SimulatorFleetTelemetryDashboard: React.FC<SimulatorFleetTelemetryD
   const isFresh = Boolean(latestTime && Date.now() - new Date(latestTime).getTime() < 30000);
   const sourceState = error ? 'UNAVAILABLE' : fleetLoading && fleetReadings.length === 0 ? 'CONNECTING' : fleetReadings.length ? isFresh ? 'LIVE · MYSQL' : 'SAVED DATA · STREAM IDLE' : 'WAITING FOR READINGS';
   const signalChartTypes: Record<string, 'area' | 'line' | 'columns' | 'bullet'> = {
-    'temperature': 'area', 'motor temperature': 'area', 'vibration': 'line', pressure: 'line',
+    'temperature': 'area', 'motor temperature': 'area', 'coolant temperature': 'area', 'vibration': 'line', pressure: 'line',
     rpm: 'columns', 'cycle time': 'columns', 'motor load': 'bullet', current: 'bullet',
     'motor power': 'area', torque: 'area', 'coolant flow': 'line', voltage: 'line',
   };
@@ -247,13 +247,16 @@ export const SimulatorFleetTelemetryDashboard: React.FC<SimulatorFleetTelemetryD
       const good = findValue('Good Parts'); const scrap = findValue('Scrap Parts'); const target = findValue('Shift Target');
       if (!good && !scrap && !target) return null;
       const goodValue = Number(good?.sensor_value ?? 0); const scrapValue = Number(scrap?.sensor_value ?? 0); const targetValue = Number(target?.sensor_value ?? 0);
-      const progress = targetValue > 0 ? Math.min(100, (goodValue + scrapValue) / targetValue * 100) : 0;
+      if (!good || !scrap || !target || !Number.isFinite(goodValue) || !Number.isFinite(scrapValue) || !Number.isFinite(targetValue) || goodValue < 0 || scrapValue < 0 || targetValue <= 0) {
+        return <section className="rounded-xl border border-slate-200 bg-white p-4"><h2 className="text-base font-semibold">Shift output against target</h2><p className="mt-2 text-xs text-slate-600">Production comparison unavailable: valid good-part, scrap and target readings are all required. Missing counters are not zero.</p></section>;
+      }
+      const progress = (goodValue + scrapValue) / targetValue * 100;
       return <section className="rounded-xl border border-slate-200 bg-gradient-to-r from-white via-white to-teal-50 p-4 shadow-sm sm:p-5" aria-label="Estimated production progress">
         <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-teal-800">Estimated production progress</p><h2 className="mt-1 text-base font-semibold text-slate-900">Shift output against target</h2><p className="mt-1 text-xs text-slate-600">Part-count figures are estimates and are not verified factory production totals.</p></div><span className="rounded-full bg-teal-100 px-2.5 py-1 text-xs font-semibold text-teal-800">{targetValue > 0 ? `${progress.toFixed(0)}% of target` : 'Target unavailable'}</span></div>
         <div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(260px,0.8fr)] md:items-center">
           <div>
             <div className="flex justify-between text-xs"><span className="font-medium text-slate-700">{(goodValue + scrapValue).toLocaleString()} of {targetValue.toLocaleString()} parts</span><span className="text-slate-500">{Math.max(0, targetValue - goodValue - scrapValue).toLocaleString()} remaining</span></div>
-            <div className="mt-2 h-3 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 transition-all" style={{ width: `${progress}%` }} /></div>
+            <div className="mt-2 h-3 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 transition-all" style={{ width: `${Math.min(100, progress)}%` }} /></div>
             <p className="mt-2 text-[11px] text-slate-500">Progress to the estimated shift target</p>
           </div>
           <div className="grid gap-3 rounded-lg border border-slate-200 bg-white/80 p-3 sm:grid-cols-3 sm:items-center">
@@ -331,7 +334,7 @@ export const SimulatorFleetTelemetryDashboard: React.FC<SimulatorFleetTelemetryD
           })}</div>
         </div>)}
       </div>
-      <p className="mt-3 rounded-lg bg-slate-50 p-3 text-xs leading-relaxed text-slate-600">Motor Power is a shaft-power estimate derived from torque and RPM, not electrical energy. Motor Load is a torque-range proxy, not a VFD measurement. Coolant temperature and kWh energy consumption are not available in the current data feed, so those stay unavailable.</p>
+      <p className="mt-3 rounded-lg bg-slate-50 p-3 text-xs leading-relaxed text-slate-600">Motor Power is a shaft-power estimate derived from torque and RPM, not electrical energy. Motor Load is a torque-range proxy, not a VFD measurement. Coolant temperature appears only when its dedicated stream is received. Electrical kWh remains unavailable without an energy source.</p>
     </Card>
   </div>;
 };
