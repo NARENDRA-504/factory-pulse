@@ -1,19 +1,13 @@
-# Power BI connection preparation
+# FactoryPulse Power BI
 
-Existing files found outside the repository:
-- Documents/admins dashboard.pbix: visual definitions reference `synthetic dataset` machine_id/machine_status. Its underlying live MySQL connection and refresh are not verified.
-- Documents/visualization.pbix: visual definitions reference unrelated `sales data` City/Sales/Region/Segment. Not FactoryPulse telemetry.
+Current report: `FactoryPulse Machine Overview.pbix`.
 
-The original reports were not modified.
+Verified locally on 3 November 2026: native MySQL Import from the latest-reading view, successful manual Home -> Refresh, 1,280 source rows and 40 machine snapshot rows at that check. Visuals: RPM and temperature bar charts, machine status donut, machine slicer, pressure/vibration table. Slicer tested from 40 machines to one and back. Numeric GOOD values are used; sensor units are preserved and pressure/vibration are not summed. Source provenance remains simulated.
 
-## Prepared actual MySQL inputs
-LatestReadings.pq, SensorHistory.pq and Incidents.pq use the local ziro_manufacturing database directly. No API keys/passwords are embedded, and Supabase is not involved. SensorHistory limits the last24hours to50000rows; it is not an all-history production/downtime model.
+Connection: `127.0.0.1:3306`, database `ziro_manufacturing`, MySQL Basic authentication. Enter credentials locally in Power BI; never commit them. Connector/NET must be installed. Use an appropriately restricted reporting account for deployment.
 
-In Power BI Desktop: Get Data -> Blank Query -> Advanced Editor, paste the content of a .pq file, then use Database authentication for127.0.0.1:3306. Enter MySQL credentials in Power BI's credential dialog, never in the query. Oracle MySQL Connector/NET is required for the native MySQL connector. Import mode uses Refresh; these prepared queries do not establish automatic real-time refresh.
+This is a latest-state report, not a historical OEE report. Import data changes only after Refresh. Gateway, scheduled cloud refresh, publishing, role-level Power BI security and app embedding are not verified. App live charts refresh separately through FactoryPulse's authorized API.
 
-Recommended report: latestRPM card filteredsensorRPM; trendtimestamp/sensor_value filteredone sensor+machine; machine status counts distinctmachine_id with lateststatus; incident severity/status bars. Never sum different physical sensor units. LatestReadings has multiple sensors per machine; distinctmachine counts must avoid counting one machine six times.
+The notebook reads the same MySQL latest view, but a later refresh may differ because live data advances. Compare reading IDs/timestamps at the same snapshot, not a later moving mean.
 
-## Verification boundary
-Actual source views and records were checked through MySQL. M queries have not been executed in Power BI Desktop. Native app-control approval timed out, so no report refresh was performed. Do not claim this is a connected/refreshing Power BI report yet. Do not publish workplace telemetry to a public report.
-
-Official connector reference: https://learn.microsoft.com/en-us/power-query/connectors/mysql-database
+Original external reports `admins dashboard.pbix` and `visualization.pbix` reference other sources; they were preserved and are not claimed to use this operational pipeline. Older documentation is retained under docs/archive.

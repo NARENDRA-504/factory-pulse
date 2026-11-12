@@ -633,27 +633,27 @@ export const AnalyticsView: React.FC = () => {
             <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-xs">
               <span className="text-[10px] font-mono text-teal-700 uppercase font-semibold block">Fleet Availability</span>
               <div className="mt-1 text-2xl font-bold font-mono text-teal-800">
-                {mfgKPIs?.availability_pct ?? 96.88}%
+                {mfgKPIs?.availability_pct ?? 'Unavailable'}%
               </div>
               <div className="text-[10px] text-slate-600 mt-0.5 font-mono">
-                Operating: {mfgKPIs?.operating_hours ?? 1162.5}h / {mfgKPIs?.planned_production_hours ?? 1200}h
+                Operating: {mfgKPIs?.operating_hours ?? 'Unavailable'}h / {mfgKPIs?.planned_production_hours ?? 'Unavailable'}h
               </div>
             </div>
 
             <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-xs">
               <span className="text-[10px] font-mono text-rose-700 uppercase font-semibold block">Total Downtime Rate</span>
               <div className="mt-1 text-2xl font-bold font-mono text-rose-800">
-                {mfgKPIs?.downtime_pct ?? 3.12}%
+                {mfgKPIs?.downtime_pct ?? 'Unavailable'}%
               </div>
               <div className="text-[10px] text-slate-600 mt-0.5 font-mono">
-                Cumulative: {mfgKPIs?.total_downtime_hours ?? 37.5}h lost
+                Cumulative: {mfgKPIs?.total_downtime_hours ?? 'Unavailable'}h lost
               </div>
             </div>
 
             <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-xs">
               <span className="text-[10px] font-mono text-slate-700 uppercase font-semibold block">MTBF (Reliability)</span>
               <div className="mt-1 text-2xl font-bold font-mono text-slate-700">
-                {mfgKPIs?.mtbf_hours ?? 193.75} h
+                {mfgKPIs?.mtbf_hours ?? 'Unavailable'} h
               </div>
               <div className="text-[10px] text-slate-600 mt-0.5 font-mono">Mean Time Between Failures</div>
             </div>
@@ -661,7 +661,7 @@ export const AnalyticsView: React.FC = () => {
             <div className="p-4 bg-white border border-purple-900/40 rounded-xl shadow-xs">
               <span className="text-[10px] font-mono text-purple-700 uppercase font-semibold block">MTTR (Maintainability)</span>
               <div className="mt-1 text-2xl font-bold font-mono text-purple-800">
-                {mfgKPIs?.mttr_hours ?? 1.45} h
+                {mfgKPIs?.mttr_hours ?? 'Unavailable'} h
               </div>
               <div className="text-[10px] text-slate-600 mt-0.5 font-mono">Mean Time to Resolution</div>
             </div>

@@ -1,4 +1,5 @@
 """Admin inventory, machine management, 50-machine configuration, and AI health assistant."""
+from .team_access import check_machine
 import datetime as dt
 import os
 import json
@@ -181,6 +182,7 @@ class MachineCreateRequest(BaseModel):
     location: str = Field(..., min_length=2, max_length=255)
     status: Literal['Nominal', 'Warning', 'Critical', 'Offline', 'Down', 'Idle', 'Maintenance'] = 'Nominal'
     installation_date: dt.date
+    last_inspection_date: Optional[dt.date] = None
     manufacturer: Optional[str] = Field(None, max_length=128)
     description: Optional[str] = Field(None, max_length=2000)
     is_active: bool = True
@@ -223,70 +225,17 @@ def register(app, api):
             'schema_ready': {'machine_id', 'operating_limits', 'sensor_configuration'}.issubset(fields),
             'management_note': 'SQL registration requires a recorded inspection date. Catalog identity and telemetry history are preserved.'}
 
-    @app.get('/api/v1/simulator/active-machines')
+    @app.get('/api/v1/simulator/active-machines', dependencies=[Depends(api['require_simulator_api_key'])])
     def get_simulator_active_machines():
-        """Expose active machine roster for AI Simulator synchronization (default ~50 machines)."""
-        limit = get_default_active_count()
-        catalog = api['load_canonical_machine_master']()
-        sorted_catalog = sorted(catalog.values(), key=lambda m: m.get('machineId', ''))
-        active = []
-
-        # Read SQL overrides if database is available
-        sql_machines = {}
-        try:
-            with api['get_telemetry_engine']().connect() as conn:
-                rows = conn.execute(api['_sql_text']('SELECT machine_id, machine_code, name, is_active FROM machines')).mappings().all()
-                for r in rows:
-                    if r.get('machine_id'):
-                        sql_machines[r['machine_id']] = r
-        except Exception:
-            pass
-
-        for idx, m in enumerate(sorted_catalog):
-            mid = m['machineId']
-            if mid in sql_machines:
-                is_act = bool(sql_machines[mid].get('is_active', True))
-            else:
-                is_act = (idx < limit)
-            if is_act:
-                active.append({
-                    'machine_id': mid,
-                    'machine_code': m['machineCode'],
-                    'display_name': m['displayName'],
-                    'machine_type': m['machineType'],
-                    'department': m['shopFloor'],
-                    'production_line': m['productionLine'],
-                    'is_active': True
-                })
-
-        # Include dynamically registered machines
-        for mid, d in DYNAMIC_REGISTERED_MACHINES.items():
-            if d.get('is_active', True) and not any(a['machine_id'] == mid for a in active):
-                active.append({
-                    'machine_id': mid,
-                    'machine_code': d.get('machine_code', f"CNC-{mid}"),
-                    'display_name': d.get('name', mid),
-                    'machine_type': d.get('machine_type', 'CNC'),
-                    'department': d.get('location', 'Floor A1'),
-                    'production_line': d.get('line_id', 'Line 5AX-01'),
-                    'is_active': True
-                })
-
-        return {
-            'default_configured_count': limit,
-            'active_count': len(active),
-            'active_machine_ids': [a['machine_id'] for a in active],
-            'machines': active
-        }
+        catalog=api['load_available_machine_master']()
+        active=[{'machine_id':mid,'machine_code':m['machineCode'],'display_name':m['displayName'],
+                 'machine_type':m['machineType'],'department':m['shopFloor'],
+                 'production_line':m['productionLine'],'is_active':True} for mid,m in catalog.items()]
+        return {'active_count':len(active),'active_machine_ids':list(catalog),'machines':active}
 
     @app.post('/api/v1/simulator/register-machine')
     def register_simulator_machine(payload: Dict[str, Any], user=Depends(require_admin)):
-        """Dynamic simulator registration endpoint allowing zero-restart ingestion."""
-        machine_id = payload.get('machine_id')
-        if not machine_id:
-            raise HTTPException(422, 'machine_id required')
-        DYNAMIC_REGISTERED_MACHINES[machine_id] = payload
-        return {'registered': True, 'machine_id': machine_id, 'simulator_sync': 'SYNCHRONIZED'}
+        raise HTTPException(409,'Save the machine in Machine Management, then use its onboarding controls to confirm sender registration.')
 
     @app.get('/api/v1/admin/machine-inventory')
     def inventory(user=Depends(require_admin)):
@@ -356,7 +305,11 @@ def register(app, api):
 
     @app.post('/api/v1/admin/machines', status_code=201)
     def create_machine(payload: MachineCreateRequest, request: Request, user=Depends(require_admin)):
-        """Admin creates a new machine. Auto-generates unique machine_id, persists in SQL, and registers with simulator."""
+        """Save a SQL machine; separate onboarding must confirm its sender profile."""
+        if payload.status not in {'Nominal','Warning','Critical','Offline'}:
+            raise HTTPException(422,'Choose a supported registry status: Nominal, Warning, Critical or Offline.')
+        if payload.last_inspection_date and payload.last_inspection_date>dt.datetime.now(dt.timezone.utc).date():
+            raise HTTPException(422,'Inspection date cannot be in the future.')
         engine = api['get_telemetry_engine']()
         catalog = api['load_canonical_machine_master']()
 
@@ -399,6 +352,9 @@ def register(app, api):
         new_machine_code = f"{type_prefix}-{new_num:03d}"
 
         model_name = payload.manufacturer + " " + payload.name if payload.manufacturer else payload.name
+        floor_prefix=payload.department.split(':')[0]
+        plant=next((m['plant'] for m in catalog.values() if m['shopFloor'].split(':')[0]==floor_prefix),None)
+        if not plant:raise HTTPException(422,'Choose a known department so the plant assignment is explicit.')
 
         # Store in dynamic cache immediately for instant simulator ingestion & zero restart
         machine_record = {
@@ -411,11 +367,11 @@ def register(app, api):
             'model': model_name,
             'machineType': payload.machine_type,
             'machine_type': payload.machine_type,
-            'plant': 'Plant A: Precision Machining',
+            'plant': plant,
             'shopFloor': payload.department,
             'location': payload.location,
-            'productionLine': 'Line 5AX-01',
-            'line_id': 'Line 5AX-01',
+            'productionLine': 'Unassigned',
+            'line_id': 'Unassigned',
             'status': payload.status,
             'installation_date': payload.installation_date.isoformat(),
             'manufacturer': payload.manufacturer or 'Mazak',
@@ -431,32 +387,27 @@ def register(app, api):
                     INSERT INTO machines
                       (machine_code, machine_id, name, model, line_id, machine_type, plant, location,
                        manufacturer, installation_date, description, last_inspection_date, is_active,
-                       status, active_workpiece, simulator_machine_id)
+                       status, active_workpiece, simulator_machine_id, sensor_configuration)
                     VALUES
                       (:code, :mid, :name, :model, :line, :type, :plant, :loc,
-                       :mfr, :inst_date, :desc, :inst_date, :active,
-                       :status, 'Standard Production Run', :mid)
-                    ON DUPLICATE KEY UPDATE
-                      name = VALUES(name),
-                      model = VALUES(model),
-                      machine_type = VALUES(machine_type),
-                      location = VALUES(location),
-                      is_active = VALUES(is_active),
-                      status = VALUES(status)
+                       :mfr, :inst_date, :desc, :inspection_date, :active,
+                       :status, 'Standard Production Run', :mid, :identity)
                 """), {
                     'code': new_machine_code,
                     'mid': new_machine_id,
                     'name': payload.name.strip(),
                     'model': model_name,
-                    'line': 'Line 5AX-01',
+                    'line': 'Unassigned',
                     'type': payload.machine_type,
-                    'plant': 'Plant A: Precision Machining',
+                    'plant': plant,
                     'loc': payload.location,
                     'mfr': payload.manufacturer,
                     'inst_date': payload.installation_date,
+                    'inspection_date': payload.last_inspection_date,
                     'desc': payload.description or '',
                     'active': payload.is_active,
-                    'status': payload.status
+                    'status': payload.status,
+                    'identity': json.dumps({'identity':machine_record})
                 })
                 api['_audit_insert'](
                     connection,
@@ -472,6 +423,7 @@ def register(app, api):
         except Exception as e:
             raise HTTPException(503, 'Machine was not saved in MySQL') from e
 
+        api['_extra_machine_cache'] = None
         DYNAMIC_REGISTERED_MACHINES[new_machine_id] = machine_record
 
         return {
@@ -516,6 +468,7 @@ def register(app, api):
     def machine_ai_health(machine_id: str, user=Depends(get_user)):
         """AI Machine Health Assistant analyzing live sensor telemetry, downtime, and failure indicators."""
         machine = api['resolve_canonical_machine'](machine_id)
+        check_machine(user,machine['machineCode'])
         if user['role'] == 'Operator' and machine.get('machineCode') != user.get('assigned_machine'):
             raise HTTPException(403, 'Operators may only view AI health for their assigned machine')
 

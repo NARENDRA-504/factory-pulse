@@ -28,6 +28,8 @@ def persist_batch(payloads, api, engine=None):
         with (engine or api['get_telemetry_engine']()).begin() as connection:
             existing = {r['reading_id']: r for r in connection.execute(sql(
                 f'SELECT * FROM simulator_sensor_readings WHERE reading_id IN ({placeholders})'), params).mappings().all()}
+            from .storage_management import ARCHIVE_MARKER, reading_fingerprint
+            archived={r['reading_id']:r['payload_hash'] for r in connection.execute(sql(f'SELECT reading_id,payload_hash FROM telemetry_archived_ids WHERE reading_id IN ({placeholders})'),params).mappings()} if ARCHIVE_MARKER.exists() else {}
             values = []
             for payload in payloads:
                 machine = machines[payload.machine_id]
@@ -43,13 +45,19 @@ def persist_batch(payloads, api, engine=None):
                     expected_min=payload.expected_min, expected_max=payload.expected_max,
                     machine_status=payload.machine_status, data_quality=payload.data_quality, fault_mode=payload.fault_mode,
                     data_provenance='SIMULATED', data_source='AI_SIMULATOR'))
+            unarchived=[]
+            for value in values:
+                if value['reading_id'] in archived:
+                    if archived[value['reading_id']]!=reading_fingerprint(value):raise HTTPException(409,'Archived reading_id already exists with different values')
+                else:unarchived.append(value)
+            values=unarchived
             if values:
                 # Trigger updates lock the latest pointer for each stream.
                 # Use the same lock order in concurrent batches to avoid deadlocks.
                 values.sort(key=lambda row: (row['machine_id'], row['sensor_name'], row['reading_timestamp'], row['reading_id']))
                 columns = list(values[0])
                 connection.execute(sql(f"INSERT INTO simulator_sensor_readings ({','.join(columns)}) VALUES ({','.join(':'+k for k in columns)})"), values)
-        return {'accepted_reading_ids': ids, 'stored': len(values), 'duplicates': len(existing)}
+        return {'accepted_reading_ids': ids, 'stored': len(values), 'duplicates': len(existing)+len(archived)}
     except HTTPException:
         raise
     except Exception as exc:

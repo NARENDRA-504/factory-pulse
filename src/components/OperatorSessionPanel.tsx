@@ -1,6 +1,7 @@
 import React, {useEffect,useState} from 'react';
 import {UserProfile} from '../types';
 import {apiClient} from '../services/apiClient';
+import {ShiftOperations} from './ShiftOperations';
 import {HorizontalBarChart} from './DashboardCharts';
 const duration=(seconds:number)=>{const s=Math.max(0,Math.floor(seconds||0));return `${Math.floor(s/3600)}h ${Math.floor(s%3600/60)}m ${s%60}s`;};
 export function OperatorSessionPanel({user,machineId}:{user:UserProfile;machineId?:string}) {
@@ -15,6 +16,7 @@ export function OperatorSessionPanel({user,machineId}:{user:UserProfile;machineI
  const rounds=(downtime?.rounds||[]).slice(-8);
  const stat=(label:string,value:string,note:string)=><div className="rounded-lg border border-slate-200 bg-white p-3"><p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">{label}</p><strong className="mt-2 block text-base tabular-nums text-slate-900">{value}</strong><p className="mt-1 text-[10px] text-slate-500">{note}</p></div>;
  return <section aria-label="Operator session and downtime" className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
+ <ShiftOperations machineId={machineId}/>
  <div><h2 className="text-base font-semibold text-slate-900">My session & machine downtime</h2><p className="mt-1 text-xs text-slate-600">Your sign-in details and recorded machine stops. Session duration is not attendance or productive working time.</p></div>
  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{stat('Operator ID',user.workId,user.fullName)}{stat('Login time',formatTime(user.sessionStartedAt),activity?.factory_time_zone||'Local display time')}{stat('Current session',Number.isFinite(elapsed)?duration(elapsed):'Unavailable','Elapsed time since this sign-in')}{stat('Assigned station',user.assignedMachine||'Unassigned',`${user.shift||'Shift not assigned'} · ${machineId||'No machine selected'}`)}</div>
  <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="text-sm font-semibold">Recorded machine downtime</h3><label className="text-xs text-slate-600">Window<select aria-label="Production downtime window" value={minutes} onChange={e=>setMinutes(Number(e.target.value))} className="ml-2 rounded-lg border border-slate-200 bg-white px-3 py-2"><option value={15}>Last 15 minutes</option><option value={60}>Last hour</option><option value={1440}>Last 24 hours</option></select></label></div>

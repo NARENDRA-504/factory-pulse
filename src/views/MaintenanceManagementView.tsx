@@ -1,6 +1,8 @@
+import { MaintenanceEffectiveness } from '../components/ReliabilityPanels';
 import React, { useState, useEffect } from 'react';
 import { MaintenanceWorkOrder, UserProfile, Machine, Incident } from '../types';
 import { apiClient } from '../services/apiClient';
+import { MaintenanceTicketClosure } from '../components/MaintenanceTicketClosure';
 import {
   Wrench,
   CheckCircle2,
@@ -123,10 +125,12 @@ export const MaintenanceManagementView: React.FC<MaintenanceManagementViewProps>
   const inProgressCount = workOrders.filter((o) => o.status === 'In_Progress').length;
   const completedCount = workOrders.filter((o) => o.status === 'Completed').length;
 
-  const canCreate = ['Admin', 'Supervisor', 'Maintenance'].includes(currentUser.role);
+  const canCreate = ['Admin', 'Super Admin', 'Supervisor', 'Maintenance'].includes(currentUser.role);
 
   return (
     <div className="space-y-6">
+      <MaintenanceTicketClosure user={currentUser} onSaved={loadOrders}/>
+      <MaintenanceEffectiveness/>
       {/* Header Banner */}
       <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -479,7 +483,7 @@ export const MaintenanceManagementView: React.FC<MaintenanceManagementViewProps>
                     onClick={() => handleStatusChange(activeOrder.id, 'Completed')}
                     className="p-2.5 rounded-lg border border-slate-200 bg-emerald-50 text-slate-700 text-xs font-mono font-semibold hover:bg-emerald-50"
                   >
-                    Mark Completed
+                    Complete order only
                   </button>
                 </div>
               </div>

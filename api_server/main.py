@@ -1,3 +1,6 @@
+from api_server.super_admin import effective_user, clear_view
+from api_server.access_roles import role_allowed, protect_privileged_account
+from .team_access import check_machine, scoped_catalog
 """
 ZIRO Digital Internship Program — AI Manufacturing Incident & Maintenance Platform
 FastAPI Primary Backend Engine (Port 8000)
@@ -124,7 +127,7 @@ class AdminUserCreateRequest(BaseModel):
     work_id: str = Field(..., min_length=2, max_length=32)
     full_name: str = Field(..., min_length=1, max_length=128)
     password: str = Field(..., min_length=12, max_length=256)
-    role: Literal["Operator", "Supervisor", "Manager", "Maintenance", "Admin"]
+    role: Literal["Operator", "Supervisor", "Manager", "Maintenance", "Admin", "Super Admin"]
     assigned_machine: Optional[str] = Field(None, max_length=32)
     department: Optional[str] = Field(None, max_length=128)
     shift: Optional[Literal["Shift A", "Shift B", "Night Shift"]] = None
@@ -133,7 +136,7 @@ class AdminUserCreateRequest(BaseModel):
 class AdminUserUpdateRequest(BaseModel):
     work_id: Optional[str] = Field(None, min_length=2, max_length=32)
     full_name: Optional[str] = Field(None, min_length=1, max_length=128)
-    role: Optional[Literal["Operator", "Supervisor", "Manager", "Maintenance", "Admin"]] = None
+    role: Optional[Literal["Operator", "Supervisor", "Manager", "Maintenance", "Admin", "Super Admin"]] = None
     assigned_machine: Optional[str] = Field(None, max_length=32)
     department: Optional[str] = Field(None, max_length=128)
     shift: Optional[Literal["Shift A", "Shift B", "Night Shift"]] = None
@@ -152,6 +155,10 @@ class UserProfileResponse(BaseModel):
     shift: Optional[str] = None
     is_active: bool = True
     session_started_at_utc: Optional[str] = None
+    view_owner_work_id: Optional[str] = None
+    view_owner_name: Optional[str] = None
+    view_remaining_seconds: Optional[int] = None
+    view_reason: Optional[str] = None
 
 class LoginResponse(BaseModel):
     access_token: str
@@ -393,6 +400,18 @@ def _audit_insert(connection, *, employee_id=None, employee_name=None, role=None
                   details=None, request: Optional[Request] = None, resource_type=None,
                   resource_id=None, changed_fields=None):
     """Write the base audit event and only optional columns present in this DB version."""
+    actor = getattr(request.state, "acting_principal", None) if request else None
+    target = getattr(request.state, "acting_as", None) if request else None
+    if actor and target:
+        employee_id, employee_work_id, employee_name, role = actor["id"], actor["work_id"], actor["full_name"], actor["role"]
+        try:
+            structured = json.loads(details or "")
+        except (ValueError,TypeError): structured = None
+        if isinstance(structured,dict):
+            structured['acting_as'] = target['work_id']
+            details = json.dumps(structured,separators=(',',':'),ensure_ascii=False)
+        else:
+            details = f"Acting as {target['work_id']} ({target['role']}); " + (details or "")
     columns = {row[0] for row in connection.execute(_sql_text("""
         SELECT COLUMN_NAME FROM information_schema.columns
         WHERE table_schema = DATABASE() AND table_name = 'activity_log'
@@ -486,13 +505,14 @@ def get_current_user(request: Request, authorization: Optional[str] = Header(Non
                 connection.execute(_sql_text("UPDATE auth_sessions SET revoked_at_utc = UTC_TIMESTAMP(6), revoke_reason = 'expired' WHERE session_id = :session_id AND revoked_at_utc IS NULL"), {"session_id": row["session_id"]})
                 _audit_insert(connection, employee_id=row["employee_id"], employee_work_id=row["work_id"], employee_name=row["full_name"], role=row["role"], event_type="session_expiry", session_id=row["session_id"], request_id=getattr(request.state, "request_id", None), request=request)
             raise HTTPException(status_code=401, detail="Session expired. Sign in again.")
-        return {
+        principal = {
             "id": row["employee_id"], "work_id": row["work_id"], "full_name": row["full_name"],
             "role": row["role"], "assigned_machine": row["assigned_machine"],
             "email": row["email"], "department": row["department"], "shift": row["shift"],
             "is_active": row["is_active"], "session_id": row["session_id"],
             "session_started_at_utc": row["created_at_utc"].replace(tzinfo=datetime.timezone.utc).isoformat() if row["created_at_utc"].tzinfo is None else row["created_at_utc"].astimezone(datetime.timezone.utc).isoformat(),
         }
+        return effective_user(principal, request, globals())
     except HTTPException:
         raise
     except Exception as exc:
@@ -501,7 +521,7 @@ def get_current_user(request: Request, authorization: Optional[str] = Header(Non
 
 def require_roles(allowed_roles: List[str]):
     def role_checker(user: Dict[str, Any] = Depends(get_current_user)):
-        if user["role"] not in allowed_roles:
+        if not role_allowed(user["role"], allowed_roles):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=f"Permission Denied: User role '{user['role']}' is not authorized. Allowed roles: {allowed_roles}"
@@ -601,6 +621,8 @@ def get_me(user: Dict[str, Any] = Depends(get_current_user)):
         role=user["role"],
         assigned_machine=user["assigned_machine"],
         email=user["email"], department=user.get("department"), shift=user.get("shift"), is_active=user.get("is_active", True),
+        view_owner_work_id=user.get("view_owner_work_id"), view_owner_name=user.get("view_owner_name"),
+        view_remaining_seconds=user.get("view_remaining_seconds"), view_reason=user.get("view_reason"),
         session_started_at_utc=user.get("session_started_at_utc")
     )
 
@@ -643,6 +665,7 @@ def logout(request: Request, user: Dict[str, Any] = Depends(get_current_user), a
     except Exception as exc:
         print(f"[Authentication] Logout failed: {type(exc).__name__}")
         raise HTTPException(status_code=503, detail="Could not record sign-out") from exc
+    clear_view(user["session_id"])
     return {"signed_out": True}
 
 @app.get("/api/v1/admin/activity-log")
@@ -713,6 +736,7 @@ def get_admin_users(user: Dict[str, Any] = Depends(require_roles(["Admin"]))):
 
 @app.post("/api/v1/admin/users", status_code=201)
 def create_admin_user(payload: AdminUserCreateRequest, request: Request, user: Dict[str, Any] = Depends(require_roles(["Admin"]))):
+    protect_privileged_account(user, requested_role=payload.role)
     if DEMO_AUTH_ENABLED:
         work_id = payload.work_id.strip().upper()
         if work_id in DEMO_USERS:
@@ -750,12 +774,14 @@ def update_admin_user(employee_id: int, payload: AdminUserUpdateRequest, request
         raise HTTPException(status_code=422, detail="No personnel fields supplied")
     if any(updates.get(field) is None for field in ("full_name", "role", "email", "is_active") if field in updates):
         raise HTTPException(status_code=422, detail="Name, role, email, and active status cannot be null")
-    if employee_id == user["id"] and (updates.get("role", user["role"]) != "Admin" or updates.get("is_active") is False):
+    if employee_id == user["id"] and (updates.get("role", user["role"]) != user["role"] or updates.get("is_active") is False):
         raise HTTPException(status_code=409, detail="You cannot remove your own administrator access")
     if DEMO_AUTH_ENABLED:
         target = next((item for item in DEMO_USERS.values() if item["id"] == employee_id), None)
         if not target:
             raise HTTPException(status_code=404, detail="Employee not found")
+        protect_privileged_account(user, target["role"], updates.get("role"))
+        if target["role"] == "Super Admin" and (updates.get("role", target["role"]) != "Super Admin" or updates.get("is_active") is False): raise HTTPException(409, "Super Admin ownership is protected")
         next_work_id = updates.get("work_id", target["work_id"]).strip().upper()
         if next_work_id != target["work_id"] and next_work_id in DEMO_USERS:
             raise HTTPException(status_code=409, detail="That employee ID already exists")
@@ -782,8 +808,11 @@ def update_admin_user(employee_id: int, payload: AdminUserUpdateRequest, request
     assignments = ", ".join(f"{key} = :{key}" for key in updates if key in allowed)
     try:
         with engine.begin() as connection:
-            before = connection.execute(_sql_text("SELECT id, work_id, role, is_active FROM users WHERE id = :id"), {"id": employee_id}).mappings().first()
+            before = connection.execute(_sql_text("SELECT id, work_id, role, is_active FROM users WHERE id = :id FOR UPDATE"), {"id": employee_id}).mappings().first()
             if not before: raise HTTPException(status_code=404, detail="Employee not found")
+            protect_privileged_account(user, before["role"], updates.get("role"))
+            if before["role"] == "Super Admin" and (updates.get("role", before["role"]) != "Super Admin" or updates.get("is_active") is False):
+                raise HTTPException(409, "Super Admin demotion and deactivation require a separate ownership transfer; this account is protected.")
             leaving_admin_role = before["role"] == "Admin" and before["is_active"] and (updates.get("role", "Admin") != "Admin" or updates.get("is_active") is False)
             if leaving_admin_role:
                 admin_count = connection.execute(_sql_text("SELECT COUNT(*) FROM users WHERE role = 'Admin' AND is_active = TRUE")).scalar_one()
@@ -812,6 +841,8 @@ def deactivate_admin_user(employee_id: int, request: Request, user: Dict[str, An
             raise HTTPException(status_code=404, detail="Employee not found")
         if target["role"] == "Admin" and target.get("is_active", True) and sum(1 for item in DEMO_USERS.values() if item["role"] == "Admin" and item.get("is_active", True)) <= 1:
             raise HTTPException(status_code=409, detail="At least one active administrator must remain")
+        protect_privileged_account(user, target["role"])
+        if target["role"] == "Super Admin": raise HTTPException(409, "Super Admin ownership is protected")
         target["is_active"] = False
         for digest, session in list(DEMO_SESSIONS.items()):
             if session["user"]["id"] == employee_id:
@@ -820,8 +851,10 @@ def deactivate_admin_user(employee_id: int, request: Request, user: Dict[str, An
     engine = get_telemetry_engine()
     try:
         with engine.begin() as connection:
-            employee = connection.execute(_sql_text("SELECT work_id, role, is_active FROM users WHERE id = :id"), {"id": employee_id}).mappings().first()
+            employee = connection.execute(_sql_text("SELECT work_id, role, is_active FROM users WHERE id = :id FOR UPDATE"), {"id": employee_id}).mappings().first()
             if not employee: raise HTTPException(status_code=404, detail="Employee not found")
+            protect_privileged_account(user, employee["role"])
+            if employee["role"] == "Super Admin": raise HTTPException(409, "Transfer ownership before deactivating a Super Admin.")
             if employee["role"] == "Admin" and employee["is_active"]:
                 admin_count = connection.execute(_sql_text("SELECT COUNT(*) FROM users WHERE role = 'Admin' AND is_active = TRUE")).scalar_one()
                 if admin_count <= 1: raise HTTPException(status_code=409, detail="At least one active administrator must remain")
@@ -842,7 +875,7 @@ def deactivate_admin_user(employee_id: int, request: Request, user: Dict[str, An
 def list_machines(user: Dict[str, Any] = Depends(get_current_user)):
     machines=[{'machine_id':m['machineId'],'machine_code':m['machineCode'],
         'code':m['machineCode'],'name':m['displayName'],'line_id':m['productionLine'],
-        'status':'UNKNOWN','plant':m['plant']} for m in load_available_machine_master().values()]
+        'status':'UNKNOWN','plant':m['plant']} for m in scoped_catalog(user, load_available_machine_master()).values()]
     if user['role']=='Operator':
         return [m for m in machines if m['code']==user.get('assigned_machine')]
     return machines
@@ -851,6 +884,7 @@ def list_machines(user: Dict[str, Any] = Depends(get_current_user)):
 def get_machine_telemetry(code: str, user: Dict[str, Any] = Depends(get_current_user)):
     if user["role"] == "Operator" and code != user.get("assigned_machine"):
         raise HTTPException(status_code=403, detail="Operators may view telemetry only for their assigned machine")
+    check_machine(user, code)
     now = datetime.datetime.utcnow().isoformat()
     return TelemetryReadingSchema(
         timestamp=now,
@@ -886,11 +920,31 @@ def load_canonical_machine_master() -> Dict[str, Dict[str, str]]:
 
 def load_available_machine_master():
     from .machine_roster import available_master
-    return available_master(load_canonical_machine_master())
+    master=load_canonical_machine_master();result=available_master(master)
+    # Additional SQL machines remain visible after restarts. Reference-catalog
+    # activation is still controlled by the explicit 40-machine roster.
+    global _extra_machine_cache
+    import time
+    cache=globals().get('_extra_machine_cache')
+    if cache is None or time.monotonic()-cache[0]>30:
+        with get_telemetry_engine().connect() as c:
+            rows=c.execute(_sql_text('SELECT * FROM machines WHERE is_active=1 AND machine_id IS NOT NULL')).mappings().all()
+        extras={}
+        for row in rows:
+            mid=row['machine_id']
+            if mid in master:continue
+            settings=row.get('sensor_configuration') or {}
+            if isinstance(settings,str):settings=json.loads(settings)
+            identity=settings.get('identity')
+            if identity:extras[mid]={**identity,'is_active':True}
+            else:extras[mid]={'machineId':mid,'machineCode':row['machine_code'],'displayName':row['name'],'machineType':row.get('machine_type') or 'CNC','plant':row.get('plant') or 'Unassigned','shopFloor':row.get('location') or 'Unassigned','productionLine':row['line_id'],'is_active':True}
+        _extra_machine_cache=(time.monotonic(),extras)
+    result.update(_extra_machine_cache[1])
+    return result
 
 @app.get('/api/v1/machines/available')
 def available_machine_catalog(user=Depends(get_current_user)):
-    return list(load_available_machine_master().values())
+    return list(scoped_catalog(user, load_available_machine_master()).values())
 
 def resolve_canonical_machine(machine_id: str) -> Dict[str, Any]:
     try:
@@ -911,6 +965,9 @@ def resolve_canonical_machine(machine_id: str) -> Dict[str, Any]:
             with engine.connect() as conn:
                 row = conn.execute(_sql_text("SELECT * FROM machines WHERE machine_id = :mid OR simulator_machine_id = :mid OR machine_code = :mid"), {"mid": machine_id}).mappings().first()
                 if row:
+                    configuration=row.get('sensor_configuration') or {}
+                    if isinstance(configuration,str):configuration=json.loads(configuration)
+                    if configuration.get('identity'):return {**configuration['identity'],'is_active':bool(row.get('is_active',True))}
                     return {
                         "machineId": row.get("machine_id") or machine_id,
                         "machineCode": row.get("machine_code") or f"CNC-{machine_id}",
@@ -1086,6 +1143,12 @@ def persist_simulator_reading(payload: SimulatorTelemetryIngest, machine: Dict[s
     """)
     try:
         with db_engine.begin() as connection:
+            from .storage_management import ARCHIVE_MARKER, reading_fingerprint
+            if ARCHIVE_MARKER.exists():
+                archived=connection.execute(_sql_text('SELECT payload_hash FROM telemetry_archived_ids WHERE reading_id=:id'),{'id':payload.reading_id}).scalar()
+                if archived:
+                    if archived==reading_fingerprint(parameters):return True
+                    raise HTTPException(409,'reading_id already exists in archived telemetry with different values')
             existing = connection.execute(select_sql, {"reading_id": payload.reading_id}).mappings().first()
             if existing:
                 if _reading_values_match(existing, payload, machine):
@@ -1168,6 +1231,7 @@ def get_simulator_telemetry_readings(
 ):
     """Return persisted simulator readings for a canonical machine, newest first."""
     machine = resolve_canonical_machine(machine_id)
+    check_machine(user, machine["machineCode"])
     if limit < 1 or limit > 1000:
         raise HTTPException(status_code=422, detail="limit must be between 1 and 1000")
     if sensor_name is not None and (not sensor_name.strip() or len(sensor_name) > 128):
@@ -1242,7 +1306,9 @@ def get_simulator_fleet_latest_readings(
     Fleet roles can compare the records across plants. Operators are restricted
     to their assigned machine, matching the per-machine history endpoint.
     """
-    master = load_available_machine_master()
+    master = scoped_catalog(user, load_available_machine_master())
+    if not master:
+        return []
     assigned_machine_id = None
     if user.get("role") == "Operator":
         assigned_code = user.get("assigned_machine")
@@ -1257,6 +1323,8 @@ def get_simulator_fleet_latest_readings(
     try:
         machine_filter = "WHERE latest.machine_id = :machine_id" if assigned_machine_id else ""
         parameters = {"machine_id": assigned_machine_id} if assigned_machine_id else {}
+        from .team_access import sql_scope
+        team_filter = sql_scope(user, "r.machine_code", parameters)
         with engine.connect() as connection:
             # The migration maintains one pointer per machine/sensor stream.
             # Joining through it keeps the one-second dashboard poll to a
@@ -1269,7 +1337,7 @@ def get_simulator_fleet_latest_readings(
                 FROM simulator_sensor_latest latest
                 JOIN simulator_sensor_readings r ON r.id = latest.reading_row_id
                 {machine_filter}
-                  {'AND' if machine_filter else 'WHERE'} r.data_source = 'AI_SIMULATOR'
+                  {'AND' if machine_filter else 'WHERE'} r.data_source = 'AI_SIMULATOR' AND {team_filter}
             """
             try:
                 rows = connection.execute(_sql_text(latest_query), parameters).mappings().all()
@@ -1284,7 +1352,7 @@ def get_simulator_fleet_latest_readings(
             if not rows:
                 # Also recover historical readings if the pointer table exists
                 # but its backfill has not been run yet.
-                machine_history_filter = "WHERE machine_id = :machine_id" if assigned_machine_id else ""
+                machine_history_filter = "WHERE " + sql_scope(user, "machine_code", parameters)
                 streams = connection.execute(_sql_text(f"""
                     SELECT machine_id, sensor_name FROM simulator_sensor_readings
                     {machine_history_filter} GROUP BY machine_id, sensor_name
@@ -1345,6 +1413,7 @@ def inject_telemetry(
     Returns a simulated sample; it does not persist the telemetry.
     External simulator persistence uses POST /api/v1/telemetry.
     """
+    check_machine(user, machine_code)
     now = datetime.datetime.utcnow().isoformat()
     sim_record = {
         "timestamp": now,
@@ -1638,6 +1707,8 @@ def get_pipeline_health(user: Dict[str, Any] = Depends(require_roles(["Superviso
 
 from .operational_insights import register as register_operational_insights
 register_operational_insights(app, globals())
+from .sop_guidance import register as register_sop_guidance
+register_sop_guidance(app, globals())
 from .machine_inventory import register as register_machine_inventory
 register_machine_inventory(app, globals())
 
@@ -1649,3 +1720,32 @@ register_sql_incidents(app,globals())
 
 from .telemetry_batch import register as register_telemetry_batch
 register_telemetry_batch(app, globals())
+from .workforce_roster import register as register_workforce_roster
+register_workforce_roster(app, globals())
+
+from .shift_tracking import register as register_shift_tracking
+register_shift_tracking(app, globals())
+from .storage_management import register as register_storage_management
+register_storage_management(app, globals())
+
+from .fault_automation import register as register_fault_automation
+register_fault_automation(app, globals())
+from .machine_operations import register as register_machine_operations
+register_machine_operations(app, globals())
+from .usage_tracking import register as register_usage_tracking
+register_usage_tracking(app, globals())
+
+from .onboarding import register as register_onboarding
+register_onboarding(app, globals())
+
+from .machine_changes import register as register_machine_changes
+register_machine_changes(app, globals())
+
+from .super_admin import register as register_super_admin
+register_super_admin(app, globals())
+
+from .operational_readiness import register as register_operational_readiness
+register_operational_readiness(app, globals())
+
+from .reliability_operations import register as register_reliability_operations
+register_reliability_operations(app, globals())

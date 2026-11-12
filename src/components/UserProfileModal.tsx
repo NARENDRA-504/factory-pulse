@@ -40,6 +40,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
         return 'text-purple-700 bg-purple-50 border-purple-200';
       case 'Maintenance':
         return 'text-amber-700 bg-amber-50 border-amber-200';
+      case 'Super Admin':
       case 'Admin':
         return 'text-rose-700 bg-rose-50 border-rose-200';
     }
@@ -79,12 +80,12 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
     {
       name: 'Access Strategic Power BI & Analytics',
       desc: 'View tool wear, roughness & cycle benchmarks',
-      allowed: ['Supervisor', 'Manager', 'Maintenance', 'Admin'].includes(user.role),
+      allowed: ['Supervisor', 'Manager', 'Maintenance', 'Admin', 'Super Admin'].includes(user.role),
     },
     {
       name: 'Security Governance & User Management',
       desc: 'Configure RBAC, audit logs & personnel roster',
-      allowed: ['Admin'].includes(user.role),
+      allowed: ['Admin', 'Super Admin'].includes(user.role),
     },
   ];
   const grantedPermissions = permissionsList.filter((permission) => permission.allowed);

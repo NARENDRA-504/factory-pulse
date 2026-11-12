@@ -1,0 +1,8 @@
+{
+  "failure_events.csv": "3b18f34c4d1a23d51b69f90fd9da8c9e3bd81ba509c30ebd17afbc2d2d635fc6",
+  "machine_id_crosswalk.csv": "fe39abb9fa32247b33ff792ec4d50e9cfbc374e658f42535ca9416751eb4991e",
+  "machine_registry.csv": "40f9db6970a6b6f3395bac4155da5ffd8c8217a00fdf73d1560cd562fdcfb1c9",
+  "maintenance_log.csv": "929561df789fe74495a97b6ab98d78079953bb63f6a61e58cc01b089d028a8c3",
+  "telemetry_raw.csv": "ef8667ea2cee1ba6248e5448fae0baf8646f126605f93430d943f379260cc81a",
+  "training_labels.csv": "16ccbea0614719b5deb11720d1c1bc7fa011ef94c45e2aafe49c817f1a56fb14"
+}

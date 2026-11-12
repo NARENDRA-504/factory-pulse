@@ -93,6 +93,10 @@ class SimulatorTelemetryIngestionTests(unittest.TestCase):
             sys.modules["sqlalchemy.exc"] = cls._previous_sqlalchemy_exc
 
     def setUp(self):
+        # Isolate this raw-ingestion fixture from the PC's enabled archive policy.
+        archive_patch=patch('api_server.storage_management.ARCHIVE_MARKER')
+        archive_marker=archive_patch.start();archive_marker.exists.return_value=False
+        self.addCleanup(archive_patch.stop)
         self.engine = _SQLiteEngine()
         with self.engine.begin() as connection:
             connection.execute("""
@@ -164,12 +168,12 @@ class SimulatorTelemetryIngestionTests(unittest.TestCase):
         with patch.object(api, "get_telemetry_engine", return_value=self.engine):
             records = api.get_simulator_telemetry_readings(
                 "MCH-001", limit=1, sensor_name="Vibration", data_source="ai_simulator",
-                user={"work_id": "SUP-201", "role": "Supervisor"},
+                user={"work_id": "SUP-A01", "role": "Supervisor", "department": "Plant A / Team A01"},
             )
         self.assertEqual(len(records), 1)
         self.assertEqual(records[0].reading_id, "READ-7D11014C9980")
         with self.assertRaises(HTTPException) as error:
-            api.get_simulator_telemetry_readings("MCH-001", limit=1001, user={"role": "Supervisor"})
+            api.get_simulator_telemetry_readings("MCH-001", limit=1001, user={"role": "Manager"})
         self.assertEqual(error.exception.status_code, 422)
 
     def test_database_write_failure_does_not_report_success(self):

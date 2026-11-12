@@ -79,7 +79,7 @@ export const UsersView: React.FC<UsersViewProps> = ({
     fetchUsers();
   }, []);
 
-  const isAdmin = currentUser.role === 'Admin';
+  const isAdmin = ['Admin', 'Super Admin'].includes(currentUser.role);
 
   const getRoleBadgeStyle = (role: UserRole) => {
     switch (role) {
@@ -91,6 +91,7 @@ export const UsersView: React.FC<UsersViewProps> = ({
         return 'text-purple-700 bg-purple-50 border-purple-200';
       case 'Maintenance':
         return 'text-amber-700 bg-amber-50 border-amber-200';
+      case 'Super Admin':
       case 'Admin':
         return 'text-rose-700 bg-rose-50 border-rose-200';
     }
@@ -630,7 +631,7 @@ export const UsersView: React.FC<UsersViewProps> = ({
                           </button>
 
                           {/* Edit / Delete actions for Admin */}
-                          {isAdmin && (
+                          {isAdmin && (user.role !== "Super Admin" || currentUser.role === "Super Admin") && (
                             <>
                               <button
                                 type="button"
@@ -754,6 +755,7 @@ export const UsersView: React.FC<UsersViewProps> = ({
                     <option value="Manager">Manager (Executive &amp; Power BI)</option>
                     <option value="Maintenance">Maintenance (Work Orders &amp; Repairs)</option>
                     <option value="Admin">Admin (System Governance)</option>
+                    {currentUser.role === "Super Admin" && <option value="Super Admin">Super Admin (Ownership & oversight)</option>}
                   </select>
                 </div>
 

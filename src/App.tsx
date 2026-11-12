@@ -1,3 +1,7 @@
+import { useOperationalInbox, OperationalAlertCenter } from './components/ReliabilityPanels';
+import { OperationalReadiness } from './components/OperationalReadiness';
+import { SuperAdminUserSwitcher } from './components/SuperAdminUserSwitcher';
+import { MachineChangeView } from './views/MachineChangeView';
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -12,11 +16,10 @@ import { Sidebar } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
 import { RaiseAlertModal } from './components/RaiseAlertModal';
 import { UserProfileModal } from './components/UserProfileModal';
-import { NotificationCenterModal } from './components/NotificationCenterModal';
-import { NotificationToast } from './components/NotificationToast';
-import { notificationService, LiveNotification } from './services/notificationService';
-import { ShieldAlert, MessageSquare, X } from 'lucide-react';
+import { ShieldAlert } from 'lucide-react';
+import { DraggableAssistant } from './components/DraggableAssistant';
 import { FactoryChat } from './components/FactoryChat';
+import { SopGuidancePanel } from './components/SopGuidancePanel';
 import { LoginView } from './views/LoginView';
 import { DashboardView } from './views/DashboardView';
 import { MachineConditionView } from './views/MachineConditionView';
@@ -42,10 +45,7 @@ export default function App() {
   const [isGlobalAlertOpen, setIsGlobalAlertOpen] = useState<boolean>(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
   const [isNotificationCenterOpen, setIsNotificationCenterOpen] = useState<boolean>(false);
-  const [notifications, setNotifications] = useState<LiveNotification[]>(() =>
-    notificationService.getNotificationsForRole(currentUser?.role)
-  );
-  const [activeToastNotification, setActiveToastNotification] = useState<LiveNotification | null>(null);
+  const alertInbox=useOperationalInbox(currentUser);
 
   // Handoff state for filing incident from telemetry anomaly snapshot
   const [handoffMachine, setHandoffMachine] = useState<string | undefined>(undefined);
@@ -62,7 +62,6 @@ export default function App() {
     if (machList && machList.length > 0) setMachines(machList);
     if (incList) setIncidents(incList);
     if (woList) setWorkOrders(woList);
-    setNotifications(notificationService.getNotificationsForRole(currentUser?.role));
   };
 
   useEffect(() => {
@@ -80,7 +79,9 @@ export default function App() {
   useEffect(() => {
     refreshData().catch(console.error);
     const timer=window.setInterval(()=>refreshData().catch(console.error),10000);
-    return ()=>window.clearInterval(timer);
+    const changed = () => { refreshData().catch(console.error); };
+    window.addEventListener('factorypulse:incidents-changed', changed);
+    return ()=>{ window.clearInterval(timer); window.removeEventListener('factorypulse:incidents-changed', changed); };
   }, [currentUser]);
 
   // Account assignments can change while an employee is signed in.
@@ -94,33 +95,6 @@ export default function App() {
     }, 10000);
     return () => window.clearInterval(timer);
   }, [currentUser?.workId]);
-
-  // Live real-time notification subscription: delivers notifications without page refresh
-  useEffect(() => {
-    if (currentUser) {
-      notificationService.syncUserRole(currentUser.role, currentUser.assignedPlant);
-    }
-
-    const unsubscribe = notificationService.subscribe((incomingNotif) => {
-      // Refresh local store and check role access
-      if (!currentUser) return;
-      const roleAllowed = incomingNotif.targetRoles.includes(currentUser.role);
-      if (roleAllowed) {
-        setNotifications((prev) => {
-          const filtered = prev.filter((n) => n.id !== incomingNotif.id);
-          return [incomingNotif, ...filtered];
-        });
-        // Pop floating toast notification
-        setActiveToastNotification(incomingNotif);
-        // Refresh incidents/machines state automatically
-        refreshData();
-      }
-    });
-
-    return () => {
-      unsubscribe();
-    };
-  }, [currentUser]);
 
   const handleLoginSuccess = (user: UserProfile) => {
     setCurrentUser(user);
@@ -181,6 +155,7 @@ export default function App() {
       {/* 2. Main Canvas (Light FactoryPulse dashboard theme) */}
       <div className="flex-1 flex flex-col min-w-0 lg:pl-64">
         {/* Top Context Bar with Breadcrumb, Title, and Action Controls */}
+        <SuperAdminUserSwitcher user={currentUser} />
         <TopBar
           currentUser={currentUser}
           currentScreen={currentScreen}
@@ -188,12 +163,13 @@ export default function App() {
           onRefreshData={refreshData}
           onRaiseAlert={() => setIsGlobalAlertOpen(true)}
           onOpenProfile={() => setIsProfileModalOpen(true)}
-          unreadNotificationsCount={notifications.filter((n) => !n.isRead && !n.acknowledgedAt).length}
+          unreadNotificationsCount={alertInbox.data?.alerts.filter((a:any)=>!a.acknowledged_at).length||0}
           onOpenNotifications={() => setIsNotificationCenterOpen(true)}
         />
 
         {/* Viewport Content */}
         <main className="flex-1 w-full max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-8 py-5">
+          <SopGuidancePanel screen={currentScreen} user={currentUser} machineId={(currentUser.role === 'Operator' ? machines.find(machine => machine.machineCode === currentUser.assignedMachine || machine.code === currentUser.assignedMachine) : machines.find(machine => machine.machineCode === selectedMachineCode || machine.code === selectedMachineCode))?.machineId}/>
           <ErrorBoundary fallbackTitle="View Rendering Interrupted">
             {(['production', 'coverage', 'downtime', 'quality', 'reports'] as const).map(page => currentScreen === page && (canOpenScreen(currentUser.role, page) ? <RoleOperationsView key={page} screen={page} user={currentUser} machines={machines} incidents={incidents} workOrders={workOrders} onNavigate={setCurrentScreen} /> : <p key={page} role="alert" className="rounded-lg bg-rose-50 p-4 text-rose-800">This page is unavailable for your role.</p>))}
             {currentScreen === 'dashboard' && (
@@ -251,7 +227,7 @@ export default function App() {
             )}
 
             {currentScreen === 'users' && (
-              currentUser.role !== 'Admin' ? (
+              !['Admin', 'Super Admin'].includes(currentUser.role) ? (
                 <div className="bg-white border border-rose-200 rounded-xl p-8 text-center space-y-4 max-w-xl mx-auto my-12">
                   <ShieldAlert className="w-12 h-12 text-rose-700 mx-auto" />
                   <h2 className="text-lg font-bold text-slate-900 font-display">Administrative Authority Required</h2>
@@ -273,7 +249,9 @@ export default function App() {
                 />
               )
             )}
-            {currentScreen === 'inventory' && (currentUser.role === 'Admin'
+            {currentScreen === 'readiness' && <OperationalReadiness user={currentUser}/>}
+            {currentScreen === 'machine-changes' && <MachineChangeView user={currentUser} />}
+            {currentScreen === 'inventory' && (['Admin', 'Super Admin'].includes(currentUser.role)
               ? <MachineManagementView user={currentUser} machines={machines}/>
               : <p className="rounded-lg border border-rose-200 bg-rose-50 p-5 text-rose-800">Machine management requires Admin access.</p>)}
             {currentScreen === 'maintenance' && (
@@ -291,7 +269,7 @@ export default function App() {
               />
             )}
             {currentScreen === 'activity' && (
-              currentUser.role !== 'Admin' ? (
+              !['Admin', 'Super Admin'].includes(currentUser.role) ? (
                 <div className="m-12 rounded-xl border border-rose-200 bg-white p-8 text-center"><h2 className="font-bold text-slate-900">Admin access required</h2><p className="mt-2 text-sm text-slate-600">This activity log is restricted to administrators.</p></div>
               ) : <ActivityLogView />
             )}
@@ -312,40 +290,7 @@ export default function App() {
         </footer>
       </div>
 
-      {/* Floating In-App Live Notification Toast (Zero-Refresh Alert) */}
-      <NotificationToast
-        notification={activeToastNotification}
-        onClose={() => setActiveToastNotification(null)}
-        onOpenCenter={() => {
-          setActiveToastNotification(null);
-          setIsNotificationCenterOpen(true);
-        }}
-      />
-
-      {/* Live Notification Center Modal */}
-      <NotificationCenterModal
-        isOpen={isNotificationCenterOpen}
-        onClose={() => setIsNotificationCenterOpen(false)}
-        currentUser={currentUser}
-        notifications={notifications}
-        onAcknowledge={(notifId) => {
-          notificationService.acknowledgeNotification(notifId, currentUser.fullName);
-          setNotifications(notificationService.getNotificationsForRole(currentUser.role));
-        }}
-        onDismiss={(notifId) => {
-          notificationService.dismissNotification(notifId);
-          setNotifications(notificationService.getNotificationsForRole(currentUser.role));
-        }}
-        onNavigateToMachine={(code) => {
-          setSelectedMachineCode(code);
-          setCurrentScreen('machines');
-          setIsNotificationCenterOpen(false);
-        }}
-        onNavigateToIncidents={() => {
-          setCurrentScreen('incidents');
-          setIsNotificationCenterOpen(false);
-        }}
-      />
+      {isNotificationCenterOpen&&<OperationalAlertCenter inbox={alertInbox} user={currentUser} onClose={()=>setIsNotificationCenterOpen(false)} onIncidents={()=>{setCurrentScreen('incidents');setIsNotificationCenterOpen(false);}}/>}
 
       {/* Global Quick Raise Alert Modal */}
       <RaiseAlertModal
@@ -359,13 +304,9 @@ export default function App() {
         }}
       />
 
-      <div className="fixed bottom-5 right-4 z-40 sm:right-6">
-        {chatOpen && <div id="factory-chat-panel" role="region" aria-label="Machine and production assistant" onKeyDown={event => { if(event.key === 'Escape') setChatOpen(false); }} className="mb-3 max-h-[78dvh] w-[min(25rem,calc(100vw-2rem))] overflow-y-auto rounded-xl border border-teal-200 bg-white shadow-xl">
-          <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2"><span className="text-xs font-semibold text-teal-800">{currentUser.role} assistant</span><button type="button" aria-label="Close assistant" onClick={() => setChatOpen(false)} className="rounded p-2 text-slate-600"><X size={16} /></button></div>
-          <FactoryChat machineId={(currentUser.role === 'Operator' ? machines.find(machine => machine.machineCode === currentUser.assignedMachine || machine.code === currentUser.assignedMachine) : machines.find(machine => machine.machineCode === selectedMachineCode || machine.code === selectedMachineCode))?.machineId} />
-        </div>}
-        <button type="button" aria-expanded={chatOpen} aria-controls="factory-chat-panel" aria-label={chatOpen ? 'Close machine assistant' : 'Open machine assistant'} onClick={() => setChatOpen(open => !open)} className="ml-auto flex items-center gap-2 rounded-full bg-teal-700 px-4 py-3 text-xs font-semibold text-white shadow-lg hover:bg-teal-800"><MessageSquare size={19} />Machine assistant</button>
-      </div>
+      <DraggableAssistant open={chatOpen} onOpenChange={setChatOpen} role={currentUser.role}>
+        <FactoryChat machineId={(currentUser.role === 'Operator' ? machines.find(machine => machine.machineCode === currentUser.assignedMachine || machine.code === currentUser.assignedMachine) : machines.find(machine => machine.machineCode === selectedMachineCode || machine.code === selectedMachineCode))?.machineId} />
+      </DraggableAssistant>
 
       {/* User Profile & Permissions Modal */}
       <UserProfileModal

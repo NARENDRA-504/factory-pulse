@@ -6,7 +6,11 @@ from fastapi import Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from .live_analytics import summarize_downtime
 from .chat_scope import in_scope
+from .team_access import check_machine,sql_scope,scoped_catalog
+from .conversation import conversation_reply, private_request
 from .gemini_insights import generate_selected_analysis, provider_configuration
+from .rag import retrieve_context, local_knowledge_answer, resolve_retrieval_question
+from .sop_retrieval import retrieve_sop
 
 
 def as_utc(value):
@@ -15,7 +19,7 @@ def as_utc(value):
 
 
 class FactoryQuestion(BaseModel):
-    question: str = Field(..., min_length=3, max_length=1000)
+    question: str = Field(..., min_length=2, max_length=1000)
     machine_id: str | None = None
     use_ai: bool = False
     prior_questions: list[str] = Field(default_factory=list,max_length=4)
@@ -30,6 +34,7 @@ def register(app, api):
     @app.get('/api/v1/telemetry/downtime/{machine_id}')
     def downtime(machine_id: str, minutes: int = Query(60, ge=1, le=1440), user=Depends(current)):
         machine=api['resolve_canonical_machine'](machine_id)
+        check_machine(user,machine['machineCode'])
         if user['role']=='Operator' and machine['machineCode']!=user.get('assigned_machine'):
             raise HTTPException(403,'Operators may only view their assigned machine')
         until=api['_utcnow'](); since=until-dt.timedelta(minutes=minutes)
@@ -79,12 +84,18 @@ def register(app, api):
         if any(len(q)>1000 for q in payload.prior_questions):
             raise HTTPException(422,'Previous questions must be at most 1000 characters')
         safe_prior=[q for q in payload.prior_questions if in_scope(q)]
-        if not in_scope(payload.question,safe_prior):
-            return {'answer':'I can help only with machines, production, sensor readings, maintenance and factory operations. Ask a machine or production question.',
-                'facts':[],'calculation':None,'limitations':[],
-                'provider_status':'out_of_scope','generated_analysis':None,
-                'provider_message':'No factory data or external AI was accessed for this unrelated question.',
-                'evidence_source':'Scope guidance','generated_at':api['_utcnow']().isoformat()}
+        if private_request(payload.question) or not in_scope(payload.question,safe_prior):
+            answer=conversation_reply(payload.question)
+            generated={'provider_status':'local_conversation','generated_analysis':None,
+                       'provider_message':'Local conversation; no factory records accessed.'}
+            if payload.use_ai and not private_request(payload.question):
+                # Only conversational questions are carried over; machine evidence never enters this path.
+                prior=[q for q in payload.prior_questions if not in_scope(q) and not private_request(q)]
+                prompt=('Previous questions: '+repr(prior)+'\nCurrent question: '+payload.question) if prior else payload.question
+                generated=generate_selected_analysis(prompt,None,[],conversation=True)
+            return {'answer':answer,'facts':[],'calculation':None,'limitations':[],**generated,
+                    'evidence_source':'Conversation · no factory records accessed',
+                    'generated_at':api['_utcnow']().isoformat()}
         machine_id=payload.machine_id
         mentioned=re.findall(r'\bMCH-\d{3}\b',payload.question.upper())
         if len(set(mentioned))>1: raise HTTPException(422,'Select one machine for a detailed question')
@@ -93,14 +104,32 @@ def register(app, api):
             raise HTTPException(422,'Select one machine before requesting Gemini analysis')
         if machine_id:
             machine=api['resolve_canonical_machine'](machine_id)
+            check_machine(user,machine['machineCode'])
             if user['role']=='Operator' and machine['machineCode']!=user.get('assigned_machine'):
                 raise HTTPException(403,'Operators may only ask about their assigned machine')
+        safe_prior=[q for q in safe_prior if all(id==machine_id for id in re.findall(r'\bMCH-\d{3}\b',q.upper()))]
+        retrieval_question=resolve_retrieval_question(payload.question,safe_prior)
         rows=fleet(user=user)
         if machine_id: rows=[row for row in rows if row.machine_id==machine_id]
-        question=payload.question.lower()
+        question=retrieval_question.lower()
+        if re.search(r'\b(sop|procedure|instructions|safe[ -]?stop|switch off|emergency stop)\b',question) or ('what should' in question and 'do' in question):
+            procedure=retrieve_sop(retrieval_question,user['role'],machine_id,[r.model_dump() for r in rows],api['_utcnow']())
+            sources=procedure['sources']
+            answer=procedure['notice']
+            if machine_id:answer+='\nMachine: '+machine_id+' · Received status: '+procedure.get('level','Unavailable')+'.'
+            for source in sources:
+                answer+='\n\n['+source['id']+'] '+source['title']+' · Revision '+source['revision']+' · '+source['section']+'\n'
+                answer+='\n'.join(f'{i+1}. {step}' for i,step in enumerate(source['steps']))
+            return {'answer':answer,'facts':[],'calculation':None,'sources':sources,'procedure':procedure,
+                    'retrieval':{'method':'role_and_machine_filtered_sop_retrieval'},
+                    'provider_status':'disabled','generated_analysis':None,
+                    'provider_message':'SOP steps are retrieved directly without generative rewriting.',
+                    'limitations':['Normal Stop, Emergency Stop and power isolation are different actions. Exact equipment actions require the approved procedure.',
+                                   'No ML diagnosis, notification delivery or machine control is performed by this answer.'],
+                    'evidence_source':'Role-specific SOP catalog','generated_at':api['_utcnow']().isoformat()}
         if 'critical' in question: rows=[row for row in rows if row.machine_status=='CRITICAL']
         elif 'warning' in question: rows=[row for row in rows if row.machine_status in {'WARNING','CRITICAL'}]
-        sensor_filters=[('motor temperature','Motor Temperature'),('rpm','RPM'),('spindle','RPM'),('vibration','Vibration'),('temperature','Temperature'),('torque','Torque'),('current draw','Current')]
+        sensor_filters=[('motor temperature','Motor Temperature'),('coolant flow','Coolant Flow'),('motor load','Motor Load'),('motor power','Motor Power'),('rpm','RPM'),('spindle','RPM'),('vibration','Vibration'),('temperature','Temperature'),('pressure','Pressure'),('voltage','Voltage'),('torque','Torque'),('current draw','Current')]
         for term,sensor in sensor_filters:
             if term in question:
                 rows=[row for row in rows if row.sensor_name==sensor]
@@ -118,14 +147,40 @@ def register(app, api):
                 limitations.append(calculation['round_definition'])
             else: limitations.append('Select a machine to calculate its recorded downtime.')
         if any(word in question for word in ['production','output','jobs','power','coolant','tool wear']):
-            limitations.append('Production counts, coolant temperature, kW power and tool wear are not sent by this Simulator; they cannot be inferred.')
-        if 'sop' in question: limitations.append('No manufacturer-verified SOP knowledge base is connected.')
+            limitations.append('Only recorded fields are available. Modeled counts and derived power are estimates; missing measurements cannot be inferred.')
+        if 'sop' in question: limitations.append('Project guidance is available; no manufacturer-verified SOP manual is connected.')
         safe_prior=[q for q in safe_prior if all(id==machine_id for id in re.findall(r'\bMCH-\d{3}\b',q.upper()))]
         context_question=('Previous manufacturing questions (context only): '+repr(safe_prior)+'\nCurrent question: '+payload.question) if safe_prior else payload.question
-        generated=generate_selected_analysis(context_question,machine_id,facts,calculation) if payload.use_ai else {
+        retrieval=retrieve_context(retrieval_question,facts,machine_id,api['_utcnow'](),
+            stale_seconds=max(2,int(os.getenv('TELEMETRY_STALE_SECONDS','30'))))
+        retrieval['followup_context_used']=retrieval_question!=payload.question
+        limitations.extend(retrieval['warnings'])
+        sources=retrieval['sources']
+        if calculation is not None:
+            sources.append({'id':'C1','kind':'calculation','title':'Observed STOPPED downtime over the last hour',
+                            'source':'FactoryPulse MySQL status intervals',
+                            'excerpt':f"Observed STOPPED time: {calculation['total_seconds']:.1f} seconds. Unobserved gaps are unknown."})
+            answer+=' [C1]'
+        elif facts:
+            answer+='\nSources: '+', '.join('['+s['id']+']' for s in sources if s['kind']=='telemetry')
+        else:
+            knowledge=local_knowledge_answer([s for s in sources if s['kind']=='project_knowledge'][:1])
+            if knowledge: answer+='\n\n'+knowledge
+        if not sources: limitations.append('No relevant evidence was retrieved. Rephrase or select a machine with saved readings.')
+        reading_ids={source.get('reading_id') for source in sources if source['kind']=='telemetry'}
+        retrieved_facts=[fact for fact in facts if fact.get('reading_id') in reading_ids]
+        if calculation is None and retrieved_facts:
+            answer=f'Retrieved {len(retrieved_facts)} of {len(rows)} matching latest readings in your authorized scope.\n'
+            answer+='\n'.join(f"[{source['id']}] {source['title']}: {source['excerpt']}"
+                               for source in sources if source['kind']=='telemetry')
+        knowledge_sources=[s for s in sources if s['kind']=='project_knowledge']
+        if retrieved_facts and knowledge_sources:
+            answer+='\n\nRelevant project guidance\n'+local_knowledge_answer(knowledge_sources[:1])
+        generated=generate_selected_analysis(context_question,machine_id,retrieved_facts,calculation,retrieved_sources=sources) if payload.use_ai else {
             'provider_status':'disabled','generated_analysis':None,'provider_message':'Local SQL evidence only; Gemini was not requested.'}
-        return {'answer':answer,'facts':facts,'calculation':calculation,'limitations':limitations,
-                **generated,'evidence_source':'FactoryPulse MySQL','generated_at':api['_utcnow']().isoformat()}
+        return {'answer':answer,'facts':retrieved_facts,'calculation':calculation,'limitations':limitations,
+                'sources':sources,'retrieval':{key:value for key,value in retrieval.items() if key!='sources'},
+                **generated,'evidence_source':'Authorized MySQL and locally retrieved project knowledge','generated_at':api['_utcnow']().isoformat()}
 
     @app.get('/api/v1/analytics/fleet-statistics')
     def fleet_statistics(user=Depends(api['require_roles'](['Supervisor', 'Manager', 'Maintenance', 'Admin']))):
@@ -156,88 +211,39 @@ def register(app, api):
 
     @app.get('/api/v1/analytics/manufacturing-kpis')
     def manufacturing_kpis(user=Depends(api['require_roles'](['Supervisor', 'Manager', 'Maintenance', 'Admin']))):
-        from .telemetry_cleaner_and_stats import compute_manufacturing_kpis
-        with engine().connect() as connection:
-            active_machines_count = connection.execute(sql("SELECT COUNT(*) FROM machines WHERE is_active = 1")).scalar() or 50
-            total_incidents = connection.execute(sql("SELECT COUNT(*) FROM incidents")).scalar() or 0
-            resolutions = connection.execute(sql("""
-                SELECT TIMESTAMPDIFF(MINUTE, created_at, closed_at) / 60.0 AS res_hours
-                FROM incidents WHERE closed_at IS NOT NULL
-            """)).scalars().all()
-            total_stoppages = connection.execute(sql("""
-                SELECT COUNT(*) FROM simulator_sensor_readings WHERE machine_status = 'STOPPED'
-            """)).scalar() or 0
-        downtime_hours = round(total_stoppages * 0.5, 1)
-        kpi_result = compute_manufacturing_kpis(
-            machines_count=active_machines_count,
-            total_planned_hours=24.0,
-            total_downtime_hours=downtime_hours,
-            total_production_parts=int(active_machines_count * 285),
-            total_incidents=total_incidents,
-            closed_incidents_resolution_hours=[float(r) for r in resolutions if r is not None]
-        )
-        return {
-            'timestamp': api['_utcnow']().isoformat(),
-            'data_source': 'MySQL FactoryPulse Analytics',
-            **kpi_result
-        }
+        rows=fleet(user=user);values={}
+        cohorts={r.machine_id:r.timestamp for r in rows if r.sensor_name=='Model Planned Time'}
+        for r in rows:
+            if r.timestamp==cohorts.get(r.machine_id) and r.data_quality=='GOOD' and isinstance(r.sensor_value,(int,float)) and not isinstance(r.sensor_value,bool) and r.sensor_value>=0:
+                values.setdefault(r.machine_id,{})[r.sensor_name]=r.sensor_value
+        complete=[v for v in values.values() if all(k in v for k in ('Model Planned Time','Model Run Time','Model Window Good','Model Window Scrap')) and 0<=v['Model Run Time']<=v['Model Planned Time']]
+        planned=sum(v['Model Planned Time'] for v in complete);run=sum(v['Model Run Time'] for v in complete)
+        params={};scope=sql_scope(user,'machine_code',params)
+        with engine().connect() as c:
+            incidents=c.execute(sql('SELECT COUNT(*) FROM incidents WHERE '+scope),params).scalar()
+            resolutions=c.execute(sql('SELECT TIMESTAMPDIFF(SECOND,created_at,closed_at)/3600.0 FROM incidents WHERE closed_at>=created_at AND '+scope),params).scalars().all()
+        return {'timestamp':api['_utcnow']().isoformat(),'data_source':'MySQL observed model windows; not certified shift OEE',
+            'active_machines':len(scoped_catalog(user,api['load_available_machine_master']())),
+            'planned_production_hours':planned/3600 if complete else None,'operating_hours':run/3600 if complete else None,
+            'total_downtime_hours':(planned-run)/3600 if complete else None,'availability_pct':100*run/planned if planned else None,
+            'downtime_pct':100*(planned-run)/planned if planned else None,'total_parts_produced':sum(v['Model Window Good']+v['Model Window Scrap'] for v in complete) if complete else None,
+            'total_incidents_reported':incidents,'mtbf_hours':None,'mttr_hours':sum(float(r) for r in resolutions)/len(resolutions) if resolutions else None,
+            'limitations':['MTTR is reported incident creation-to-closure time, not measured repair labor. MTBF needs validated failure intervals.','Only machines with complete model-window inputs are included.'],'reporting_machines':len(complete)}
 
     @app.get('/api/v1/analytics/business-insights')
     def business_insights(user=Depends(api['require_roles'](['Supervisor', 'Manager', 'Maintenance', 'Admin']))):
-        with engine().connect() as connection:
-            # 1. Top downtime machines
-            top_downtime = connection.execute(sql("""
-                SELECT machine_id, COUNT(*) AS stoppage_count, ROUND(COUNT(*) * 0.5, 1) AS downtime_hours
-                FROM simulator_sensor_readings
-                WHERE machine_status = 'STOPPED'
-                GROUP BY machine_id
-                ORDER BY stoppage_count DESC LIMIT 5
-            """)).mappings().all()
-
-            # 2. Top incident machines
-            top_incidents = connection.execute(sql("""
-                SELECT machine_code, COUNT(*) AS incident_count,
-                       SUM(CASE WHEN severity IN ('High', 'Critical') THEN 1 ELSE 0 END) AS high_sev_count
-                FROM incidents
-                GROUP BY machine_code
-                ORDER BY incident_count DESC LIMIT 5
-            """)).mappings().all()
-
-            # 3. Department stoppages
-            dept_stoppages = connection.execute(sql("""
-                SELECT department, COUNT(*) AS stoppage_events
-                FROM simulator_sensor_readings
-                WHERE machine_status = 'STOPPED' AND department IS NOT NULL AND department <> ''
-                GROUP BY department
-                ORDER BY stoppage_events DESC LIMIT 5
-            """)).mappings().all()
-
-            # 4. High vibration machines (warning threshold > 4.5 mm/s)
-            high_vib = connection.execute(sql("""
-                SELECT machine_id, sensor_name, MAX(CAST(JSON_UNQUOTE(sensor_value_json) AS DECIMAL(10,2))) as max_val
-                FROM simulator_sensor_readings
-                WHERE sensor_name LIKE '%Vibration%' AND JSON_VALID(sensor_value_json)
-                GROUP BY machine_id, sensor_name
-                HAVING max_val >= 4.5
-                ORDER BY max_val DESC LIMIT 5
-            """)).mappings().all()
-
-            # 5. Maintenance backlog
-            backlog = connection.execute(sql("""
-                SELECT status, COUNT(*) as count
-                FROM maintenance_work_orders
-                GROUP BY status
-            """)).mappings().all()
-
-        return {
-            'generated_at': api['_utcnow']().isoformat(),
-            'highest_downtime_machines': [dict(r) for r in top_downtime],
-            'highest_incident_machines': [dict(r) for r in top_incidents],
-            'department_stoppages': [dict(r) for r in dept_stoppages],
-            'high_vibration_machines': [dict(r) for r in high_vib],
-            'maintenance_backlog': [dict(r) for r in backlog],
-            'methodology': 'Calculated deterministically from MySQL database tables and telemetry logs.'
-        }
+        rows=fleet(user=user);down=[];vibration=[]
+        for r in rows:
+            if r.data_quality!='GOOD' or not isinstance(r.sensor_value,(int,float)):continue
+            if r.sensor_name=='Model Down Time':down.append({'machine_id':r.machine_id,'downtime_hours':r.sensor_value/3600,'stoppage_count':None})
+            if r.sensor_name=='Vibration' and r.sensor_value>r.expected_max:vibration.append({'machine_id':r.machine_id,'sensor_name':r.sensor_name,'max_val':r.sensor_value})
+        params={};scope=sql_scope(user,'machine_code',params)
+        with engine().connect() as c:
+            incidents=c.execute(sql("SELECT machine_code,COUNT(*) incident_count,SUM(severity IN ('High','Critical')) high_sev_count FROM incidents WHERE "+scope+' GROUP BY machine_code ORDER BY incident_count DESC LIMIT 5'),params).mappings().all()
+            backlog=c.execute(sql('SELECT status,COUNT(*) count FROM maintenance_work_orders WHERE '+scope+' GROUP BY status'),params).mappings().all()
+        return {'generated_at':api['_utcnow']().isoformat(),'highest_downtime_machines':sorted(down,key=lambda r:r['downtime_hours'],reverse=True)[:5],
+            'highest_incident_machines':[dict(r) for r in incidents],'department_stoppages':[],'high_vibration_machines':vibration[:5],
+            'maintenance_backlog':[dict(r) for r in backlog],'methodology':'Authorized SQL incidents and work orders; latest modeled downtime seconds converted to hours. Sensor row counts are never converted to duration. Reason-coded department totals are unavailable.'}
 
     @app.post('/api/v1/telemetry/validate-batch')
     def validate_batch(payload: dict, user=Depends(api['require_roles'](['Admin', 'Supervisor', 'Maintenance']))):

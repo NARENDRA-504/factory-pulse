@@ -1,7 +1,8 @@
 """Transaction-backed incident workflow. MySQL remains authoritative."""
 import json,uuid
+from .team_access import check_machine,sql_scope
 from fastapi import Depends,HTTPException,Request
-from pydantic import BaseModel,Field
+from pydantic import BaseModel,Field,field_validator
 
 class Report(BaseModel):
     machine_code:str=Field(min_length=1,max_length=32)
@@ -18,6 +19,12 @@ class OrderStatus(BaseModel):
     status: str
 class Closure(BaseModel):
     closure_notes:str=Field(min_length=3,max_length=8000)
+    @field_validator('closure_notes')
+    @classmethod
+    def meaningful_notes(cls,value):
+        value=value.strip()
+        if len(value)<3:raise ValueError('Enter repair and verification notes')
+        return value
 
 SELECT="""SELECT i.*,u.full_name AS reporter_name,u.role AS reporter_role,
  a.full_name AS assigned_to_name,b.full_name AS closed_by_name,b.role AS closed_role,
@@ -32,6 +39,7 @@ def register(app,api):
         if not row:raise HTTPException(404,'Incident not found')
         if user['role']=='Operator' and row['machine_code']!=user.get('assigned_machine'):raise HTTPException(403,'Only assigned-machine incidents are available')
         if user['role']=='Maintenance' and row['assigned_to_id'] not in (None,user['id']):raise HTTPException(403,'This incident is assigned to another technician')
+        check_machine(user,row['machine_code'])
         data=dict(row)
         for field in ('created_at','closed_at'):
             if data.get(field):data[field]=api['_iso_utc'](data[field])
@@ -46,6 +54,7 @@ def register(app,api):
             query='SELECT id FROM incidents';params={}
             if user['role']=='Operator':query+=' WHERE machine_code=:machine';params['machine']=user.get('assigned_machine') or ''
             elif user['role']=='Maintenance':query+=' WHERE assigned_to_id IS NULL OR assigned_to_id=:user';params['user']=user['id']
+            if user['role']=='Supervisor':query+=' WHERE '+sql_scope(user,'machine_code',params)
             ids=c.execute(sql(query+' ORDER BY created_at DESC,id DESC LIMIT 500'),params).scalars().all()
             return [fetch(c,id,user) for id in ids]
 
@@ -60,9 +69,10 @@ def register(app,api):
 
     @app.post('/api/v1/incidents')
     def create(payload:Report,request:Request,user=Depends(api['require_roles'](['Operator','Supervisor','Maintenance']))):
+        check_machine(user,payload.machine_code)
         if payload.severity not in ('Low','Medium','High','Critical'):raise HTTPException(422,'Invalid severity')
         if user['role']=='Operator' and payload.machine_code!=user.get('assigned_machine'):raise HTTPException(403,'Report only your assigned machine')
-        machine=next((m for m in api['load_canonical_machine_master']().values() if m['machineCode']==payload.machine_code),None)
+        machine=next((m for m in api['load_available_machine_master']().values() if m['machineCode']==payload.machine_code),None)
         if not machine:raise HTTPException(422,'Unknown machine code')
         # Snapshot only actual persisted readings, preserving their units.
         snapshot=api['get_simulator_telemetry_readings'](machine_id=machine['machineId'],limit=6,since=None,until=None,sensor_name=None,data_source='AI_SIMULATOR',user=user)
@@ -122,8 +132,9 @@ def register(app,api):
     @app.get('/api/v1/work-orders')
     def orders(user=Depends(api['require_roles'](['Admin','Supervisor','Maintenance','Manager']))):
         with api['get_telemetry_engine']().connect() as c:
-            condition=' WHERE w.technician_id=:user' if user['role']=='Maintenance' else ''
-            rows=c.execute(sql("SELECT w.*,i.incident_code,u.full_name AS technician_name FROM maintenance_work_orders w JOIN incidents i ON i.id=w.incident_id JOIN users u ON u.id=w.technician_id"+condition+' ORDER BY w.created_at DESC,w.id DESC LIMIT 500'),{'user':user['id']}).mappings().all()
+            params={'user':user['id']}
+            condition=' WHERE w.technician_id=:user' if user['role']=='Maintenance' else ' WHERE '+sql_scope(user,'w.machine_code',params)
+            rows=c.execute(sql("SELECT w.*,i.incident_code,u.full_name AS technician_name FROM maintenance_work_orders w JOIN incidents i ON i.id=w.incident_id JOIN users u ON u.id=w.technician_id"+condition+' ORDER BY w.created_at DESC,w.id DESC LIMIT 500'),params).mappings().all()
             return [dict(row) for row in rows]
 
     @app.patch('/api/v1/work-orders/{order_id}')
@@ -133,6 +144,7 @@ def register(app,api):
             row=c.execute(sql('SELECT * FROM maintenance_work_orders WHERE id=:id FOR UPDATE'),{'id':order_id}).mappings().first()
             if not row:raise HTTPException(404,'Work order not found')
             if user['role']=='Maintenance' and row['technician_id']!=user['id']:raise HTTPException(403,'Only the assigned technician may update this order')
+            check_machine(user,row['machine_code'])
             if row['status']=='Completed' and payload.status=='Completed':raise HTTPException(409,'Work order already completed')
             c.execute(sql("UPDATE maintenance_work_orders SET status=:status,completed_at=IF(:status='Completed',UTC_TIMESTAMP(),NULL) WHERE id=:id"),{'status':payload.status,'id':order_id})
             audit(c,user,request,'work_order_updated','work_order',order_id,['status','completed_at'])
@@ -144,6 +156,7 @@ def register(app,api):
         tech_name = payload.get('technician_name')
         priority = payload.get('priority', 'Medium')
         notes = payload.get('action_notes', '')
+        if machine_code: check_machine(user,machine_code)
         if not machine_code: raise HTTPException(422, 'machine_code is required')
         with api['get_telemetry_engine']().begin() as c:
             tech = c.execute(sql("SELECT id FROM users WHERE (full_name=:name OR work_id=:name) AND is_active=1 LIMIT 1"), {'name': tech_name or user['full_name']}).scalar()

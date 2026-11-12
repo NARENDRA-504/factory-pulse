@@ -1,41 +1,295 @@
 {
+  "checked_at_utc": "2026-11-03T05:20:17.317613+00:00",
+  "source_files_read": 22,
   "audit_passed": true,
+  "meaning_of_pass": "All four input groups are present, nonempty and contain required targets; not a clean-data or database-import claim.",
+  "required_columns_present": {
+    "tool_wear": true,
+    "turning_roughness": true,
+    "mill_telemetry": true,
+    "milling_life": true
+  },
   "datasets_verified": [
     {
-      "name": "CNC Machine Tool Wear Dataset",
-      "target": "Vb (Flank Wear Width)",
-      "unit": "mm",
+      "dataset": "tool_wear",
       "rows": 2054,
-      "cols": 154,
-      "null_policy": "Verified missing values in sensor_channel_14 and 15 (kept NULL, no auto-impute)",
-      "status": "VALIDATED"
+      "columns": 154,
+      "source_files": 1,
+      "missing_cells": 1142,
+      "duplicate_value_rows": 0
     },
     {
-      "name": "CNC Turning Roughness Dataset",
-      "target": "Ra (Surface Roughness Arithmetic Mean)",
-      "unit": "\u00b5m",
+      "dataset": "turning_roughness",
       "rows": 612,
-      "cols": 6,
-      "null_policy": "0 missing values. Exp1 (306 rows) + Exp2 (306 rows) merged with source_experiment.",
-      "status": "VALIDATED"
+      "columns": 27,
+      "source_files": 2,
+      "missing_cells": 900,
+      "duplicate_value_rows": 0
     },
     {
-      "name": "CNC Mill Tool Telemetry Dataset",
-      "target": "Machine Telemetry & Potential Anomaly Streams",
-      "unit": "RPM, mm/min, m/s\u00b2, A",
+      "dataset": "mill_telemetry",
       "rows": 25286,
-      "cols": 49,
-      "null_policy": "0 missing values across 18 merged experiment files.",
-      "status": "VALIDATED"
+      "columns": 48,
+      "source_files": 18,
+      "missing_cells": 0,
+      "duplicate_value_rows": 331
     },
     {
-      "name": "FeatureAndMetadata_Milling",
-      "target": "CycleToFailure (Tool Life to Failure)",
-      "unit": "Discrete cut cycles",
+      "dataset": "milling_life",
       "rows": 968,
-      "cols": 131,
-      "null_policy": "0 missing values in target CycleToFailure.",
-      "status": "VALIDATED"
+      "columns": 131,
+      "source_files": 1,
+      "missing_cells": 0,
+      "duplicate_value_rows": 0
     }
+  ],
+  "source_manifest": [
+    {
+      "dataset": "tool_wear",
+      "file": "Dataset_Machine_tool_wear.csv",
+      "rows": 2054,
+      "columns": 154,
+      "sha256": "0199bc69cae5e74be3d668244f708da78450c669be641d254b5ca6aa712dda56",
+      "bytes": 3346122
+    },
+    {
+      "dataset": "turning_roughness",
+      "file": "Exp1.csv",
+      "rows": 324,
+      "columns": 27,
+      "sha256": "8bf73b353a9e4f0c5268f24551af635095551023923989ca2962e7806699f37f",
+      "bytes": 41563
+    },
+    {
+      "dataset": "turning_roughness",
+      "file": "Exp2.csv",
+      "rows": 288,
+      "columns": 27,
+      "sha256": "7ce5fc7a3f1812ee151223b1d1bf7d7e3d24bbf186cd28ac3742b944ad51239a",
+      "bytes": 37650
+    },
+    {
+      "dataset": "mill_telemetry",
+      "file": "experiment_01.csv",
+      "rows": 1055,
+      "columns": 48,
+      "sha256": "b1efc6d21c58a55d5872e9b9636966439af903a6fe397fa9543f283713624a72",
+      "bytes": 467193
+    },
+    {
+      "dataset": "mill_telemetry",
+      "file": "experiment_02.csv",
+      "rows": 1668,
+      "columns": 48,
+      "sha256": "c0bbf98e2bc53ab12b959e4238e2fad238b6ef7349e57ed544cf1b413a923fd0",
+      "bytes": 736459
+    },
+    {
+      "dataset": "mill_telemetry",
+      "file": "experiment_03.csv",
+      "rows": 1521,
+      "columns": 48,
+      "sha256": "347c48f997b05c9fbeafe737b95a560e8643335b710b622bfc7f6a6853c83bd0",
+      "bytes": 671985
+    },
+    {
+      "dataset": "mill_telemetry",
+      "file": "experiment_04.csv",
+      "rows": 532,
+      "columns": 48,
+      "sha256": "6dfe2f12dbc52deafa2f2810790d4325a9bef36654cdf7c6308c5f4586672b73",
+      "bytes": 234196
+    },
+    {
+      "dataset": "mill_telemetry",
+      "file": "experiment_05.csv",
+      "rows": 462,
+      "columns": 48,
+      "sha256": "027f6c2c90a549f0715010508c3829d96ed43eca9b08a19c39e48492a74660f2",
+      "bytes": 202320
+    },
+    {
+      "dataset": "mill_telemetry",
+      "file": "experiment_06.csv",
+      "rows": 1296,
+      "columns": 48,
+      "sha256": "31e20dee3f5fac3f906f78a4163fc05fbf9e0281a287fa8571aa03c222762785",
+      "bytes": 574296
+    },
+    {
+      "dataset": "mill_telemetry",
+      "file": "experiment_07.csv",
+      "rows": 565,
+      "columns": 48,
+      "sha256": "3228adbc2b8b24bbafa8218fe9fa3c5d8b88f0318693c291f3e79cd1b3c14a69",
+      "bytes": 250860
+    },
+    {
+      "dataset": "mill_telemetry",
+      "file": "experiment_08.csv",
+      "rows": 605,
+      "columns": 48,
+      "sha256": "0448594a42a7a4200366712caee5c32fe4f3742dea5d40aada92c94af51911c5",
+      "bytes": 267820
+    },
+    {
+      "dataset": "mill_telemetry",
+      "file": "experiment_09.csv",
+      "rows": 740,
+      "columns": 48,
+      "sha256": "7a6ea651e857d7668e6612056a17e1fb2dbbafaa71f2964fe2135ee66e1a35b0",
+      "bytes": 328887
+    },
+    {
+      "dataset": "mill_telemetry",
+      "file": "experiment_10.csv",
+      "rows": 1301,
+      "columns": 48,
+      "sha256": "982b68db1a26be8f191e56ee73576d253518bff33b671918b5ab802c671b3e63",
+      "bytes": 574595
+    },
+    {
+      "dataset": "mill_telemetry",
+      "file": "experiment_11.csv",
+      "rows": 2314,
+      "columns": 48,
+      "sha256": "82c4b6ebdb3100fa739bd8390736d8f42bf7a891c630c0d5d3c770cab091e4da",
+      "bytes": 1022545
+    },
+    {
+      "dataset": "mill_telemetry",
+      "file": "experiment_12.csv",
+      "rows": 2276,
+      "columns": 48,
+      "sha256": "26094bd290a1aa98342f944fd2bbe40a3e4311074d022bb33fa8cefff59ce3d5",
+      "bytes": 1004981
+    },
+    {
+      "dataset": "mill_telemetry",
+      "file": "experiment_13.csv",
+      "rows": 2233,
+      "columns": 48,
+      "sha256": "73bd4f1a4cb1d7ce42912d0626b83d361dcd3fb7879f70c774be2000971f2c58",
+      "bytes": 987653
+    },
+    {
+      "dataset": "mill_telemetry",
+      "file": "experiment_14.csv",
+      "rows": 2332,
+      "columns": 48,
+      "sha256": "380018a18ea5f0f48127fba21cd53795d61d89464339ed08d67f5b77bc433faf",
+      "bytes": 1030795
+    },
+    {
+      "dataset": "mill_telemetry",
+      "file": "experiment_15.csv",
+      "rows": 1381,
+      "columns": 48,
+      "sha256": "9a108ab590fd67c4a43c7f4548205b5a58fdf121bc0bba659b32df1be5ba8a21",
+      "bytes": 608883
+    },
+    {
+      "dataset": "mill_telemetry",
+      "file": "experiment_16.csv",
+      "rows": 602,
+      "columns": 48,
+      "sha256": "8bbe7f6e0b17ebc80ab5eb73ae67ed35535e6f0ae7679fff08f413f8851a3070",
+      "bytes": 264491
+    },
+    {
+      "dataset": "mill_telemetry",
+      "file": "experiment_17.csv",
+      "rows": 2150,
+      "columns": 48,
+      "sha256": "0cd2ec585c6630c7a5dce1556546df15c3cc297d74c8d87489e04f4a4539103a",
+      "bytes": 948848
+    },
+    {
+      "dataset": "mill_telemetry",
+      "file": "experiment_18.csv",
+      "rows": 2253,
+      "columns": 48,
+      "sha256": "f9e0b002f824b81850ef4ed0eab51942f1a208cb71bf1a53c0fee696478183c5",
+      "bytes": 996061
+    },
+    {
+      "dataset": "milling_life",
+      "file": "FeatureAndMetadata_Milling.csv",
+      "rows": 968,
+      "columns": 131,
+      "sha256": "e125471f983e98ae326e2c47e15f633bb30738e285b9ad6e54b5e364d4d66dbc",
+      "bytes": 1797280
+    }
+  ],
+  "target_statistics": {
+    "tool_wear": [
+      {
+        "column": "Vb",
+        "count": 2054,
+        "missing_or_invalid": 0,
+        "min": 0.0,
+        "mean": 151.10392794547224,
+        "median": 124.69,
+        "std_sample": 116.6045145758045,
+        "p25": 74.774,
+        "p75": 187.40800000000002,
+        "p95": 363.61285,
+        "max": 792.346
+      }
+    ],
+    "turning_roughness": [
+      {
+        "column": "Ra",
+        "count": 612,
+        "missing_or_invalid": 0,
+        "min": 0.142,
+        "mean": 0.6826797385620915,
+        "median": 0.622,
+        "std_sample": 0.3043832680363492,
+        "p25": 0.45775,
+        "p75": 0.86375,
+        "p95": 1.181,
+        "max": 1.812
+      }
+    ],
+    "mill_telemetry": [
+      {
+        "column": "S1_ActualVelocity",
+        "count": 25286,
+        "missing_or_invalid": 0,
+        "min": -0.069,
+        "mean": 38.98642385707506,
+        "median": 53.3,
+        "std_sample": 23.49126690548999,
+        "p25": 0.002,
+        "p75": 53.4,
+        "p95": 53.5,
+        "max": 53.8
+      }
+    ],
+    "milling_life": [
+      {
+        "column": "CycleToFailure",
+        "count": 968,
+        "missing_or_invalid": 0,
+        "min": 0,
+        "mean": 48.52066115702479,
+        "median": 41.0,
+        "std_sample": 35.98841573322512,
+        "p25": 19.0,
+        "p75": 73.0,
+        "p95": 117.0,
+        "max": 149
+      }
+    ]
+  },
+  "database_writes": false,
+  "rows_dropped": 0,
+  "values_imputed": 0,
+  "limitations": [
+    "Missing values and duplicate-valued rows retained.",
+    "Vb source unit is unverified; no automatic mm label.",
+    "CycleToFailureNormalized must not predict CycleToFailure.",
+    "MySQL research ingestion is checked separately in the notebook."
   ]
 }

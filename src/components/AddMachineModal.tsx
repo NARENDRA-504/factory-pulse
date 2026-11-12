@@ -269,9 +269,8 @@ export const AddMachineModal: React.FC<AddMachineModalProps> = ({
                     onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
                   >
                     <option value="Nominal">Nominal (Running)</option>
-                    <option value="Idle">Idle (Waiting)</option>
-                    <option value="Maintenance">Maintenance</option>
-                    <option value="Down">Down (Stoppage)</option>
+                    <option value="Offline">Offline / not yet commissioned</option>
+                    <option value="Critical">Critical</option>
                     <option value="Warning">Warning</option>
                   </select>
                 </div>
@@ -286,7 +285,7 @@ export const AddMachineModal: React.FC<AddMachineModalProps> = ({
                       onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
                     />
                     <span className="font-semibold text-teal-800">
-                      Activate immediately in AI Simulator roster
+                      Make available for onboarding
                     </span>
                   </label>
                 </div>

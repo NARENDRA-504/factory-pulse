@@ -34,6 +34,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         return 'text-purple-700 bg-purple-50 border-purple-200';
       case 'Maintenance':
         return 'text-amber-700 bg-amber-50 border-amber-200';
+      case 'Super Admin':
       case 'Admin':
         return 'text-rose-700 bg-rose-50 border-rose-200';
     }

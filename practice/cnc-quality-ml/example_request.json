@@ -1,0 +1,11 @@
+{
+  "material": "Aluminium",
+  "spindle_speed_rpm": 4118.4,
+  "feed_rate_mm_min": 474.6,
+  "machine_temperature_c": 64.33,
+  "vibration_mm_s": 2.503,
+  "pressure_bar": 5.093,
+  "coolant_flow_l_min": 38.79,
+  "tool_usage_hours": 55.89,
+  "ambient_temperature_c": 25.14
+}

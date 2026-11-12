@@ -3,7 +3,6 @@
  * Communicates with Python FastAPI backend (VITE_API_BASE_URL)
  * or provides persistent local operational store for interactive review.
  */
-
 import {
   UserProfile,
   Machine,
@@ -24,7 +23,6 @@ import {
   AIMachineHealthAnalysis,
   MachineDowntimeSummary,
 } from '../types';
-
 import {
   SEED_MACHINES,
   SEED_INCIDENTS,
@@ -36,7 +34,6 @@ import {
   PIPELINE_AUDIT,
 } from '../data/seedData';
 import { notificationService } from './notificationService';
-
 const STORAGE_KEYS = {
   AUTH_TOKEN: 'factorypulse_auth_token',
   INCIDENTS: 'ziro_incidents_store',
@@ -45,7 +42,6 @@ const STORAGE_KEYS = {
   DYNAMIC_MACHINES: 'ziro_dynamic_machines',
   ACTIVE_OVERRIDES: 'ziro_active_overrides',
 };
-
 export interface PersistedSimulatorReading {
   reading_id: string;
   machine_id: string;
@@ -65,20 +61,16 @@ export interface PersistedSimulatorReading {
   fault_mode?: string | null;
   data_provenance: 'SIMULATED';
 }
-
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8001').replace(/\/$/, '');
-
 // Resilient in-memory fallback store when localStorage is restricted in iframes / tests
 const memoryStore: Record<string, string> = {
   [STORAGE_KEYS.INCIDENTS]: JSON.stringify(SEED_INCIDENTS),
   [STORAGE_KEYS.WORK_ORDERS]: JSON.stringify(SEED_WORK_ORDERS),
 };
-
 function getSessionToken(): string | null {
   try { return typeof window !== 'undefined' ? window.sessionStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) : null; }
   catch { return null; }
 }
-
 function setSessionToken(token: string | null): void {
   try {
     if (typeof window !== 'undefined' && window.sessionStorage) {
@@ -87,12 +79,10 @@ function setSessionToken(token: string | null): void {
     }
   } catch { /* session storage may be blocked by an embedded browser */ }
 }
-
 function authHeaders(): HeadersInit {
   const token = getSessionToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
-
 function toUserProfile(user: any): UserProfile {
   return {
     id: user.id,
@@ -104,10 +94,13 @@ function toUserProfile(user: any): UserProfile {
     department: user.department || undefined,
     shift: user.shift || undefined,
     sessionStartedAt: user.session_started_at_utc || undefined,
+    viewOwnerWorkId: user.view_owner_work_id || undefined,
+    viewOwnerName: user.view_owner_name || undefined,
+    viewRemainingSeconds: user.view_remaining_seconds,
+    viewReason: user.view_reason || undefined,
     status: user.is_active === false ? 'Offline' : 'Active',
   };
 }
-
 function safeGetItem(key: string): string | null {
   try {
     if (typeof window !== 'undefined' && window.localStorage) {
@@ -119,7 +112,6 @@ function safeGetItem(key: string): string | null {
   }
   return memoryStore[key] || null;
 }
-
 function safeSetItem(key: string, val: string): void {
   memoryStore[key] = val;
   try {
@@ -130,7 +122,6 @@ function safeSetItem(key: string, val: string): void {
     // Sandboxed iframe / private window fallback
   }
 }
-
 // Synchronize memory store with localStorage if present
 function initializePersistence() {
   try {
@@ -146,14 +137,11 @@ function initializePersistence() {
     // Ignore iframe security error
   }
 }
-
 initializePersistence();
-
 // -------------------------------------------------------------
 // AI Simulator Live Data Receiver & Cache
 // -------------------------------------------------------------
 const simulatorTelemetryCache: Record<string, Partial<TelemetryReading> & { receivedAt: number }> = {};
-
 export function updateSimulatorTelemetry(machineCode: string, data: Partial<TelemetryReading>) {
   if (!machineCode) return;
   simulatorTelemetryCache[machineCode] = {
@@ -162,7 +150,6 @@ export function updateSimulatorTelemetry(machineCode: string, data: Partial<Tele
     receivedAt: Date.now(),
   };
 }
-
 export function getSimulatorTelemetry(machineCode: string): (Partial<TelemetryReading> & { receivedAt: number }) | null {
   const item = simulatorTelemetryCache[machineCode];
   // Valid within 45 seconds of last telemetry broadcast
@@ -171,7 +158,6 @@ export function getSimulatorTelemetry(machineCode: string): (Partial<TelemetryRe
   }
   return null;
 }
-
 // Global browser listeners for simulator telemetry feeds
 if (typeof window !== 'undefined') {
   window.addEventListener('message', (event) => {
@@ -197,7 +183,6 @@ if (typeof window !== 'undefined') {
       // ignore cross-origin/sandbox exceptions
     }
   });
-
   window.addEventListener('factorypulse:simulator', ((event: CustomEvent) => {
     if (event.detail && (event.detail.machineCode || event.detail.code)) {
       const code = event.detail.machineCode || event.detail.code;
@@ -205,44 +190,37 @@ if (typeof window !== 'undefined') {
     }
   }) as EventListener);
 }
-
 export const apiClient = {
   getLocalDynamicMachines(): any[] {
     const raw = safeGetItem(STORAGE_KEYS.DYNAMIC_MACHINES);
     return raw ? JSON.parse(raw) : [];
   },
-
   getLocalActiveOverrides(): Record<string, boolean> {
     const raw = safeGetItem(STORAGE_KEYS.ACTIVE_OVERRIDES);
     return raw ? JSON.parse(raw) : {};
   },
-
   async createMachine(payload: NewMachineInput): Promise<any> {
     const response = await fetch(`${API_BASE_URL}/api/v1/admin/machines`, {method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(payload),signal:AbortSignal.timeout(15000)});
     const body = await response.json();
     if (!response.ok) throw new Error(body.detail || 'Machine could not be saved in MySQL');
     return body;
   },
-
   async toggleMachineActivation(machineId: string, isActive: boolean): Promise<any> {
     const response = await fetch(`${API_BASE_URL}/api/v1/admin/machines/${encodeURIComponent(machineId)}/activation`, {method:'PATCH',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({is_active:isActive}),signal:AbortSignal.timeout(10000)});
     const body = await response.json();
     if (!response.ok) throw new Error(body.detail || 'Machine activation could not be saved');
     return body;
   },
-
   getLocalMachineInventory(): any {
     const overrides = this.getLocalActiveOverrides();
     const dynamic = this.getLocalDynamicMachines();
     const records: MachineInventoryRecord[] = [];
-
     // First 50 canonical machines from SEED_MACHINES are ACTIVE by default
     SEED_MACHINES.forEach((m, idx) => {
       const isDefaultActive = idx < 50;
       const isActive = overrides[m.machineId] !== undefined ? overrides[m.machineId] : isDefaultActive;
       const isDown = m.status === 'Critical' || m.status === 'Offline';
       const isMaint = m.status === 'Warning';
-
       records.push({
         machine_id: m.machineId,
         machine_code: m.machineCode || m.code,
@@ -267,7 +245,6 @@ export const apiClient = {
         sensors: [],
       });
     });
-
     // Append dynamic created machines (all active by default)
     dynamic.forEach((d: any) => {
       const mid = d.machineId || d.machine_id;
@@ -296,14 +273,12 @@ export const apiClient = {
         sensors: [],
       });
     });
-
     const activeRecs = records.filter((r) => r.is_active);
     const activeCount = activeRecs.length;
     const runningCount = activeRecs.filter((r) => r.operating_status === 'Nominal' && r.connection_status === 'RECEIVING').length;
     const idleCount = activeRecs.filter((r) => r.operating_status === 'Idle' || r.connection_status === 'WAITING').length;
     const downCount = activeRecs.filter((r) => r.operating_status === 'STOPPED' || r.operating_status === 'Critical').length;
     const maintenanceCount = activeRecs.filter((r) => r.operating_status === 'MAINTENANCE').length;
-
     return {
       records,
       sql_registered: 50 + dynamic.length,
@@ -320,7 +295,6 @@ export const apiClient = {
       management_note: 'Configured default active population: 50 machines. Additional registered machines expand active capacity dynamically.',
     };
   },
-
   async getAIMachineHealth(machineId: string): Promise<AIMachineHealthAnalysis> {
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/machines/${encodeURIComponent(machineId)}/ai-health`, {
@@ -333,42 +307,34 @@ export const apiClient = {
     } catch {
       // offline empirical assessment
     }
-
     // Deterministic empirical health evaluation
     const machine = SEED_MACHINES.find((m) => m.machineId === machineId || m.code === machineId) || this.getLocalDynamicMachines().find((d: any) => d.machineId === machineId || d.machine_id === machineId) || SEED_MACHINES[0];
     const isDown = machine.status === 'Critical' || machine.status === 'Offline';
     const isWarn = machine.status === 'Warning';
-
     const temp = machine.coolantTemperatureC || 24.5;
     const vib = machine.vibrationMmS || 1.35;
     const rpm = machine.spindleRpm || 10000;
-
     const tempWarning = temp > 45 ? {
       severity: temp > 65 ? 'CRITICAL' : 'WARNING',
       observed_value: `${temp.toFixed(1)} °C`,
       threshold: '45.0 °C',
       message: temp > 65 ? 'Critical thermal escalation exceeding spindle emergency cutoff.' : 'Elevated temperature detected above normal cutting range.',
     } : null;
-
     const vibWarning = vib > 2.5 ? {
       severity: vib > 4.5 ? 'CRITICAL' : 'WARNING',
       observed_value: `${vib.toFixed(2)} mm/s`,
       threshold: '2.5 mm/s',
       message: vib > 4.5 ? 'Severe vibration spike indicating dynamic spindle imbalance or tool chatter.' : 'Moderate vibration elevation approaching ISO tolerance boundary.',
     } : null;
-
     const failureIndicators: string[] = [];
     if (vibWarning) failureIndicators.push('Spindle Bearing Micro-Pitting / Tool Flank Wear (Vb)');
     if (tempWarning) failureIndicators.push('Coolant Circuit Heat Exchanger Saturation');
     if (isDown) failureIndicators.push('Axis Inrush Surge / Emergency Stop Triggered');
-
     const maintenanceRecs: string[] = [];
     if (vibWarning) maintenanceRecs.push('Inspect spindle taper runout and replace worn cutting inserts.');
     if (tempWarning) maintenanceRecs.push('Check cutting fluid reservoir level and cleanse line filters.');
     if (maintenanceRecs.length === 0) maintenanceRecs.push('Maintain regular shift operation; verify hydrostatic guideway oil levels.');
-
     const overall: 'NOMINAL' | 'WARNING' | 'CRITICAL' = isDown || (vibWarning?.severity === 'CRITICAL') ? 'CRITICAL' : (isWarn || tempWarning || vibWarning) ? 'WARNING' : 'NOMINAL';
-
     return {
       machine_id: machineId,
       machine_code: machine.machineCode || machine.code,
@@ -393,7 +359,6 @@ export const apiClient = {
       generated_at: new Date().toISOString(),
     };
   },
-
   async saveMachineRegistration(machineId: string, payload: any): Promise<any> {
     const response = await fetch(`${API_BASE_URL}/api/v1/admin/machine-inventory/${encodeURIComponent(machineId)}`, {method:'PUT',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(payload),signal:AbortSignal.timeout(20000)});
     const body=await response.json();
@@ -406,7 +371,6 @@ export const apiClient = {
     if(!response.ok) throw new Error(body.detail || 'SQL inventory is unavailable');
     return body;
   },
-
   async getMyActivity(): Promise<{ events: Array<{id:number;event_type:string;occurred_at_utc:string;occurred_at_local:string;role:string}>; factory_time_zone:string }> {
     const response = await fetch(`${API_BASE_URL}/api/v1/auth/me/activity`, { headers: authHeaders(), signal: AbortSignal.timeout(5000) });
     if (!response.ok) throw new Error('Your activity history could not be loaded.');
@@ -450,7 +414,6 @@ export const apiClient = {
     }
     return response.json() as Promise<PersistedSimulatorReading[]>;
   },
-
   async getLatestSimulatorFleetTelemetry(): Promise<PersistedSimulatorReading[]> {
     const response = await fetch(`${API_BASE_URL}/api/v1/telemetry/fleet/latest`, {
       headers: authHeaders(), signal: AbortSignal.timeout(8000),
@@ -465,7 +428,6 @@ export const apiClient = {
     }
     return response.json() as Promise<PersistedSimulatorReading[]>;
   },
-
   // -------------------------------------------------------------
   // Authentication & Session
   // -------------------------------------------------------------
@@ -480,14 +442,12 @@ export const apiClient = {
     setSessionToken(body.access_token);
     return toUserProfile(body.user);
   },
-
   async getCurrentUser(): Promise<UserProfile | null> {
     if (!getSessionToken()) return null;
     const response = await fetch(`${API_BASE_URL}/api/v1/auth/me`, { headers: authHeaders() });
     if (!response.ok) { setSessionToken(null); return null; }
     return toUserProfile(await response.json());
   },
-
   async logout(): Promise<void> {
     try {
       if (getSessionToken()) {
@@ -497,14 +457,36 @@ export const apiClient = {
     }
     finally { setSessionToken(null); }
   },
-
   async getActivityLog(limit = 250): Promise<{ factory_time_zone: string; events: any[]; demo_mode?: boolean }> {
     const response = await fetch(`${API_BASE_URL}/api/v1/admin/activity-log?limit=${limit}`, { headers: authHeaders() });
     const body = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(body.detail || `Activity log request failed (${response.status})`);
     return body;
   },
-
+  async operationRequest(path:string,method='GET',data?:any): Promise<any> {
+    const response=await fetch(`${API_BASE_URL}/api/v1/${path}`,{method,headers:{...authHeaders(),...(data?{'Content-Type':'application/json'}:{})},...(data?{body:JSON.stringify(data)}:{}),signal:AbortSignal.timeout(30000)});
+    const body=await response.json();if(!response.ok)throw new Error(body.detail||'Operation could not be completed');return body;
+  },
+  async getShift(machineId?: string, offset=0): Promise<any> {
+    const response=await fetch(`${API_BASE_URL}/api/v1/operations/shift?offset=${offset}${machineId ? '&machine_id='+encodeURIComponent(machineId) : ''}`,{headers:authHeaders(),signal:AbortSignal.timeout(30000)});
+    const body=await response.json();if(!response.ok)throw new Error(body.detail||'Shift records unavailable');return body;
+  },
+  async recordShiftEvent(machineId:string,event:string,note:string): Promise<any> {
+    const response=await fetch(`${API_BASE_URL}/api/v1/operations/shift/events`,{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({machine_id:machineId,event,note})});
+    const body=await response.json();if(!response.ok)throw new Error(body.detail||'Shift event could not be saved');return body;
+  },
+  async getStoragePolicy(): Promise<any> {
+    const response=await fetch(`${API_BASE_URL}/api/v1/admin/storage`,{headers:authHeaders()});const body=await response.json();if(!response.ok)throw new Error(body.detail||'Storage status unavailable');return body;
+  },
+  async saveStoragePolicy(policy:any): Promise<any> {
+    const response=await fetch(`${API_BASE_URL}/api/v1/admin/storage`,{method:'PUT',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(policy)});const body=await response.json();if(!response.ok)throw new Error(body.detail||'Storage policy could not be saved');return body;
+  },
+  async getWorkforceRoster(): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/api/v1/admin/workforce`, { headers: authHeaders() });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(body.detail || 'Workforce assignments unavailable');
+    return body;
+  },
   // -------------------------------------------------------------
   // User Management & Access Governance
   // -------------------------------------------------------------
@@ -514,7 +496,6 @@ export const apiClient = {
     if (!response.ok) throw new Error(body.detail || `Personnel request failed (${response.status})`);
     return body.map(toUserProfile);
   },
-
   async createUser(newUser: Omit<UserProfile, 'id'> & { password: string }): Promise<UserProfile> {
     const response = await fetch(`${API_BASE_URL}/api/v1/admin/users`, {
       method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
@@ -524,7 +505,6 @@ export const apiClient = {
     if (!response.ok) throw new Error(body.detail || `Personnel create failed (${response.status})`);
     return toUserProfile(body);
   },
-
   async updateUser(id: number, data: Partial<UserProfile> & { password?: string; isActive?: boolean }): Promise<UserProfile> {
     const response = await fetch(`${API_BASE_URL}/api/v1/admin/users/${id}`, {
       method: 'PATCH', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
@@ -534,13 +514,11 @@ export const apiClient = {
     if (!response.ok) throw new Error(body.detail || `Personnel update failed (${response.status})`);
     return toUserProfile(body);
   },
-
   async deleteUser(id: number): Promise<void> {
     const response = await fetch(`${API_BASE_URL}/api/v1/admin/users/${id}`, { method: 'DELETE', headers: authHeaders() });
     const body = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(body.detail || `Personnel deactivation failed (${response.status})`);
   },
-
   // -------------------------------------------------------------
   // Machines & Floor Status
   // -------------------------------------------------------------
@@ -553,7 +531,6 @@ export const apiClient = {
       return {...metadata,...row,machineId:row.machine_id,machineCode:row.machine_code,code:row.machine_code,name:row.name,displayName:row.name,plant:row.plant,lineId:row.line_id,productionLine:row.line_id,status:row.status} as Machine;
     });
   },
-
   async getMachineByCode(code: string): Promise<Machine | undefined> {
     if (code === 'CNC-MILL-01') return SEED_MACHINES[0];
     if (code === 'CNC-MILL-02') return SEED_MACHINES[1];
@@ -569,7 +546,6 @@ export const apiClient = {
         m.displayName === code
     );
   },
-
   // -------------------------------------------------------------
   // Local demo telemetry generation; this client-side action is not a backend database write.
   // -------------------------------------------------------------
@@ -583,13 +559,10 @@ export const apiClient = {
           m.telemetryKey === machineCode ||
           m.machineId === machineCode
       ) || SEED_MACHINES[0];
-
     const baseRpm = matched?.spindleRpm ?? (machineCode.includes('LATHE') || machineCode.includes('TURN') ? 1800 : 4500);
     const baseKw = matched?.powerKw ?? (machineCode.includes('LATHE') || machineCode.includes('TURN') ? 7.5 : 12.0);
-
     // Check if live AI simulator telemetry was received
     const cachedSim = getSimulatorTelemetry(machineCode);
-
     if (anomalyType === 'HIGH_CHATTER') {
       return {
         timestamp: now,
@@ -611,7 +584,6 @@ export const apiClient = {
         activeAlert: 'High Spindle Chatter Resonance',
       };
     }
-
     if (anomalyType === 'THERMAL_OVERLOAD') {
       return {
         timestamp: now,
@@ -633,7 +605,6 @@ export const apiClient = {
         activeAlert: 'Z-Axis Servo Thermal Surge',
       };
     }
-
     if (anomalyType === 'FEED_SPIKE') {
       return {
         timestamp: now,
@@ -655,7 +626,6 @@ export const apiClient = {
         activeAlert: 'Feed Rate Inrush Surge',
       };
     }
-
     // Nominal empirical baseline / real incoming AI simulator telemetry
     return {
       timestamp: now,
@@ -676,7 +646,6 @@ export const apiClient = {
       activeAlert: cachedSim?.activeAlert ?? (matched?.activeAlertCount && matched.activeAlertCount > 0 ? `${matched.displayName}: Alert Logged` : null),
     };
   },
-
   async injectSimulatorTelemetry(
     machineCode: string,
     anomalyType: string,
@@ -685,9 +654,7 @@ export const apiClient = {
     if (userRole !== 'Supervisor' && userRole !== 'Maintenance') {
       throw new Error('Permission Denied: Only Supervisor or Maintenance may trigger simulated telemetry injection.');
     }
-
     const reading = this.getLiveTelemetrySnapshot(machineCode, anomalyType);
-
     // Keep demo events in browser storage only; persistent ingestion uses the FastAPI route.
     const existing = JSON.parse(safeGetItem(STORAGE_KEYS.SIM_EVENTS) || '[]');
     existing.unshift({
@@ -696,7 +663,6 @@ export const apiClient = {
       injectedAt: new Date().toISOString(),
     });
     safeSetItem(STORAGE_KEYS.SIM_EVENTS, JSON.stringify(existing.slice(0, 100)));
-
     // Immediately broadcast live notification to Supervisor and Maintenance
     try {
       notificationService.notifyAbnormalTelemetry({
@@ -707,10 +673,8 @@ export const apiClient = {
     } catch (e) {
       console.warn('Failed to dispatch abnormal telemetry notification', e);
     }
-
     return reading;
   },
-
   // -------------------------------------------------------------
   // Incidents Workflow & Consistent Permissions
   // -------------------------------------------------------------
@@ -730,30 +694,24 @@ export const apiClient = {
   async assignIncident(id:number,technicianName:string,_role:UserRole):Promise<Incident>{return this.toIncident(await this.incidentRequest(`incidents/${id}/assign`,'PATCH',{technician_name:technicianName}));},
   async updateIncidentProgress(id:number,notes:string,_role:UserRole):Promise<Incident>{return this.toIncident(await this.incidentRequest(`incidents/${id}/progress`,'PATCH',{progress_notes:notes}));},
   async closeIncident(id:number,notes:string,_user:UserProfile):Promise<Incident>{return this.toIncident(await this.incidentRequest(`incidents/${id}/close`,'PATCH',{closure_notes:notes}));},
-
   // -------------------------------------------------------------
   // AI Incident Investigation Assistant (Server-Side Calling Pattern)
   // -------------------------------------------------------------
   async diagnoseIncidentWithAI(_incidentId:number):Promise<AIDiagnosisResult>{
     throw new Error('Incident AI diagnosis is unavailable. Use Factory Intelligence on the live dashboard for SQL evidence and optional selected-machine AI analysis.');
   },
-
   async getToolWearAnalytics(): Promise<Dataset1ToolWearSummary> {
     return DATASET_1_SUMMARY;
   },
-
   async getRoughnessAnalytics(): Promise<Dataset2RoughnessSummary> {
     return DATASET_2_SUMMARY;
   },
-
   async getTelemetryAnalytics(): Promise<Dataset3TelemetrySummary> {
     return DATASET_3_SUMMARY;
   },
-
   async getCycleToFailureAnalytics(): Promise<Dataset4CycleToFailureSummary> {
     return DATASET_4_SUMMARY;
   },
-
   async getWorkOrders(): Promise<MaintenanceWorkOrder[]> {
     const rows=await this.incidentRequest('work-orders');
     return rows.map((row:any)=>({id:row.id,orderCode:row.order_code,incidentCode:row.incident_code,machineCode:row.machine_code,technicianName:row.technician_name,priority:row.priority,actionTaken:row.action_taken,status:row.status,createdAt:row.created_at,completedAt:row.completed_at}));
@@ -762,11 +720,9 @@ export const apiClient = {
     await this.incidentRequest(`work-orders/${_orderId}`,'PATCH',{status:_status});
     return this.getWorkOrders();
   },
-
   async createWorkOrder(payload: { machine_code: string; technician_name?: string; priority?: string; action_notes?: string }): Promise<any> {
     return this.incidentRequest('work-orders','POST',payload);
   },
-
   async getFleetStatistics(): Promise<any> {
     try {
       const res = await fetch(`${API_BASE_URL}/api/v1/analytics/fleet-statistics`, {
@@ -787,68 +743,15 @@ export const apiClient = {
       total_sample_readings: 300,
     };
   },
-
-  async getManufacturingKPIs(): Promise<any> {
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/analytics/manufacturing-kpis`, {
-        headers: authHeaders(),
-        signal: AbortSignal.timeout(8000),
-      });
-      if (res.ok) return await res.json();
-    } catch { /* offline fallback */ }
-    return {
-      active_machines: 50,
-      planned_production_hours: 1200.0,
-      operating_hours: 1162.5,
-      total_downtime_hours: 37.5,
-      availability_pct: 96.88,
-      downtime_pct: 3.12,
-      total_parts_produced: 14250,
-      total_incidents_reported: 6,
-      mtbf_hours: 193.75,
-      mttr_hours: 1.45,
-    };
+  async getManufacturingKPIs(): Promise<any> {return this.operationRequest('analytics/manufacturing-kpis');},
+  async getBusinessInsights(): Promise<any> {return this.operationRequest('analytics/business-insights');},
+  async getSopGuidance(module: string, signal?: AbortSignal, machineId?: string, question = ''): Promise<any> {
+    const params = new URLSearchParams({module, question});
+    if (machineId) params.set('machine_id', machineId);
+    const response = await fetch(`${API_BASE_URL}/api/v1/guidance/sop?${params}`, {headers: authHeaders(), signal});
+    if (!response.ok) throw new Error(response.status === 403 ? 'SOP guidance is unavailable for this role.' : 'SOP guidance could not be loaded.');
+    return response.json();
   },
-
-  async getBusinessInsights(): Promise<any> {
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/analytics/business-insights`, {
-        headers: authHeaders(),
-        signal: AbortSignal.timeout(8000),
-      });
-      if (res.ok) return await res.json();
-    } catch { /* offline fallback */ }
-    return {
-      highest_downtime_machines: [
-        { machine_id: 'MCH-012', stoppage_count: 14, downtime_hours: 7.0 },
-        { machine_id: 'MCH-007', stoppage_count: 11, downtime_hours: 5.5 },
-        { machine_id: 'MCH-031', stoppage_count: 8, downtime_hours: 4.0 },
-        { machine_id: 'MCH-003', stoppage_count: 6, downtime_hours: 3.0 },
-        { machine_id: 'MCH-048', stoppage_count: 5, downtime_hours: 2.5 },
-      ],
-      highest_incident_machines: [
-        { machine_code: 'CNC-5AX-012', incident_count: 4, high_sev_count: 2 },
-        { machine_code: 'CNC-5AX-007', incident_count: 3, high_sev_count: 1 },
-        { machine_code: 'CNC-5AX-031', incident_count: 2, high_sev_count: 1 },
-      ],
-      department_stoppages: [
-        { department: 'Precision Machining', stoppage_events: 28 },
-        { department: 'Heavy Milling', stoppage_events: 19 },
-        { department: 'Micro-Finishing', stoppage_events: 9 },
-      ],
-      high_vibration_machines: [
-        { machine_id: 'MCH-012', sensor_name: 'Vibration', max_val: 5.82 },
-        { machine_id: 'MCH-007', sensor_name: 'Vibration', max_val: 4.95 },
-      ],
-      maintenance_backlog: [
-        { status: 'Pending', count: 3 },
-        { status: 'In_Progress', count: 2 },
-        { status: 'Completed', count: 18 },
-      ],
-      methodology: 'Calculated deterministically from MySQL database tables and telemetry logs.',
-    };
-  },
-
   async validateTelemetryBatch(records: any[]): Promise<any> {
     const res = await fetch(`${API_BASE_URL}/api/v1/telemetry/validate-batch`, {
       method: 'POST',
@@ -857,12 +760,10 @@ export const apiClient = {
     });
     return await res.json();
   },
-
   async getSimulatedEvents(): Promise<any[]> {
     const raw = safeGetItem(STORAGE_KEYS.SIM_EVENTS);
     return raw ? JSON.parse(raw) : [];
   },
-
   async getPipelineHealth(): Promise<PipelineHealthAudit> {
     return PIPELINE_AUDIT;
   },

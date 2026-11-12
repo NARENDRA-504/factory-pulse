@@ -2,7 +2,7 @@
  * ZIRO Digital Internship — AI Manufacturing Platform Type Definitions
  */
 
-export type UserRole = 'Operator' | 'Supervisor' | 'Manager' | 'Maintenance' | 'Admin';
+export type UserRole = 'Operator' | 'Supervisor' | 'Manager' | 'Maintenance' | 'Admin' | 'Super Admin';
 
 export type DataProvenance = 'EMPIRICAL DATASET' | 'SIMULATED' | 'DEMO';
 
@@ -24,6 +24,10 @@ export interface UserProfile {
   department?: string;
   /** UTC timestamp returned by the authenticated session endpoint. */
   sessionStartedAt?: string;
+  viewOwnerWorkId?: string;
+  viewOwnerName?: string;
+  viewRemainingSeconds?: number;
+  viewReason?: string;
   status?: 'Active' | 'On Duty' | 'Standby' | 'Offline';
   phone?: string;
 }

@@ -1,0 +1,272 @@
+{
+  "schema_version": 1,
+  "documents": [
+    {
+      "id": "FP-GENERAL-001",
+      "title": "General machine-condition response",
+      "revision": "0.1",
+      "status": "training",
+      "machine_ids": [],
+      "category": "general",
+      "keywords": [
+        "sop",
+        "procedure",
+        "instructions",
+        "stop",
+        "machine",
+        "abnormal"
+      ],
+      "scope_notice": "Generic training draft. No approved numeric limits, isolation sequence or equipment-specific operating response is provided.",
+      "roles": {
+        "Operator": [
+          "Confirm the machine ID, sensor name, unit, timestamp and quality before responding.",
+          "For a Suspect condition, report the observation to your assigned supervisor and responsible maintenance team. Continue operation only if the approved site procedure permits it.",
+          "For a Critical condition, follow the equipment-specific approved safe-stop procedure. This draft does not specify a stop button, emergency-stop action or power-isolation sequence.",
+          "Keep clear of moving equipment. Do not bypass guards, open electrical panels or attempt unauthorized repair.",
+          "Record symptoms and reading references in the incident. Restart only through the approved authorization process, even if the reading returns to normal."
+        ],
+        "Supervisor": [
+          "Confirm the affected machine, assigned operator and freshness of the supporting evidence.",
+          "For Suspect, prioritize the concern and assign the responsible maintenance team within your scope.",
+          "For Critical, coordinate the approved machine response and escalate to the responsible plant manager.",
+          "Coordinate workstation coverage and record the handover without disclosing unrelated machine or personnel records.",
+          "Review inspection and verification findings before accepting resolution; an app status alone does not authorize restart."
+        ],
+        "Maintenance": [
+          "Review the assigned incident, exact sensor, timestamps and relevant equipment manual.",
+          "Use only the approved equipment-specific isolation and inspection procedure, performed by authorized personnel.",
+          "Inspect the reported concern using the applicable approved checklist. Do not infer a failed component solely from an unusual sensor value.",
+          "Record findings, actions and verification evidence in the assigned work order.",
+          "Follow the approved release/restart authorization. Close the incident with verification notes and confirm linked work orders are complete."
+        ],
+        "Manager": [
+          "Review the affected machine/line and the reported severity with the responsible supervisor.",
+          "For Critical, confirm a response owner and coordinate the site escalation and recovery process.",
+          "Use verified production impact and investigation findings for operational decisions; the detector does not decide repair or replacement.",
+          "Track the resolution and any required authorization with the supervisor and maintenance lead."
+        ],
+        "Admin": [
+          "Check ingestion health, machine identity and user/team mappings if the alert appears incorrectly routed.",
+          "Correct only authorized configuration issues and retain the audit trail.",
+          "Direct equipment operating decisions to the responsible supervisor and maintenance team; Admin access is not operating authorization."
+        ]
+      },
+      "approved_by": null,
+      "manual_reference": null,
+      "effective_date": null,
+      "review_due": null
+    },
+    {
+      "id": "FP-TEMP-001",
+      "title": "Elevated temperature response",
+      "revision": "0.1",
+      "status": "training",
+      "machine_ids": [],
+      "category": "temperature",
+      "keywords": [
+        "temperature",
+        "thermal",
+        "overheat",
+        "overheating",
+        "motor"
+      ],
+      "scope_notice": "Generic training draft. No approved numeric limits, isolation sequence or equipment-specific operating response is provided.",
+      "roles": {
+        "Operator": [
+          "Confirm the machine ID, sensor name, unit, timestamp and quality before responding.",
+          "For a Suspect condition, report the observation to your assigned supervisor and responsible maintenance team. Continue operation only if the approved site procedure permits it.",
+          "For a Critical condition, follow the equipment-specific approved safe-stop procedure. This draft does not specify a stop button, emergency-stop action or power-isolation sequence.",
+          "Keep clear of moving equipment. Do not bypass guards, open electrical panels or attempt unauthorized repair.",
+          "Record symptoms and reading references in the incident. Restart only through the approved authorization process, even if the reading returns to normal."
+        ],
+        "Supervisor": [
+          "Confirm the affected machine, assigned operator and freshness of the supporting evidence.",
+          "For Suspect, prioritize the concern and assign the responsible maintenance team within your scope.",
+          "For Critical, coordinate the approved machine response and escalate to the responsible plant manager.",
+          "Coordinate workstation coverage and record the handover without disclosing unrelated machine or personnel records.",
+          "Review inspection and verification findings before accepting resolution; an app status alone does not authorize restart."
+        ],
+        "Maintenance": [
+          "Review the assigned incident, exact sensor, timestamps and relevant equipment manual.",
+          "Use only the approved equipment-specific isolation and inspection procedure, performed by authorized personnel.",
+          "Inspect the reported concern using the applicable approved checklist. Do not infer a failed component solely from an unusual sensor value.",
+          "Record findings, actions and verification evidence in the assigned work order.",
+          "Follow the approved release/restart authorization. Close the incident with verification notes and confirm linked work orders are complete."
+        ],
+        "Manager": [
+          "Review the affected machine/line and the reported severity with the responsible supervisor.",
+          "For Critical, confirm a response owner and coordinate the site escalation and recovery process.",
+          "Use verified production impact and investigation findings for operational decisions; the detector does not decide repair or replacement.",
+          "Track the resolution and any required authorization with the supervisor and maintenance lead."
+        ],
+        "Admin": [
+          "Check ingestion health, machine identity and user/team mappings if the alert appears incorrectly routed.",
+          "Correct only authorized configuration issues and retain the audit trail.",
+          "Direct equipment operating decisions to the responsible supervisor and maintenance team; Admin access is not operating authorization."
+        ]
+      },
+      "approved_by": null,
+      "manual_reference": null,
+      "effective_date": null,
+      "review_due": null
+    },
+    {
+      "id": "FP-VIB-001",
+      "title": "Abnormal vibration response",
+      "revision": "0.1",
+      "status": "training",
+      "machine_ids": [],
+      "category": "vibration",
+      "keywords": [
+        "vibration",
+        "chatter",
+        "oscillation"
+      ],
+      "scope_notice": "Generic training draft. No approved numeric limits, isolation sequence or equipment-specific operating response is provided.",
+      "roles": {
+        "Operator": [
+          "Confirm the machine ID, sensor name, unit, timestamp and quality before responding.",
+          "For a Suspect condition, report the observation to your assigned supervisor and responsible maintenance team. Continue operation only if the approved site procedure permits it.",
+          "For a Critical condition, follow the equipment-specific approved safe-stop procedure. This draft does not specify a stop button, emergency-stop action or power-isolation sequence.",
+          "Keep clear of moving equipment. Do not bypass guards, open electrical panels or attempt unauthorized repair.",
+          "Record symptoms and reading references in the incident. Restart only through the approved authorization process, even if the reading returns to normal."
+        ],
+        "Supervisor": [
+          "Confirm the affected machine, assigned operator and freshness of the supporting evidence.",
+          "For Suspect, prioritize the concern and assign the responsible maintenance team within your scope.",
+          "For Critical, coordinate the approved machine response and escalate to the responsible plant manager.",
+          "Coordinate workstation coverage and record the handover without disclosing unrelated machine or personnel records.",
+          "Review inspection and verification findings before accepting resolution; an app status alone does not authorize restart."
+        ],
+        "Maintenance": [
+          "Review the assigned incident, exact sensor, timestamps and relevant equipment manual.",
+          "Use only the approved equipment-specific isolation and inspection procedure, performed by authorized personnel.",
+          "Inspect the reported concern using the applicable approved checklist. Do not infer a failed component solely from an unusual sensor value.",
+          "Record findings, actions and verification evidence in the assigned work order.",
+          "Follow the approved release/restart authorization. Close the incident with verification notes and confirm linked work orders are complete."
+        ],
+        "Manager": [
+          "Review the affected machine/line and the reported severity with the responsible supervisor.",
+          "For Critical, confirm a response owner and coordinate the site escalation and recovery process.",
+          "Use verified production impact and investigation findings for operational decisions; the detector does not decide repair or replacement.",
+          "Track the resolution and any required authorization with the supervisor and maintenance lead."
+        ],
+        "Admin": [
+          "Check ingestion health, machine identity and user/team mappings if the alert appears incorrectly routed.",
+          "Correct only authorized configuration issues and retain the audit trail.",
+          "Direct equipment operating decisions to the responsible supervisor and maintenance team; Admin access is not operating authorization."
+        ]
+      },
+      "approved_by": null,
+      "manual_reference": null,
+      "effective_date": null,
+      "review_due": null
+    },
+    {
+      "id": "FP-RPM-001",
+      "title": "Abnormal spindle-speed response",
+      "revision": "0.1",
+      "status": "training",
+      "machine_ids": [],
+      "category": "rpm",
+      "keywords": [
+        "rpm",
+        "spindle",
+        "speed",
+        "overspeed"
+      ],
+      "scope_notice": "Generic training draft. No approved numeric limits, isolation sequence or equipment-specific operating response is provided.",
+      "roles": {
+        "Operator": [
+          "Confirm the machine ID, sensor name, unit, timestamp and quality before responding.",
+          "For a Suspect condition, report the observation to your assigned supervisor and responsible maintenance team. Continue operation only if the approved site procedure permits it.",
+          "For a Critical condition, follow the equipment-specific approved safe-stop procedure. This draft does not specify a stop button, emergency-stop action or power-isolation sequence.",
+          "Keep clear of moving equipment. Do not bypass guards, open electrical panels or attempt unauthorized repair.",
+          "Record symptoms and reading references in the incident. Restart only through the approved authorization process, even if the reading returns to normal."
+        ],
+        "Supervisor": [
+          "Confirm the affected machine, assigned operator and freshness of the supporting evidence.",
+          "For Suspect, prioritize the concern and assign the responsible maintenance team within your scope.",
+          "For Critical, coordinate the approved machine response and escalate to the responsible plant manager.",
+          "Coordinate workstation coverage and record the handover without disclosing unrelated machine or personnel records.",
+          "Review inspection and verification findings before accepting resolution; an app status alone does not authorize restart."
+        ],
+        "Maintenance": [
+          "Review the assigned incident, exact sensor, timestamps and relevant equipment manual.",
+          "Use only the approved equipment-specific isolation and inspection procedure, performed by authorized personnel.",
+          "Inspect the reported concern using the applicable approved checklist. Do not infer a failed component solely from an unusual sensor value.",
+          "Record findings, actions and verification evidence in the assigned work order.",
+          "Follow the approved release/restart authorization. Close the incident with verification notes and confirm linked work orders are complete."
+        ],
+        "Manager": [
+          "Review the affected machine/line and the reported severity with the responsible supervisor.",
+          "For Critical, confirm a response owner and coordinate the site escalation and recovery process.",
+          "Use verified production impact and investigation findings for operational decisions; the detector does not decide repair or replacement.",
+          "Track the resolution and any required authorization with the supervisor and maintenance lead."
+        ],
+        "Admin": [
+          "Check ingestion health, machine identity and user/team mappings if the alert appears incorrectly routed.",
+          "Correct only authorized configuration issues and retain the audit trail.",
+          "Direct equipment operating decisions to the responsible supervisor and maintenance team; Admin access is not operating authorization."
+        ]
+      },
+      "approved_by": null,
+      "manual_reference": null,
+      "effective_date": null,
+      "review_due": null
+    },
+    {
+      "id": "FP-PRESSURE-001",
+      "title": "Abnormal pressure response",
+      "revision": "0.1",
+      "status": "training",
+      "machine_ids": [],
+      "category": "pressure",
+      "keywords": [
+        "pressure",
+        "bar",
+        "pneumatic",
+        "hydraulic"
+      ],
+      "scope_notice": "Generic training draft. No approved numeric limits, isolation sequence or equipment-specific operating response is provided.",
+      "roles": {
+        "Operator": [
+          "Confirm the machine ID, sensor name, unit, timestamp and quality before responding.",
+          "For a Suspect condition, report the observation to your assigned supervisor and responsible maintenance team. Continue operation only if the approved site procedure permits it.",
+          "For a Critical condition, follow the equipment-specific approved safe-stop procedure. This draft does not specify a stop button, emergency-stop action or power-isolation sequence.",
+          "Keep clear of moving equipment. Do not bypass guards, open electrical panels or attempt unauthorized repair.",
+          "Record symptoms and reading references in the incident. Restart only through the approved authorization process, even if the reading returns to normal."
+        ],
+        "Supervisor": [
+          "Confirm the affected machine, assigned operator and freshness of the supporting evidence.",
+          "For Suspect, prioritize the concern and assign the responsible maintenance team within your scope.",
+          "For Critical, coordinate the approved machine response and escalate to the responsible plant manager.",
+          "Coordinate workstation coverage and record the handover without disclosing unrelated machine or personnel records.",
+          "Review inspection and verification findings before accepting resolution; an app status alone does not authorize restart."
+        ],
+        "Maintenance": [
+          "Review the assigned incident, exact sensor, timestamps and relevant equipment manual.",
+          "Use only the approved equipment-specific isolation and inspection procedure, performed by authorized personnel.",
+          "Inspect the reported concern using the applicable approved checklist. Do not infer a failed component solely from an unusual sensor value.",
+          "Record findings, actions and verification evidence in the assigned work order.",
+          "Follow the approved release/restart authorization. Close the incident with verification notes and confirm linked work orders are complete."
+        ],
+        "Manager": [
+          "Review the affected machine/line and the reported severity with the responsible supervisor.",
+          "For Critical, confirm a response owner and coordinate the site escalation and recovery process.",
+          "Use verified production impact and investigation findings for operational decisions; the detector does not decide repair or replacement.",
+          "Track the resolution and any required authorization with the supervisor and maintenance lead."
+        ],
+        "Admin": [
+          "Check ingestion health, machine identity and user/team mappings if the alert appears incorrectly routed.",
+          "Correct only authorized configuration issues and retain the audit trail.",
+          "Direct equipment operating decisions to the responsible supervisor and maintenance team; Admin access is not operating authorization."
+        ]
+      },
+      "approved_by": null,
+      "manual_reference": null,
+      "effective_date": null,
+      "review_due": null
+    }
+  ]
+}

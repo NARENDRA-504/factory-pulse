@@ -1,0 +1,55 @@
+{
+  "checked_at_utc": "2026-11-03T05:36:35.770177+00:00",
+  "incident_id": 7,
+  "sql_status": "Closed",
+  "linked_orders_completed": true,
+  "saved_sensor_snapshot": true,
+  "audit_events": [
+    {
+      "event_type": "incident_created",
+      "role_at_event": "Operator",
+      "occurred_at_utc": "2026-11-03 05:27:32.750227"
+    },
+    {
+      "event_type": "incident_assigned",
+      "role_at_event": "Supervisor",
+      "occurred_at_utc": "2026-11-03 05:27:44.910858"
+    },
+    {
+      "event_type": "incident_progress_updated",
+      "role_at_event": "Maintenance",
+      "occurred_at_utc": "2026-11-03 05:28:02.954242"
+    },
+    {
+      "event_type": "incident_closed",
+      "role_at_event": "Maintenance",
+      "occurred_at_utc": "2026-11-03 05:28:07.110069"
+    }
+  ],
+  "role_visibility": {
+    "OP-A002": {
+      "http_status": 200,
+      "status": "Closed"
+    },
+    "SUP-A01": {
+      "http_status": 200,
+      "status": "Closed"
+    },
+    "OPS-MAINTENANCE": {
+      "http_status": 200,
+      "status": "Closed"
+    },
+    "OPS-MANAGER": {
+      "http_status": 200,
+      "status": "Closed"
+    },
+    "OPS-ADMIN": "login unavailable with saved local credentials"
+  },
+  "pipeline": {
+    "latest_rows": 1280,
+    "machines": 40,
+    "advancing_machines_in_six_seconds": 37,
+    "advancing_streams": 1184
+  },
+  "no_machine_control_changes": true
+}

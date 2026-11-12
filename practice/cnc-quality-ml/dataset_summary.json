@@ -1,0 +1,24 @@
+{
+  "synthetic": true,
+  "seed": 20261109,
+  "rows": 6000,
+  "unique_machines": 20,
+  "splits": {
+    "train": {
+      "rows": 4200,
+      "failed_inspection_count": 1097,
+      "failed_inspection_rate": 0.2612
+    },
+    "validation": {
+      "rows": 900,
+      "failed_inspection_count": 259,
+      "failed_inspection_rate": 0.2878
+    },
+    "test": {
+      "rows": 900,
+      "failed_inspection_count": 234,
+      "failed_inspection_rate": 0.26
+    }
+  },
+  "missing_cells": 498
+}

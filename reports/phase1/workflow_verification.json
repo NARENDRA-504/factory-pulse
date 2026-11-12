@@ -1,0 +1,37 @@
+{
+  "checked_at_utc": "2026-11-03T05:28:27.439Z",
+  "incident_id": 7,
+  "incident_code": "INC-7A531874DF4746809536",
+  "machine_code": "CNC-5AX-002",
+  "steps": [
+    {
+      "step": "reported",
+      "status": "Open",
+      "at": "2026-11-03T05:27:32.960Z"
+    },
+    {
+      "step": "assigned",
+      "status": "In_Investigation",
+      "at": "2026-11-03T05:27:45.511Z"
+    },
+    {
+      "step": "repair_logged",
+      "status": "Action_Required",
+      "at": "2026-11-03T05:28:03.106Z"
+    },
+    {
+      "step": "resolved",
+      "status": "Closed",
+      "at": "2026-11-03T05:28:07.242Z"
+    }
+  ],
+  "linked_work_orders": [
+    {
+      "id": 7,
+      "status": "Completed"
+    }
+  ],
+  "page_errors": [],
+  "method": "Actual browser forms and authenticated live APIs; persisted MySQL training ticket. No response mocks.",
+  "limitations": "Manually reported training fault. No sensor fault was injected and no physical repair was performed."
+}

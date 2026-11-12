@@ -45,6 +45,11 @@ const ROLE_COPY: Record<UserRole, { eyebrow: string; title: string; description:
     title: 'Telemetry & Operations Control Room',
     description: 'Monitor incoming machine data, manage user credentials, and administer platform policies.',
   },
+  'Super Admin': {
+    eyebrow: 'Platform Governance & Master Oversight',
+    title: 'Telemetry & Operations Control Room',
+    description: 'Monitor incoming machine data, manage user credentials, and administer platform policies.',
+  },
 };
 
 export const MeterCard: React.FC<{
@@ -120,6 +125,12 @@ const RoleActions: React.FC<{
       note: 'Compare verified plant condition and review open operational risks. Production and financial KPIs appear when their source data is available.',
     },
     Admin: {
+      label: 'Manage users and access',
+      target: 'users',
+      icon: <Users className="h-4 w-4" />,
+      note: 'Administer employee accounts, permissions, and role access.',
+    },
+  'Super Admin': {
       label: 'Manage users and access',
       target: 'users',
       icon: <Users className="h-4 w-4" />,

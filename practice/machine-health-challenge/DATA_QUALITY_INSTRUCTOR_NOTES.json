@@ -1,0 +1,36 @@
+{
+  "synthetic": true,
+  "generated_for": "machine health ML learning only",
+  "seed": 20261111,
+  "canonical_observations": 80640,
+  "raw_packets": 81375,
+  "machines": 40,
+  "days": 14,
+  "sampling_minutes": 10,
+  "failure_events": 120,
+  "label_counts_before_cleaning": {
+    "Normal": 77858,
+    "Suspect": 1080,
+    "Critical": 360,
+    "Ineligible": 902,
+    "Unknown": 440
+  },
+  "injected_data_issues": {
+    "missing_cells": 4897,
+    "mixed_temperature_units": 5656,
+    "mixed_pressure_units": 4925,
+    "decimal_comma_cells": 951,
+    "sentinel_cells": 1127,
+    "duplicate_packets": 735,
+    "conflicting_duplicate_packets": 109,
+    "alias_machine_ids": 1598,
+    "timestamp_format_variants": 6443,
+    "outlier_cells": 218,
+    "stuck_vibration_packets": 120
+  },
+  "limits": [
+    "Fictional values and labels; no OEM safety thresholds.",
+    "3-priority labels are future failure proximity, not confirmed current fault diagnoses.",
+    "No guarantee of predictive performance or real-world failure prevention."
+  ]
+}

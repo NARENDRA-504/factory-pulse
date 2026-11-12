@@ -1,0 +1,39 @@
+{
+  "checked_at_utc": "2026-11-03T05:33:00.695166+00:00",
+  "machine_id": "MCH-001",
+  "http_status": 200,
+  "provider_status": "responded",
+  "provider_model": "gemini-3.5-flash",
+  "provider_fallback_used": true,
+  "provider_message": "Google Gemini (gemini-3.5-flash) analysis of the selected machine; recommendations require human review.",
+  "fact_count": 1,
+  "source_facts": [
+    {
+      "reading_id": "READ-5D60B92F6824407687ACAA658670D706",
+      "machine_id": "MCH-001",
+      "timestamp": "2026-11-03T05:32:45.530369+00:00",
+      "machine_type": "5-Axis CNC Machining Center",
+      "department": "Floor A1: Aerospace Micro-Milling",
+      "production_line": "Line 5AX-01",
+      "sensor_name": "Temperature",
+      "sensor_unit": "\u00b0C",
+      "sensor_value": 47.71,
+      "expected_min": 25.0,
+      "expected_max": 70.0,
+      "machine_status": "NORMAL",
+      "data_quality": "GOOD",
+      "fault_mode": null,
+      "machine_code": "CNC-5AX-001",
+      "display_name": "5-Axis-01 \u2013 Mazak VARIAXIS C-600",
+      "data_provenance": "SIMULATED"
+    }
+  ],
+  "generated_analysis": "**Observed Facts:**\n* **Machine ID:** MCH-001\n* **Sensor Name:** Temperature\n* **Current Temperature:** 47.71 \u00b0C\n* **Expected Range:** 25.0 \u00b0C to 70.0 \u00b0C\n* **Timestamp:** 2026-11-03 05:32:45.530369+00:00\n* **Machine Status:** NORMAL\n* **Data Quality:** GOOD\n* **Fault Mode:** None (null)\n\n**Supplied Calculations:**\n* None provided in the source data.\n\n**Tentative Recommendations:**\n* Continue standard operating procedures and routine monitoring, as the temperature reading is within the expected range and operating status is normal.",
+  "sql_evidence_available": true,
+  "selected_machine_only": true,
+  "grounding_check": {
+    "observed_value_in_answer": true,
+    "selected_machine_in_answer": true,
+    "recommendations_separated": true
+  }
+}

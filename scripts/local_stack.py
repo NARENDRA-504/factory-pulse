@@ -78,16 +78,8 @@ def listening(url):
         return False
 
 def start_streams():
-    catalog = json.loads((ROOT/'public/machine-name.json').read_text())
-    available=set(json.loads((ROOT/'public/available-machine-ids.json').read_text())['machine_ids'])
-    catalog=[machine for machine in catalog if machine['machineId'] in available]
-    machine_ids = [machine['machineId'] for machine in catalog]
-    request = urllib.request.Request('http://127.0.0.1:8002/api/v1/simulation/fleet/start',
-        data=json.dumps({'machine_ids': machine_ids}).encode(),
-        headers={**headers, 'Content-Type': 'application/json'}, method='POST')
-    with urllib.request.urlopen(request, timeout=30) as response:
-        if response.status != 200: raise RuntimeError('Fleet start failed')
-    print(f'Simulator fleet active: {len(machine_ids)} roster machines', flush=True)
+    # Service availability must never imply consent to generate/store telemetry.
+    print('Manual mode: services ready; no machine streams or queued delivery started. Use the Simulator controls explicitly.', flush=True)
 
 if not node or not SIM.exists():
     raise SystemExit('Node.js or the separate AI Simulator folder is unavailable.')

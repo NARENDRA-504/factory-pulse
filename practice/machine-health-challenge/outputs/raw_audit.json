@@ -1,0 +1,38 @@
+{
+  "rows": 81375,
+  "unique_packets": 80640,
+  "repeated_packet_rows": 735,
+  "missing_cells": {
+    "packet_id": 0,
+    "machine_id": 0,
+    "observed_at": 0,
+    "timestamp_basis": 0,
+    "machine_state": 0,
+    "temperature": 990,
+    "temperature_unit": 0,
+    "vibration": 1000,
+    "vibration_unit": 0,
+    "spindle_rpm": 0,
+    "motor_current_a": 984,
+    "motor_load_pct": 0,
+    "pressure": 930,
+    "pressure_unit": 0,
+    "coolant_flow_l_min": 1040,
+    "ambient_temperature_c": 0,
+    "hours_since_service": 0,
+    "quality_flag": 0
+  },
+  "temperature_units": {
+    "C": 75671,
+    "F": 5704
+  },
+  "pressure_units": {
+    "bar": 76407,
+    "kPa": 4968
+  },
+  "quality_flags": {
+    "GOOD": 79918,
+    "BAD": 1348,
+    "UNCERTAIN": 109
+  }
+}

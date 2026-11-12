@@ -6,7 +6,7 @@ interface SidebarProps {
  currentUser:UserProfile; currentScreen:AppScreen; onNavigate:(screen:AppScreen)=>void;
  onLogout:()=>void; onOpenProfile?:()=>void; activeIncidentsCount?:number; isOpenMobile:boolean; onCloseMobile:()=>void;
 }
-const icons={dashboard:Activity,machines:Cpu,incidents:AlertTriangle,analytics:BarChart3,users:Users,activity:ClipboardList,inventory:Factory,maintenance:Wrench,production:BarChart3,coverage:Users,downtime:Clock3,quality:CheckCircle2,reports:ClipboardList};
+const icons={readiness:Activity,'machine-changes':ClipboardList,dashboard:Activity,machines:Cpu,incidents:AlertTriangle,analytics:BarChart3,users:Users,activity:ClipboardList,inventory:Factory,maintenance:Wrench,production:BarChart3,coverage:Users,downtime:Clock3,quality:CheckCircle2,reports:ClipboardList};
 export const Sidebar:React.FC<SidebarProps>=({currentUser,currentScreen,onNavigate,onLogout,onOpenProfile,activeIncidentsCount=0,isOpenMobile,onCloseMobile})=>{
  const links=(items:NavItem[])=>items.map(({screen,label})=>{
   const Icon=icons[screen];const selected=currentScreen===screen;

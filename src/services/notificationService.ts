@@ -278,6 +278,7 @@ export const notificationService = {
   // Get notifications filtered by recipient role
   getNotificationsForRole(role?: UserRole): LiveNotification[] {
     const all = loadStoredNotifications();
+    if (role === 'Super Admin') role = 'Admin';
     if (!role) return all;
 
     return all.filter((n) => {

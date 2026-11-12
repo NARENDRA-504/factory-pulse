@@ -38,7 +38,7 @@ export const TopBar: React.FC<TopBarProps> = ({
     if (rolePage) return { parent: `${currentUser.role} operations`, current: rolePage.label, subtitle: 'Your authorized machine records and operational actions' };
     switch (currentScreen) {
       case 'dashboard':
-        if (currentUser.role === 'Admin') {
+        if (['Admin', 'Super Admin'].includes(currentUser.role)) {
           return {
             parent: 'Factory Governance',
             current: 'Admin Master Oversight',

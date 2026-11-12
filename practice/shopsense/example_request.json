@@ -1,0 +1,11 @@
+{
+  "Administrative": 0,
+  "Administrative_Duration": 0.0,
+  "Informational": 0,
+  "Informational_Duration": 0.0,
+  "ProductRelated": 2,
+  "ProductRelated_Duration": 2.666666667,
+  "Month": "Feb",
+  "VisitorType": "Returning_Visitor",
+  "Weekend": false
+}

@@ -1,0 +1,176 @@
+{
+  "executed_at_utc": "2026-11-03T05:21:17.265783+00:00",
+  "source": "FactoryPulse MySQL latest view + original local CSV files",
+  "snapshot": {
+    "rows": 1280,
+    "machines": 40,
+    "duplicate_machine_sensor_keys": 0,
+    "missing_reading_ids": 0,
+    "snapshot_sha256": "c9b4a2f7ddf5c730517aed644b0e54cb5e825a2af1a823caca2e9c1a7fe40a8c"
+  },
+  "research_quality": [
+    {
+      "dataset": "tool_wear",
+      "rows": 2054,
+      "columns": 154,
+      "source_files": 1,
+      "missing_cells": 1142,
+      "duplicate_value_rows": 0
+    },
+    {
+      "dataset": "turning_roughness",
+      "rows": 612,
+      "columns": 27,
+      "source_files": 2,
+      "missing_cells": 900,
+      "duplicate_value_rows": 0
+    },
+    {
+      "dataset": "mill_telemetry",
+      "rows": 25286,
+      "columns": 48,
+      "source_files": 18,
+      "missing_cells": 0,
+      "duplicate_value_rows": 331
+    },
+    {
+      "dataset": "milling_life",
+      "rows": 968,
+      "columns": 131,
+      "source_files": 1,
+      "missing_cells": 0,
+      "duplicate_value_rows": 0
+    }
+  ],
+  "research_statistics": {
+    "tool_wear": [
+      {
+        "column": "Vb",
+        "count": 2054,
+        "missing_or_invalid": 0,
+        "min": 0.0,
+        "mean": 151.10392794547224,
+        "median": 124.69,
+        "std_sample": 116.6045145758045,
+        "p25": 74.774,
+        "p75": 187.40800000000002,
+        "p95": 363.61285,
+        "max": 792.346
+      }
+    ],
+    "turning_roughness": [
+      {
+        "column": "Ra",
+        "count": 612,
+        "missing_or_invalid": 0,
+        "min": 0.142,
+        "mean": 0.6826797385620915,
+        "median": 0.622,
+        "std_sample": 0.3043832680363492,
+        "p25": 0.45775,
+        "p75": 0.86375,
+        "p95": 1.181,
+        "max": 1.812
+      }
+    ],
+    "mill_telemetry": [
+      {
+        "column": "S1_ActualVelocity",
+        "count": 25286,
+        "missing_or_invalid": 0,
+        "min": -0.069,
+        "mean": 38.98642385707506,
+        "median": 53.3,
+        "std_sample": 23.49126690548999,
+        "p25": 0.002,
+        "p75": 53.4,
+        "p95": 53.5,
+        "max": 53.8
+      },
+      {
+        "column": "S1_OutputCurrent",
+        "count": 25286,
+        "missing_or_invalid": 0,
+        "min": 290.0,
+        "mean": 322.7845052598276,
+        "median": 322.0,
+        "std_sample": 4.293571306546322,
+        "p25": 320.0,
+        "p75": 327.0,
+        "p95": 330.0,
+        "max": 332.0
+      },
+      {
+        "column": "M1_CURRENT_FEEDRATE",
+        "count": 25286,
+        "missing_or_invalid": 0,
+        "min": 3.0,
+        "mean": 16.542039073004826,
+        "median": 6.0,
+        "std_sample": 19.620219371991688,
+        "p25": 3.0,
+        "p75": 20.0,
+        "p95": 50.0,
+        "max": 50.0
+      }
+    ],
+    "milling_life": [
+      {
+        "column": "CycleToFailure",
+        "count": 968,
+        "missing_or_invalid": 0,
+        "min": 0.0,
+        "mean": 48.52066115702479,
+        "median": 41.0,
+        "std_sample": 35.98841573322512,
+        "p25": 19.0,
+        "p75": 73.0,
+        "p95": 117.0,
+        "max": 149.0
+      },
+      {
+        "column": "CycleToFailureNormalized",
+        "count": 968,
+        "missing_or_invalid": 0,
+        "min": 0.0,
+        "mean": 0.4990249597809917,
+        "median": 0.5,
+        "std_sample": 0.2917854661314043,
+        "p25": 0.24584456425,
+        "p75": 0.75,
+        "p95": 0.9552961772499999,
+        "max": 1.0
+      }
+    ]
+  },
+  "mysql_research_tables": [
+    {
+      "table": "raw_cnc_tool_wear",
+      "rows": 0,
+      "present": true
+    },
+    {
+      "table": "raw_turning_roughness",
+      "rows": 0,
+      "present": true
+    },
+    {
+      "table": "raw_mill_telemetry",
+      "rows": 0,
+      "present": true
+    },
+    {
+      "table": "raw_milling_cycles",
+      "rows": 0,
+      "present": true
+    }
+  ],
+  "independent_statistics_match": true,
+  "database_writes": false,
+  "limits": [
+    "Operational readings are simulator-generated",
+    "Latest view is not history",
+    "No trained ML model",
+    "MTBF and financial rates are not inferred"
+  ]
+}

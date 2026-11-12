@@ -1,0 +1,404 @@
+{
+  "version": 1,
+  "maximum_machines_per_supervisor": 4,
+  "shift": "Shift A",
+  "teams": [
+    {
+      "team_id": "A01",
+      "plant": "Plant A: Precision Machining",
+      "department": "Plant A / Team A01",
+      "supervisor_work_id": "SUP-A01",
+      "machines": [
+        {
+          "machine_id": "MCH-001",
+          "machine_code": "CNC-5AX-001"
+        },
+        {
+          "machine_id": "MCH-002",
+          "machine_code": "CNC-5AX-002"
+        },
+        {
+          "machine_id": "MCH-003",
+          "machine_code": "CNC-5AX-003"
+        },
+        {
+          "machine_id": "MCH-004",
+          "machine_code": "CNC-5AX-004"
+        }
+      ],
+      "primary_operators": {
+        "CNC-5AX-001": "OP-001",
+        "CNC-5AX-002": "OP-A002",
+        "CNC-5AX-003": "OP-A003",
+        "CNC-5AX-004": "OP-A004"
+      },
+      "operator_work_ids": [
+        "OP-001",
+        "OPS-OPERATOR",
+        "OP-A002",
+        "OP-A003",
+        "OP-A004"
+      ],
+      "shift": "Shift A"
+    },
+    {
+      "team_id": "A02",
+      "plant": "Plant A: Precision Machining",
+      "department": "Plant A / Team A02",
+      "supervisor_work_id": "SUP-A02",
+      "machines": [
+        {
+          "machine_id": "MCH-036",
+          "machine_code": "CNC-VMC-001"
+        },
+        {
+          "machine_id": "MCH-037",
+          "machine_code": "CNC-VMC-002"
+        },
+        {
+          "machine_id": "MCH-038",
+          "machine_code": "CNC-VMC-003"
+        },
+        {
+          "machine_id": "MCH-076",
+          "machine_code": "CNC-DRILL-001"
+        }
+      ],
+      "primary_operators": {
+        "CNC-VMC-001": "OP-A005",
+        "CNC-VMC-002": "OP-A006",
+        "CNC-VMC-003": "OP-A007",
+        "CNC-DRILL-001": "OP-A008"
+      },
+      "operator_work_ids": [
+        "OP-A005",
+        "OP-A006",
+        "OP-A007",
+        "OP-A008"
+      ],
+      "shift": "Shift A"
+    },
+    {
+      "team_id": "A03",
+      "plant": "Plant A: Precision Machining",
+      "department": "Plant A / Team A03",
+      "supervisor_work_id": "SUP-A03",
+      "machines": [
+        {
+          "machine_id": "MCH-077",
+          "machine_code": "CNC-DRILL-002"
+        },
+        {
+          "machine_id": "MCH-078",
+          "machine_code": "CNC-DRILL-003"
+        }
+      ],
+      "primary_operators": {
+        "CNC-DRILL-002": "OP-A009",
+        "CNC-DRILL-003": "OP-A010"
+      },
+      "operator_work_ids": [
+        "OP-A009",
+        "OP-A010"
+      ],
+      "shift": "Shift A"
+    },
+    {
+      "team_id": "B01",
+      "plant": "Plant B: Powertrain Components",
+      "department": "Plant B / Team B01",
+      "supervisor_work_id": "SUP-B01",
+      "machines": [
+        {
+          "machine_id": "MCH-101",
+          "machine_code": "CNC-TURN-001"
+        },
+        {
+          "machine_id": "MCH-102",
+          "machine_code": "CNC-TURN-002"
+        },
+        {
+          "machine_id": "MCH-103",
+          "machine_code": "CNC-TURN-003"
+        },
+        {
+          "machine_id": "MCH-104",
+          "machine_code": "CNC-TURN-004"
+        }
+      ],
+      "primary_operators": {
+        "CNC-TURN-001": "OP-B001",
+        "CNC-TURN-002": "OP-B002",
+        "CNC-TURN-003": "OP-B003",
+        "CNC-TURN-004": "OP-B004"
+      },
+      "operator_work_ids": [
+        "OP-B001",
+        "OP-B002",
+        "OP-B003",
+        "OP-B004"
+      ],
+      "shift": "Shift A"
+    },
+    {
+      "team_id": "B02",
+      "plant": "Plant B: Powertrain Components",
+      "department": "Plant B / Team B02",
+      "supervisor_work_id": "SUP-B02",
+      "machines": [
+        {
+          "machine_id": "MCH-141",
+          "machine_code": "CNC-HMC-001"
+        },
+        {
+          "machine_id": "MCH-142",
+          "machine_code": "CNC-HMC-002"
+        },
+        {
+          "machine_id": "MCH-143",
+          "machine_code": "CNC-HMC-003"
+        },
+        {
+          "machine_id": "MCH-176",
+          "machine_code": "CNC-MT-001"
+        }
+      ],
+      "primary_operators": {
+        "CNC-HMC-001": "OP-B005",
+        "CNC-HMC-002": "OP-B006",
+        "CNC-HMC-003": "OP-B007",
+        "CNC-MT-001": "OP-B008"
+      },
+      "operator_work_ids": [
+        "OP-B005",
+        "OP-B006",
+        "OP-B007",
+        "OP-B008"
+      ],
+      "shift": "Shift A"
+    },
+    {
+      "team_id": "B03",
+      "plant": "Plant B: Powertrain Components",
+      "department": "Plant B / Team B03",
+      "supervisor_work_id": "SUP-B03",
+      "machines": [
+        {
+          "machine_id": "MCH-177",
+          "machine_code": "CNC-MT-002"
+        },
+        {
+          "machine_id": "MCH-178",
+          "machine_code": "CNC-MT-003"
+        }
+      ],
+      "primary_operators": {
+        "CNC-MT-002": "OP-B009",
+        "CNC-MT-003": "OP-B010"
+      },
+      "operator_work_ids": [
+        "OP-B009",
+        "OP-B010"
+      ],
+      "shift": "Shift A"
+    },
+    {
+      "team_id": "C01",
+      "plant": "Plant C: Heavy Machining",
+      "department": "Plant C / Team C01",
+      "supervisor_work_id": "SUP-C01",
+      "machines": [
+        {
+          "machine_id": "MCH-201",
+          "machine_code": "CNC-HMC-036"
+        },
+        {
+          "machine_id": "MCH-202",
+          "machine_code": "CNC-HMC-037"
+        },
+        {
+          "machine_id": "MCH-203",
+          "machine_code": "CNC-HMC-038"
+        },
+        {
+          "machine_id": "MCH-204",
+          "machine_code": "CNC-HMC-039"
+        }
+      ],
+      "primary_operators": {
+        "CNC-HMC-036": "OP-C001",
+        "CNC-HMC-037": "OP-C002",
+        "CNC-HMC-038": "OP-C003",
+        "CNC-HMC-039": "OP-C004"
+      },
+      "operator_work_ids": [
+        "OP-C001",
+        "OP-C002",
+        "OP-C003",
+        "OP-C004"
+      ],
+      "shift": "Shift A"
+    },
+    {
+      "team_id": "C02",
+      "plant": "Plant C: Heavy Machining",
+      "department": "Plant C / Team C02",
+      "supervisor_work_id": "SUP-C02",
+      "machines": [
+        {
+          "machine_id": "MCH-241",
+          "machine_code": "CNC-5AX-036"
+        },
+        {
+          "machine_id": "MCH-242",
+          "machine_code": "CNC-5AX-037"
+        },
+        {
+          "machine_id": "MCH-243",
+          "machine_code": "CNC-5AX-038"
+        },
+        {
+          "machine_id": "MCH-271",
+          "machine_code": "CNC-VMC-041"
+        }
+      ],
+      "primary_operators": {
+        "CNC-5AX-036": "OP-C005",
+        "CNC-5AX-037": "OP-C006",
+        "CNC-5AX-038": "OP-C007",
+        "CNC-VMC-041": "OP-C008"
+      },
+      "operator_work_ids": [
+        "OP-C005",
+        "OP-C006",
+        "OP-C007",
+        "OP-C008"
+      ],
+      "shift": "Shift A"
+    },
+    {
+      "team_id": "C03",
+      "plant": "Plant C: Heavy Machining",
+      "department": "Plant C / Team C03",
+      "supervisor_work_id": "SUP-C03",
+      "machines": [
+        {
+          "machine_id": "MCH-272",
+          "machine_code": "CNC-VMC-042"
+        },
+        {
+          "machine_id": "MCH-273",
+          "machine_code": "CNC-VMC-043"
+        }
+      ],
+      "primary_operators": {
+        "CNC-VMC-042": "OP-C009",
+        "CNC-VMC-043": "OP-C010"
+      },
+      "operator_work_ids": [
+        "OP-C009",
+        "OP-C010"
+      ],
+      "shift": "Shift A"
+    },
+    {
+      "team_id": "D01",
+      "plant": "Plant D: Finishing and Grinding",
+      "department": "Plant D / Team D01",
+      "supervisor_work_id": "SUP-D01",
+      "machines": [
+        {
+          "machine_id": "MCH-301",
+          "machine_code": "CNC-GRIND-001"
+        },
+        {
+          "machine_id": "MCH-302",
+          "machine_code": "CNC-GRIND-002"
+        },
+        {
+          "machine_id": "MCH-303",
+          "machine_code": "CNC-GRIND-003"
+        },
+        {
+          "machine_id": "MCH-304",
+          "machine_code": "CNC-GRIND-004"
+        }
+      ],
+      "primary_operators": {
+        "CNC-GRIND-001": "OP-D001",
+        "CNC-GRIND-002": "OP-D002",
+        "CNC-GRIND-003": "OP-D003",
+        "CNC-GRIND-004": "OP-D004"
+      },
+      "operator_work_ids": [
+        "OP-D001",
+        "OP-D002",
+        "OP-D003",
+        "OP-D004"
+      ],
+      "shift": "Shift A"
+    },
+    {
+      "team_id": "D02",
+      "plant": "Plant D: Finishing and Grinding",
+      "department": "Plant D / Team D02",
+      "supervisor_work_id": "SUP-D02",
+      "machines": [
+        {
+          "machine_id": "MCH-351",
+          "machine_code": "CNC-TURN-041"
+        },
+        {
+          "machine_id": "MCH-352",
+          "machine_code": "CNC-TURN-042"
+        },
+        {
+          "machine_id": "MCH-353",
+          "machine_code": "CNC-TURN-043"
+        },
+        {
+          "machine_id": "MCH-376",
+          "machine_code": "CNC-MT-026"
+        }
+      ],
+      "primary_operators": {
+        "CNC-TURN-041": "OP-D005",
+        "CNC-TURN-042": "OP-D006",
+        "CNC-TURN-043": "OP-D007",
+        "CNC-MT-026": "OP-D008"
+      },
+      "operator_work_ids": [
+        "OP-D005",
+        "OP-D006",
+        "OP-D007",
+        "OP-D008"
+      ],
+      "shift": "Shift A"
+    },
+    {
+      "team_id": "D03",
+      "plant": "Plant D: Finishing and Grinding",
+      "department": "Plant D / Team D03",
+      "supervisor_work_id": "SUP-D03",
+      "machines": [
+        {
+          "machine_id": "MCH-377",
+          "machine_code": "CNC-MT-027"
+        },
+        {
+          "machine_id": "MCH-378",
+          "machine_code": "CNC-MT-028"
+        }
+      ],
+      "primary_operators": {
+        "CNC-MT-027": "OP-D009",
+        "CNC-MT-028": "OP-D010"
+      },
+      "operator_work_ids": [
+        "OP-D009",
+        "OP-D010"
+      ],
+      "shift": "Shift A"
+    }
+  ]
+}

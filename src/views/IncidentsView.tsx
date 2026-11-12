@@ -1,3 +1,4 @@
+import { IncidentResponsePanel } from '../components/OperationalReadiness';
 import React, { useState, useEffect } from 'react';
 import { Incident, UserProfile, TelemetryReading, AIDiagnosisResult } from '../types';
 import { apiClient } from '../services/apiClient';
@@ -39,6 +40,7 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
   initialSnapshotForReport,
 }) => {
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(incidents[0] || null);
+  useEffect(() => { setSelectedIncident(previous => previous ? incidents.find(i => i.id === previous.id) || null : incidents[0] || null); }, [incidents]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [severityFilter, setSeverityFilter] = useState<string>('ALL');
@@ -183,10 +185,10 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
   };
 
   // Permission checkers strictly aligned with approved RBAC policy
-  const canCreate = currentUser.role === 'Operator' || currentUser.role === 'Supervisor' || currentUser.role === 'Maintenance';
-  const canAssign = currentUser.role === 'Supervisor';
-  const canUpdateProgress = currentUser.role === 'Maintenance';
-  const canClose = currentUser.role === 'Supervisor' || currentUser.role === 'Maintenance';
+  const canCreate = currentUser.role === 'Super Admin' || currentUser.role === 'Operator' || currentUser.role === 'Supervisor' || currentUser.role === 'Maintenance';
+  const canAssign = currentUser.role === 'Super Admin' || currentUser.role === 'Supervisor';
+  const canUpdateProgress = currentUser.role === 'Super Admin' || currentUser.role === 'Maintenance';
+  const canClose = currentUser.role === 'Super Admin' || currentUser.role === 'Supervisor' || (currentUser.role === 'Maintenance' && selectedIncident?.assignedToId === currentUser.id);
 
   return (
     <div className="space-y-5">
@@ -416,7 +418,7 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
                             : 'text-teal-800 bg-teal-50 border border-slate-200'
                         }`}
                       >
-                        {inc.status.replace('_', ' ')}
+                        {inc.status === 'Closed' ? 'Resolved' : inc.status.replace('_', ' ')}
                       </span>
                     </div>
 
@@ -483,19 +485,20 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
                       className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-slate-900 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors font-mono"
                     >
                       <CheckCircle2 className="w-3.5 h-3.5" />
-                      Close Ticket (Sign-off)
+                      Close Ticket · Resolve Incident
                     </button>
                   )}
 
                   {selectedIncident.status === 'Closed' && (
                     <span className="px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-mono font-semibold flex items-center gap-1.5">
                       <CheckCircle2 className="w-4 h-4 text-emerald-700" />
-                      Closed by {selectedIncident.closedRole || 'Maintenance'} ({selectedIncident.closedByName})
+                      Resolved · Closed by {selectedIncident.closedRole || 'Maintenance'} ({selectedIncident.closedByName})
                     </span>
                   )}
                 </div>
               </div>
 
+              <IncidentResponsePanel incidentId={selectedIncident.id} canAcknowledge={['Operator','Supervisor','Maintenance','Super Admin'].includes(currentUser.role)}/>
               {/* Status & Metadata Strip */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono p-3 bg-slate-50 border border-slate-200 rounded-lg">
                 <div>
