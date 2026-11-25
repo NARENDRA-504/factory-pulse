@@ -1,5 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { AlertTriangle, RotateCcw, ShieldAlert, Terminal } from 'lucide-react';
+import { RotateCcw, ShieldAlert } from 'lucide-react';
 
 interface Props {
   children: ReactNode;
@@ -53,25 +53,12 @@ export class ErrorBoundary extends Component<Props, State> {
 
                 </div>
                 <h2 className="text-lg font-bold font-display text-slate-900">
-                  {this.props.fallbackTitle || 'Component Rendering Interrupted'}
+                  {this.props.fallbackTitle || 'This page needs another try'}
                 </h2>
                 <p className="text-xs text-slate-600 leading-relaxed">
                   This page could not load. Try again, open another page, or reload FactoryPulse. Your saved records have not been changed by this display error.
                 </p>
               </div>
-            </div>
-
-            {/* Error Technical Diagnostics */}
-            <div className="p-4 bg-slate-100/90 border border-slate-200 rounded-xl font-mono text-xs space-y-2">
-              <div className="flex items-center gap-2 text-rose-700 font-semibold">
-                <Terminal className="w-4 h-4" />
-                <span>{this.state.error?.name || 'Error'}: {this.state.error?.message || 'Unknown runtime error'}</span>
-              </div>
-              {this.state.errorInfo?.componentStack && (
-                <pre className="text-[10px] text-slate-600 max-h-36 overflow-y-auto whitespace-pre-wrap bg-slate-50 p-2 rounded border border-slate-200">
-                  {this.state.errorInfo.componentStack}
-                </pre>
-              )}
             </div>
 
             {/* Recovery Actions */}
@@ -83,7 +70,7 @@ export class ErrorBoundary extends Component<Props, State> {
                   className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-slate-900 text-xs font-semibold rounded-lg flex items-center gap-2 transition-colors font-mono"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
-                  Retry Render
+                  Try again
                 </button>
                 <button
                   type="button"
