@@ -1,5 +1,12 @@
 # FactoryPulse
 
+New teammate or new PC? Start with [the easy two-app setup guide](docs/TEAMMATE-SETUP.md). After installing dependencies and configuring your MySQL database, run `& ".\scripts\Connect-LocalApps.ps1" -OpenBrowser` from this folder to configure matching local connection settings and launch both separate apps. No secrets are included in GitHub.
+
+For verified local release results, backup recovery, and later deployment steps, see
+[the release runbook](docs/RELEASE-RUNBOOK.md). Public hosting is deferred by choice.
+
+For the current local demonstration, use [the launch and role walkthrough guide](docs/LOCAL-DEMONSTRATION.md). From PowerShell in this folder, run `& ".\scripts\Start-LocalDemo.ps1" -OpenBrowser`. This starts both separate apps without starting telemetry generation. `READY_IDLE` is expected until you explicitly send a finite Simulator scenario.
+
 FactoryPulse is a Phase 1 manufacturing monitoring and incident-response project. It provides role-based screens for Operators, Supervisors, Maintenance staff, Managers and Admins. A separate AI Simulator supplies modeled machine readings; FactoryPulse receives them through an authenticated Python API and stores operational telemetry in MySQL.
 
 This is an internship project. Modeled readings and production estimates are not certified physical-factory measurements. The web dashboard charts are application visuals, not an embedded Microsoft Power BI connection.
@@ -128,3 +135,15 @@ Vadde Narendra developed and reviewed this project with AI coding assistance. Re
 ## Secrets and access
 
 Do not publish environment files, API keys, MySQL passwords, account-password lists or personnel exports. Keep access checks on the server, not only in hidden menus. Configure real factory service intervals, tariffs and approved cost rates before presenting estimates as operating decisions.
+# Deployment preparation
+
+See [deployment guide](docs/DEPLOYMENT.md) for production containers, private Simulator
+deployment, secrets, persistent storage, readiness checks and the remaining hosted
+acceptance gates. No public deployment is claimed by these files.
+
+## Administrator-only pipeline monitor
+Detailed monitoring is available to Admin and Super Admin at **Pipeline Monitor**. Other roles receive only scoped machine availability at **Machine Status**. See [monitor behavior and permissions](docs/PIPELINE-MONITOR.md).
+
+Admin and Super Admin also have **Guidance & ML Review**, a read-only SOP approval register and model-validation dashboard. It exposes missing evidence and never grants procedure approval or enables automatic model alerts. See the [local demonstration guide](docs/LOCAL-DEMONSTRATION.md).
+
+In local mode, Admin **Pipeline Monitor** includes a finite machine demonstration with explicit run/stop controls, delivery counts and a MySQL sample check. Handovers include unfinished repairs and unresolved incidents. SOP and labeled-data templates support qualified site review; the empty templates intentionally fail validation rather than supplying fictional approvals or real-machine evidence. See the same guide for commands and verification limits.

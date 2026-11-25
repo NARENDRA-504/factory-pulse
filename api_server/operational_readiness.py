@@ -6,6 +6,7 @@ import datetime as dt
 import hashlib
 import json
 import math
+import os
 import time
 import urllib.request
 from pathlib import Path
@@ -43,6 +44,19 @@ def summarize_pipeline(catalog,rows,now):
         'fingerprint':hashlib.sha256('|'.join(sorted(r['reading_id'] for r in rows)).encode()).hexdigest(),
         'status':'live' if fresh_count else 'waiting' if not rows else 'stale'}
 
+def machine_status_summary(result, sender):
+    """Explicit allowlist: workplace roles receive no infrastructure diagnostics."""
+    paused=sender.get('status')=='reachable' and sender.get('paused') is True
+    def state(machine):
+        if result.get('mysql')!='reachable':return 'Data unavailable'
+        if machine.get('state')=='fresh':return 'Live'
+        return 'Paused' if paused else 'Data unavailable'
+    machines=[{'machine_id':m['machine_id'],'machine_code':m['machine_code'],'status':state(m)} for m in result.get('machines',[])]
+    status=('Data unavailable' if result.get('mysql')!='reachable' else
+            'Live' if any(m['status']=='Live' for m in machines) else
+            'Paused' if paused else 'Data unavailable')
+    return {'status':status,'checked_at':result['checked_at'],'machines':machines}
+
 _sender_cache={'at':0,'value':None}
 def sender_health():
     # Fixed local observability endpoint: never forward arbitrary browser URLs or keys.
@@ -50,8 +64,9 @@ def sender_health():
     try:
         from dotenv import dotenv_values
         path=Path(__file__).resolve().parents[2]/'AI Simulator/backend/.env'
-        key=dotenv_values(path).get('SIMULATOR_API_KEY','') if path.exists() else ''
-        req=urllib.request.Request('http://127.0.0.1:8002/api/v1/integration/status',headers={'X-API-Key':key} if key else {})
+        key=os.getenv('SIMULATOR_CONTROL_API_KEY') or (dotenv_values(path).get('SIMULATOR_API_KEY','') if path.exists() else '')
+        base=(os.getenv('SIMULATOR_CONTROL_URL') or 'http://127.0.0.1:8002').rstrip('/')
+        req=urllib.request.Request(base+'/api/v1/integration/status',headers={'X-API-Key':key} if key else {})
         with urllib.request.urlopen(req,timeout=1.5) as response:
             raw=response.read(20001)
             if len(raw)>20000:raise ValueError('Oversize sender status')
@@ -111,9 +126,22 @@ def register(app,api):
             result['mysql']='reachable'
         except Exception:
             result={'mysql':'unavailable','status':'degraded','machines':[],'notice':'MySQL diagnostics unavailable. No data has been altered.'}
-        result.update(checked_at=now.isoformat(),query_ms=round((time.perf_counter()-start)*1000,1),model=model_status())
-        if user['role'] in {'Admin','Super Admin'}:result['sender']=sender_health()
+        result.update(checked_at=now.isoformat(),query_ms=round((time.perf_counter()-start)*1000,1))
+        sender=sender_health()
+        if user['role'] not in {'Admin','Super Admin'}:
+            return machine_status_summary(result,sender)
+        result.update(sender=sender,model=model_status())
+        result['latest_saved_at']=max((m['latest_at'] for m in result.get('machines',[]) if m.get('latest_at')),default=None)
+        result['monitor_state']=('Disconnected' if result['mysql']!='reachable' else
+            'Live' if result['status']=='live' else 'Paused' if sender.get('paused') is True else
+            'Disconnected' if sender.get('status')!='reachable' else 'Waiting for readings')
         return result
+
+    @app.get('/api/v1/operations/pipeline-monitor')
+    def pipeline_monitor(user=Depends(current)):
+        if user['role'] not in {'Admin','Super Admin'}:
+            raise HTTPException(403,'Pipeline monitoring requires administrator access')
+        return readiness(user=user)
 
     @app.get('/api/v1/intelligence/health-model/{machine_id}')
     def model(machine_id:str,user=Depends(current)):
@@ -131,6 +159,7 @@ def register(app,api):
             downtime=summarize_downtime([(utc(r['reading_timestamp']),r['machine_status']=='STOPPED') for r in points[:10000]],since,now)
             downtime['coverage']='latest_10000_RPM_samples' if len(points)>10000 else 'available_RPM_samples_in_last_12h'
             incidents=[dict(r) for r in c.execute(sql("SELECT id,severity,status,component_area FROM incidents WHERE machine_code=:code AND status<>'Closed' ORDER BY id DESC LIMIT 20"),{'code':m['machineCode']}).mappings()]
+            orders=[dict(r) for r in c.execute(sql("SELECT order_code,incident_id,status,priority,created_at FROM maintenance_work_orders WHERE machine_code=:code AND status<>'Completed'"+(' AND technician_id=:uid' if user['role']=='Maintenance' else '')+" ORDER BY id DESC LIMIT 20"),{'code':m['machineCode'],'uid':user['id']}).mappings()]
             recent=c.execute(sql("SELECT id,employee_id,employee_work_id,event_type,details,occurred_at_utc FROM activity_log WHERE event_type IN ('handover_published','handover_acknowledged') ORDER BY id DESC LIMIT 300")).mappings().all()
         logs=[]
         for r in recent:
@@ -138,6 +167,9 @@ def register(app,api):
             if str(d.get('resource_id','')).split('/')[0]!=machine_id:continue
             logs.append({'id':r['id'],'employee_work_id':r['employee_work_id'],'event':r['event_type'],'at':api['_iso_utc'](r['occurred_at_utc']),**d})
         return {'machine_id':machine_id,'machine_code':m['machineCode'],'shift':shift,'downtime':downtime,'open_incidents':incidents,
+                'unfinished_work':[{**r,'created_at':api['_iso_utc'](r['created_at'])} for r in orders],
+                'next_actions':['Review '+str(len(incidents))+' unresolved incidents and '+str(len(orders))+' unfinished work orders.',
+                    'Read the latest handover restrictions before taking over.','Acknowledge the handover after reviewing its evidence.'],
                 'history':logs,'history_scope':'latest 300 handover events, filtered to authorized machine',
                 'notice':'Output is observed counter change. Downtime is limited to recorded observations. Restrictions are employee notes, not equipment authorization.'}
 
@@ -180,6 +212,8 @@ def register(app,api):
             if {'resource_type','resource_id'} <= columns:
                 linked="(resource_type='incident' AND resource_id=:id) OR ("+linked+")"
             history=c.execute(sql("SELECT employee_work_id,event_type,details,occurred_at_utc FROM activity_log WHERE "+linked+" ORDER BY id DESC LIMIT 30"),{'id':str(incident_id),'numeric_id':incident_id}).mappings().all()
+            ack_rows=c.execute(sql("SELECT role_at_event AS role,MIN(occurred_at_utc) first_at,MAX(occurred_at_utc) last_at,COUNT(*) events FROM activity_log WHERE event_type='alert_acknowledged' AND ("+linked+") GROUP BY role_at_event"),{'id':str(incident_id),'numeric_id':incident_id}).mappings().all()
+            acknowledgements={x['role']:x for x in ack_rows}
         m=next((m for m in api['load_available_machine_master']().values() if m['machineCode']==r['machine_code']),None)
         snapshot=r['sensor_snapshot']
         try:snapshot=json.loads(snapshot) if isinstance(snapshot,str) else snapshot
@@ -187,6 +221,11 @@ def register(app,api):
         facts=[f for f in (snapshot or []) if isinstance(f,dict)] if isinstance(snapshot,list) else []
         sop=retrieve_sop(str(r['component_area']),user['role'],m['machineId'] if m else None,facts,api['_utcnow']())
         return {'incident_id':incident_id,'status':r['status'],'severity':r['severity'],'sop':sop,
+            'acknowledgements':{'roles':[{'role':role,'status':'Acknowledged' if role in acknowledgements else 'Not recorded',
+                'first_at':api['_iso_utc'](acknowledgements[role]['first_at']) if role in acknowledgements else None,
+                'last_at':api['_iso_utc'](acknowledgements[role]['last_at']) if role in acknowledgements else None}
+                for role in ('Operator','Supervisor','Maintenance')],
+                'notice':'Recorded in-app acknowledgement by one or more accounts in each role at the time of the event. This does not prove every recipient saw the alert, external delivery, technician arrival or repair completion.'},
             'stages':[{'label':'Report','done':True},{'label':'Assign technician','done':r['assigned_to_id'] is not None},
                       {'label':'Repair and verify','done':r['status']=='Closed'},{'label':'Resolved','done':r['status']=='Closed'}],
             'history':[{'employee_work_id':x['employee_work_id'],'event':x['event_type'],'at':api['_iso_utc'](x['occurred_at_utc'])} for x in history]}

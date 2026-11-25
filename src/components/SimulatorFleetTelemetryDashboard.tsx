@@ -1,4 +1,5 @@
 import { SensorReliabilityPanel } from './ReliabilityPanels';
+import { MachineHealthPrediction } from './MachineHealthPrediction';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Activity, AlertTriangle, Cpu, Gauge, Radio, TrendingUp, Zap } from 'lucide-react';
 import { Machine, UserProfile } from '../types';
@@ -316,6 +317,7 @@ export const SimulatorFleetTelemetryDashboard: React.FC<SimulatorFleetTelemetryD
       </Card>
     </div>
 
+    {selectedMachine?.machineId&&<MachineHealthPrediction key={`${user.id}:${selectedMachine.machineId}`} machineId={selectedMachine.machineId}/>}
     {selectedMachine?.machineId&&<SensorReliabilityPanel machineId={selectedMachine.machineId}/>}
     <OperationalInsights machineId={selectedMachine?.machineId} isAdmin={user.role === 'Admin'}/>
     <Card title="Machine readings" hint="Latest saved values for the selected machine. Choose a signal to open its timestamped trend.">

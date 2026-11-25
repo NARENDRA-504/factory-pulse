@@ -4,7 +4,6 @@ import {
   Dataset2RoughnessSummary,
   Dataset3TelemetrySummary,
   Dataset4CycleToFailureSummary,
-  PipelineHealthAudit,
 } from '../types';
 import { apiClient } from '../services/apiClient';
 import { ProvenanceBadge } from '../components/ProvenanceBadge';
@@ -26,12 +25,11 @@ import {
 } from 'lucide-react';
 
 export const AnalyticsView: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'tool_wear' | 'roughness' | 'telemetry' | 'cycle_failure' | 'pipeline' | 'fleet_insights'>('fleet_insights');
+  const [activeTab, setActiveTab] = useState<'tool_wear' | 'roughness' | 'telemetry' | 'cycle_failure' | 'fleet_insights'>('fleet_insights');
   const [dataset1, setDataset1] = useState<Dataset1ToolWearSummary | null>(null);
   const [dataset2, setDataset2] = useState<Dataset2RoughnessSummary | null>(null);
   const [dataset3, setDataset3] = useState<Dataset3TelemetrySummary | null>(null);
   const [dataset4, setDataset4] = useState<Dataset4CycleToFailureSummary | null>(null);
-  const [pipelineAudit, setPipelineAudit] = useState<PipelineHealthAudit | null>(null);
   const [fleetStats, setFleetStats] = useState<any>(null);
   const [mfgKPIs, setMfgKPIs] = useState<any>(null);
   const [businessInsights, setBusinessInsights] = useState<any>(null);
@@ -40,12 +38,11 @@ export const AnalyticsView: React.FC = () => {
   useEffect(() => {
     async function loadData() {
       try {
-        const [d1, d2, d3, d4, pipe, fStats, kpis, insights] = await Promise.all([
+        const [d1, d2, d3, d4, fStats, kpis, insights] = await Promise.all([
           apiClient.getToolWearAnalytics(),
           apiClient.getRoughnessAnalytics(),
           apiClient.getTelemetryAnalytics(),
           apiClient.getCycleToFailureAnalytics(),
-          apiClient.getPipelineHealth(),
           apiClient.getFleetStatistics(),
           apiClient.getManufacturingKPIs(),
           apiClient.getBusinessInsights(),
@@ -54,7 +51,6 @@ export const AnalyticsView: React.FC = () => {
         setDataset2(d2);
         setDataset3(d3);
         setDataset4(d4);
-        setPipelineAudit(pipe);
         setFleetStats(fStats);
         setMfgKPIs(kpis);
         setBusinessInsights(insights);
@@ -143,16 +139,7 @@ export const AnalyticsView: React.FC = () => {
             Tab 4: Tool-Life Distribution (Dataset 4)
           </button>
 
-          <button
-            onClick={() => setActiveTab('pipeline')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium font-mono transition-all ${
-              activeTab === 'pipeline'
-                ? 'bg-teal-500/10 text-teal-800 border border-teal-500/30 shadow-xs'
-                : 'text-slate-600 hover:text-slate-800 hover:bg-slate-50'
-            }`}
-          >
-            Tab 5: Data Pipeline &amp; Power BI
-          </button>
+
 
           <button
             onClick={() => setActiveTab('fleet_insights')}
@@ -500,131 +487,6 @@ export const AnalyticsView: React.FC = () => {
 
       {/* ------------------------------------------------------------- */}
       {/* TAB 5: DATA PIPELINE & POWER BI BRIDGE */}
-      {/* ------------------------------------------------------------- */}
-      {activeTab === 'pipeline' && pipelineAudit && (
-        <div className="space-y-5">
-          {/* 7-Stage Pipeline Diagram Visualizer */}
-          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
-            <h2 className="font-display font-bold text-base text-slate-900 mb-2">
-              7-Stage End-to-End Manufacturing Data Pipeline
-            </h2>
-            <p className="text-xs text-slate-600 mb-5">
-              The project describes this target architecture; the connections shown here are not an end-to-end status check.
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-7 gap-2 text-center text-xs font-mono">
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                <div className="text-[10px] text-teal-700 font-bold uppercase">1. Sources</div>
-                <div className="text-slate-800 mt-1 font-semibold">4 Datasets + Live Feed</div>
-                <div className="text-[10px] text-slate-500 mt-1">CSV &amp; Telemetry</div>
-              </div>
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                <div className="text-[10px] text-teal-700 font-bold uppercase">2. MySQL Raw</div>
-                <div className="text-slate-800 mt-1 font-semibold">DDL defined</div>
-                <div className="text-[10px] text-slate-500 mt-1">Counts are project summaries</div>
-              </div>
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                <div className="text-[10px] text-teal-700 font-bold uppercase">3. Python EDA</div>
-                <div className="text-slate-800 mt-1 font-semibold">Notebook file</div>
-                <div className="text-[10px] text-slate-500 mt-1">Static EDA summaries</div>
-              </div>
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                <div className="text-[10px] text-teal-700 font-bold uppercase">4. Processed</div>
-                <div className="text-slate-800 mt-1 font-semibold">SQL views defined</div>
-                <div className="text-[10px] text-slate-500 mt-1">Not queried by this view</div>
-              </div>
-              <div className="p-3 bg-slate-50 border border-purple-200 bg-purple-50 rounded-lg">
-                <div className="text-[10px] text-purple-700 font-bold uppercase">5. Power BI</div>
-                <div className="text-slate-800 mt-1 font-semibold">Report not included</div>
-                <div className="text-[10px] text-purple-700 mt-1">No refresh verified</div>
-              </div>
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                <div className="text-[10px] text-teal-700 font-bold uppercase">6. FastAPI</div>
-                <div className="text-slate-800 mt-1 font-semibold">Telemetry API</div>
-                <div className="text-[10px] text-slate-500 mt-1">MySQL config required</div>
-              </div>
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                <div className="text-[10px] text-teal-700 font-bold uppercase">7. Frontend</div>
-                <div className="text-slate-800 mt-1 font-semibold">5 App Screens</div>
-                <div className="text-[10px] text-slate-500 mt-1">AI Studio SPA</div>
-              </div>
-            </div>
-          </div>
-
-          {/* MySQL Raw Layer Audit Gate */}
-          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-emerald-700" />
-                <h3 className="font-display font-bold text-sm text-slate-900">
-                  Declared Dataset Row Counts
-                </h3>
-              </div>
-                <span className="text-[10px] font-mono text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                Static summaries · database not checked
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 font-mono text-xs text-center">
-              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                <div className="text-[10px] text-slate-500">raw_cnc_tool_wear</div>
-                <div className="text-slate-900 font-bold mt-1">{pipelineAudit.rawToolWearCount} rows</div>
-                <div className="text-[10px] text-slate-600 mt-0.5">Project summary; not refreshed</div>
-              </div>
-              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                <div className="text-[10px] text-slate-500">raw_turning_roughness</div>
-                <div className="text-slate-900 font-bold mt-1">{pipelineAudit.rawRoughnessCount} rows</div>
-                <div className="text-[10px] text-slate-600 mt-0.5">Project summary; not refreshed</div>
-              </div>
-              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                <div className="text-[10px] text-slate-500">raw_mill_telemetry</div>
-                <div className="text-slate-900 font-bold mt-1">{pipelineAudit.rawTelemetryCount} rows</div>
-                <div className="text-[10px] text-slate-600 mt-0.5">Project summary; not refreshed</div>
-              </div>
-              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                <div className="text-[10px] text-slate-500">raw_milling_cycles</div>
-                <div className="text-slate-900 font-bold mt-1">{pipelineAudit.rawMillingCyclesCount} rows</div>
-                <div className="text-[10px] text-slate-600 mt-0.5">Project summary; not refreshed</div>
-              </div>
-              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 bg-amber-50">
-                <div className="text-[10px] text-amber-700">sim_telemetry_events</div>
-                <div className="text-slate-900 font-bold mt-1">{pipelineAudit.simTelemetryEventsCount} events</div>
-                <div className="text-[10px] text-amber-700 mt-0.5">Static value; not queried</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Power BI Connection Bridge Card */}
-          <div className="bg-white border border-purple-900/40 rounded-xl p-5 shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <span className="text-[10px] font-mono text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200 uppercase font-semibold">
-                  Power BI connection status
-                </span>
-                <h3 className="font-display font-bold text-sm text-slate-900 mt-2">
-                  No Power BI report is present in this project
-                </h3>
-                <p className="text-xs text-slate-700 mt-1 leading-relaxed max-w-2xl">
-                  The schema defines views including{' '}
-                  <code className="text-purple-800 font-mono">v_executive_oee_summary</code>,{' '}
-                  <code className="text-purple-800 font-mono">v_quality_roughness_compliance</code>,{' '}
-                  <code className="text-purple-800 font-mono">v_machine_current_status</code>, and{' '}
-                  <code className="text-purple-800 font-mono">v_incident_kpi_summary</code>. No Power BI file, MySQL credentials, or refresh evidence is available here; there is no downtime distribution view in the checked-in DDL.
-                </p>
-              </div>
-
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-right font-mono text-xs shrink-0">
-                <div className="text-slate-600 text-[10px]">Connection check</div>
-                <div className="text-amber-800 font-semibold mt-1">Not configured or verified</div>
-                <div className="text-slate-600">Schema target: ziro_manufacturing</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ------------------------------------------------------------- */}
-      {/* TAB 6: FLEET ANALYTICS & BUSINESS INSIGHTS (PHASE 1 V1) */}
       {/* ------------------------------------------------------------- */}
       {activeTab === 'fleet_insights' && (
         <div className="space-y-6">

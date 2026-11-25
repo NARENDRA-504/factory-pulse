@@ -1,0 +1,17 @@
+# Optional public-host overlay. Requires owned DNS/domain and inbound ports 80/443.
+# Start with: docker compose --env-file .env.deploy -f compose.yaml -f compose.https.yaml up -d
+services:
+  gateway:
+    image: caddy:2-alpine
+    environment:
+      FACTORYPULSE_DOMAIN: ${FACTORYPULSE_DOMAIN:?Set the owned frontend domain in private deployment configuration}
+    ports: ['80:80', '443:443', '443:443/udp']
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - gateway-data:/data
+      - gateway-config:/config
+    depends_on: [web]
+    restart: unless-stopped
+volumes:
+  gateway-data:
+  gateway-config:

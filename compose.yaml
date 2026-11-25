@@ -1,0 +1,30 @@
+services:
+  api:
+    build: .
+    env_file: .env.deploy
+    environment:
+      PORT: '8000'
+      DEPLOYMENT_MODE: hosted
+      APP_ENV: production
+      DEMO_AUTH_ENABLED: 'false'
+    volumes:
+      - runtime:/app/.local
+      - workforce-config:/app/config
+    ports:
+      - '127.0.0.1:8001:8000'
+    restart: unless-stopped
+    init: true
+    security_opt: [no-new-privileges:true]
+  web:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.web
+    ports:
+      - '127.0.0.1:8080:80'
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+volumes:
+  runtime:
+  workforce-config:

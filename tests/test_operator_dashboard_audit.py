@@ -529,7 +529,7 @@ class TestOperatorDashboardFunctionalAudit(unittest.TestCase):
             ddl_content = f.read()
         self.assertNotIn("CREATE TABLE shift_checklists", ddl_content)
 
-        with open(os.path.join(PROJECT_ROOT, "src", "views", "DashboardView.tsx"), "r") as f:
+        with open(os.path.join(PROJECT_ROOT, "src", "views", "DashboardView.tsx"), "r", encoding="utf-8") as f:
             view_content = f.read()
         self.assertIn("ziro_operator_checklist", view_content)
         self.assertIn("Local Shift Copy · Not DB Audited", view_content)

@@ -28,7 +28,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900 flex items-center justify-center p-4">
+    <main className="fp-login-theme min-h-screen bg-slate-50 text-slate-900 flex items-center justify-center p-4">
       <div className="w-full max-w-5xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl grid lg:grid-cols-[1.1fr_0.9fr]">
         <section className="relative min-h-64 lg:min-h-[560px] overflow-hidden border-b lg:border-b-0 lg:border-r border-slate-200 p-8 sm:p-10 flex flex-col justify-between bg-slate-50">
           <div className="absolute inset-0 opacity-20 bg-[radial-gradient(ellipse_at_25%_25%,#0d9488,transparent_55%)]" />

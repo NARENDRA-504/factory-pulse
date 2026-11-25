@@ -1,0 +1,20 @@
+{
+  "raw_rows": 81375,
+  "normalized_unique_rows": 80749,
+  "conflicting_packet_ids_excluded": 109,
+  "invalid_times": 0,
+  "unknown_machines": 0,
+  "bad_quality_rows": 1336,
+  "invalid_numeric_cells": {
+    "temperature_c": 220,
+    "vibration": 0,
+    "spindle_rpm": 0,
+    "motor_current_a": 0,
+    "motor_load_pct": 0,
+    "pressure_bar": 0,
+    "coolant_flow_l_min": 0,
+    "ambient_temperature_c": 0,
+    "hours_since_service": 0
+  },
+  "clean_rows": 79195
+}

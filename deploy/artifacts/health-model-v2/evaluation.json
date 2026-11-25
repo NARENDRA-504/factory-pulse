@@ -1,0 +1,254 @@
+{
+  "model_name": "balanced_random_forest",
+  "trained_at_utc": "2026-11-21T13:52:28.290112+00:00",
+  "sklearn_version": "1.9.1",
+  "model_sha256": "8a49396e81367aa4b8ff71ce7f09273844e79d146d5864ddbbb63b0e019d3ca1",
+  "training_source": "Fictional machine-health challenge; no physical failure validation",
+  "selection": "Highest validation macro F1 among tree ensembles; logistic and majority are comparison baselines",
+  "split_audit": {
+    "train": {
+      "rows": 46872,
+      "excluded": 2954,
+      "class_counts": {
+        "Normal": 45983,
+        "Suspect": 672,
+        "Critical": 217
+      },
+      "first_utc": "2026-01-01 00:00:00+00:00",
+      "last_utc": "2026-01-09 21:50:00+00:00",
+      "sha256": "6aa7cbbad9162f2cb3250782451a370ea878e1d855cd9c3172ba08e6536c7c53"
+    },
+    "validation": {
+      "rows": 10103,
+      "excluded": 570,
+      "class_counts": {
+        "Normal": 9796,
+        "Suspect": 228,
+        "Critical": 79
+      },
+      "first_utc": "2026-01-10 00:00:00+00:00",
+      "last_utc": "2026-01-11 21:50:00+00:00",
+      "sha256": "1039c3de38867126c86a078fa194d39b4854289f799d8949f65370e47b5137f7"
+    },
+    "test": {
+      "rows": 15377,
+      "excluded": 1043,
+      "class_counts": {
+        "Normal": 15259,
+        "Suspect": 86,
+        "Critical": 32
+      },
+      "first_utc": "2026-01-12 00:00:00+00:00",
+      "last_utc": "2026-01-14 21:50:00+00:00",
+      "sha256": "81ff1257d8d4e3115e2d5eaff9c5798a182f86de6e3b2a7e86e493b351c45395"
+    }
+  },
+  "validation": {
+    "majority": {
+      "rows": 10103,
+      "accuracy": 0.9696129862417103,
+      "macro_f1": 0.32819069634990033,
+      "recall": {
+        "Normal": 1.0,
+        "Suspect": 0.0,
+        "Critical": 0.0
+      },
+      "precision": {
+        "Normal": 0.9696129862417103,
+        "Suspect": 0.0,
+        "Critical": 0.0
+      },
+      "confusion_matrix": [
+        [
+          9796,
+          0,
+          0
+        ],
+        [
+          228,
+          0,
+          0
+        ],
+        [
+          79,
+          0,
+          0
+        ]
+      ],
+      "matrix_order": [
+        "Normal",
+        "Suspect",
+        "Critical"
+      ],
+      "normal_to_critical_rate": 0.0
+    },
+    "balanced_logistic": {
+      "rows": 10103,
+      "accuracy": 0.9114124517470058,
+      "macro_f1": 0.5194856515465104,
+      "recall": {
+        "Normal": 0.9223152307064107,
+        "Suspect": 0.543859649122807,
+        "Critical": 0.620253164556962
+      },
+      "precision": {
+        "Normal": 0.9976810954063604,
+        "Suspect": 0.1436848203939745,
+        "Critical": 0.266304347826087
+      },
+      "confusion_matrix": [
+        [
+          9035,
+          712,
+          49
+        ],
+        [
+          18,
+          124,
+          86
+        ],
+        [
+          3,
+          27,
+          49
+        ]
+      ],
+      "matrix_order": [
+        "Normal",
+        "Suspect",
+        "Critical"
+      ],
+      "normal_to_critical_rate": 0.00500204164965292
+    },
+    "balanced_random_forest": {
+      "rows": 10103,
+      "accuracy": 0.9706027912501237,
+      "macro_f1": 0.6850700264452539,
+      "recall": {
+        "Normal": 0.9802980808493262,
+        "Suspect": 0.7017543859649122,
+        "Critical": 0.5443037974683544
+      },
+      "precision": {
+        "Normal": 0.9958519133049881,
+        "Suspect": 0.42105263157894735,
+        "Critical": 0.5375
+      },
+      "confusion_matrix": [
+        [
+          9603,
+          188,
+          5
+        ],
+        [
+          36,
+          160,
+          32
+        ],
+        [
+          4,
+          32,
+          43
+        ]
+      ],
+      "matrix_order": [
+        "Normal",
+        "Suspect",
+        "Critical"
+      ],
+      "normal_to_critical_rate": 0.0005104124132298898
+    },
+    "balanced_extra_trees": {
+      "rows": 10103,
+      "accuracy": 0.968029298228249,
+      "macro_f1": 0.6757080829628928,
+      "recall": {
+        "Normal": 0.9777460187831768,
+        "Suspect": 0.6666666666666666,
+        "Critical": 0.6329113924050633
+      },
+      "precision": {
+        "Normal": 0.9962554607863532,
+        "Suspect": 0.3958333333333333,
+        "Critical": 0.47619047619047616
+      },
+      "confusion_matrix": [
+        [
+          9578,
+          209,
+          9
+        ],
+        [
+          30,
+          152,
+          46
+        ],
+        [
+          6,
+          23,
+          50
+        ]
+      ],
+      "matrix_order": [
+        "Normal",
+        "Suspect",
+        "Critical"
+      ],
+      "normal_to_critical_rate": 0.0009187423438138016
+    }
+  },
+  "test": {
+    "rows": 15377,
+    "accuracy": 0.9195551798140079,
+    "macro_f1": 0.508006219620517,
+    "recall": {
+      "Normal": 0.9214234222426109,
+      "Suspect": 0.7325581395348837,
+      "Critical": 0.53125
+    },
+    "precision": {
+      "Normal": 0.999502381460155,
+      "Suspect": 0.049606299212598425,
+      "Critical": 0.425
+    },
+    "confusion_matrix": [
+      [
+        14060,
+        1192,
+        7
+      ],
+      [
+        7,
+        63,
+        16
+      ],
+      [
+        0,
+        15,
+        17
+      ]
+    ],
+    "matrix_order": [
+      "Normal",
+      "Suspect",
+      "Critical"
+    ],
+    "normal_to_critical_rate": 0.0004587456583000197
+  },
+  "majority_test_accuracy": 0.9923262014697275,
+  "deployment_parity_rows": 500,
+  "max_score_error": 2.220446049250313e-15,
+  "alerts_enabled": false,
+  "release_gate": {
+    "real_machine_validation": false,
+    "critical_recall_at_least_90_percent": false,
+    "critical_precision_at_least_80_percent": false
+  },
+  "limitations": [
+    "Synthetic labels represent future failure proximity, not current physical diagnosis.",
+    "Same fictional machines appear across time splits; not unseen-machine validation.",
+    "This test set was examined in earlier exercises; not a fresh blind benchmark.",
+    "Scores are uncalibrated. Event-level lead time and alert burden are unverified.",
+    "Motor Load in the current sender is a torque-based proxy; domain mismatch needs real sensor validation."
+  ]
+}

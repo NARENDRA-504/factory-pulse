@@ -1,0 +1,1 @@
+packet_id,machine_id,observed_at_utc,fault_event_id,split,label_source,quality_flag,health_priority,temperature_c,vibration,spindle_rpm,motor_current_a,motor_load_pct,pressure_bar,coolant_flow_l_min

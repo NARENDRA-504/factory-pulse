@@ -11,3 +11,7 @@ This is a latest-state report, not a historical OEE report. Import data changes 
 The notebook reads the same MySQL latest view, but a later refresh may differ because live data advances. Compare reading IDs/timestamps at the same snapshot, not a later moving mean.
 
 Original external reports `admins dashboard.pbix` and `visualization.pbix` reference other sources; they were preserved and are not claimed to use this operational pipeline. Older documentation is retained under docs/archive.
+
+Recheck on 22 November 2026: the report opened with cached visuals, but an actual Home -> Refresh failed MySQL authentication. The user reported cancelling the credential dialog. SQL independently returned 1,280 latest-reading rows across 40 machines; this does not establish a successful Power BI refresh. Enter valid reporting credentials locally and retry. See `docs/RELEASE-VERIFICATION.md` for the current release blockers.
+
+Follow-up on 22 November 2026 after the user entered MySQL credentials: Home -> Refresh -> Schema and data returned to the report without an authentication/error dialog. The report displayed 40 machines and was saved (title showed Last saved Today at 10:09 am). This verifies the observed local Desktop refresh path; an independent row-by-row refreshed model comparison and cloud refresh remain unverified.

@@ -1,0 +1,2 @@
+# Optional local ONNX embeddings; install alongside requirements.txt.
+fastembed==0.9.1

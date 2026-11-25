@@ -48,15 +48,15 @@ export class ErrorBoundary extends Component<Props, State> {
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-50 text-rose-800 border border-rose-200 uppercase tracking-wider">
-                    SYSTEM RECOVERABLE FAULT
+                    PAGE DISPLAY ERROR
                   </span>
-                  <span className="text-xs font-mono text-slate-500">ISO-13849 Safety Guard</span>
+
                 </div>
                 <h2 className="text-lg font-bold font-display text-slate-900">
                   {this.props.fallbackTitle || 'Component Rendering Interrupted'}
                 </h2>
                 <p className="text-xs text-slate-600 leading-relaxed">
-                  A client-side runtime exception occurred during dashboard view rendering. The platform safety boundary caught the fault to prevent system lockup.
+                  This page could not load. Try again, open another page, or reload FactoryPulse. Your saved records have not been changed by this display error.
                 </p>
               </div>
             </div>
@@ -94,7 +94,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 </button>
               </div>
               <span className="text-[11px] font-mono text-slate-500">
-                ZIRO Incident Platform v2.4
+                FactoryPulse
               </span>
             </div>
           </div>

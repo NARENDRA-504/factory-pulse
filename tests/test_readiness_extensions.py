@@ -5,7 +5,7 @@ from fastapi import FastAPI,Depends,HTTPException,Request
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine,text
 from sqlalchemy.pool import StaticPool
-from api_server.operational_readiness import register,summarize_pipeline
+from api_server.operational_readiness import register,summarize_pipeline,machine_status_summary
 from api_server.health_model import predict_machine,FEATURES,scores,load_model
 from api_server.access_roles import role_allowed
 from api_server.team_access import check_machine
@@ -39,9 +39,11 @@ class ReadinessWorkflowTests(unittest.TestCase):
   self.user={'id':1,'work_id':'OP-1','full_name':'One','role':'Operator','assigned_machine':'CNC-1','session_id':'S1'};self.fail=False
   with self.db.begin() as c:
    for stmt in ['CREATE TABLE users(id INT)','INSERT INTO users VALUES(1),(2)',
+       'CREATE TABLE maintenance_work_orders(id INT,order_code TEXT,incident_id INT,machine_code TEXT,technician_id INT,status TEXT,priority TEXT,created_at TEXT)',
+       "INSERT INTO maintenance_work_orders VALUES(1,'WO-1',1,'CNC-1',1,'Pending','Urgent','2026-11-12 10:00:00'),(2,'WO-2',2,'CNC-2',2,'Pending','Medium','2026-11-12 10:00:00')",
        'CREATE TABLE incidents(id INT,machine_code TEXT,severity TEXT,status TEXT,component_area TEXT,sensor_snapshot TEXT,assigned_to_id INT,created_at TEXT)',
        "INSERT INTO incidents VALUES(1,'CNC-1','High','Open','Temperature','[]',NULL,'2026-11-12 10:00:00'),(2,'CNC-2','High','Open','Pressure','[]',NULL,'2026-11-12 10:00:00')",
-       'CREATE TABLE activity_log(id INTEGER PRIMARY KEY AUTOINCREMENT,employee_id INT,employee_work_id TEXT,event_type TEXT,resource_type TEXT,resource_id TEXT,details TEXT,occurred_at_utc TEXT)',
+       'CREATE TABLE activity_log(id INTEGER PRIMARY KEY AUTOINCREMENT,employee_id INT,employee_work_id TEXT,event_type TEXT,role_at_event TEXT,resource_type TEXT,resource_id TEXT,details TEXT,occurred_at_utc TEXT)',
        'CREATE TABLE simulator_sensor_readings(id INT,machine_id TEXT,machine_code TEXT,sensor_name TEXT,machine_status TEXT,reading_timestamp TEXT,created_at TEXT,reading_id TEXT)',
        'CREATE TABLE simulator_sensor_latest(reading_row_id INT)',
        "INSERT INTO simulator_sensor_readings VALUES(1,'M1','CNC-1','RPM','NORMAL','2026-11-12 10:00:00','2026-11-12 10:00:00','R1'),(2,'M2','CNC-2','RPM','NORMAL','2026-11-12 10:00:00','2026-11-12 10:00:00','R2')",
@@ -54,7 +56,7 @@ class ReadinessWorkflowTests(unittest.TestCase):
    return dep
   def audit(c,**kw):
    if self.fail:raise RuntimeError('Audit failed')
-   c.execute(text('INSERT INTO activity_log(employee_id,employee_work_id,event_type,resource_type,resource_id,details,occurred_at_utc) VALUES(:uid,:badge,:event,:kind,:rid,:details,:time)'),{'uid':kw['employee_id'],'badge':kw['employee_work_id'],'event':kw['event_type'],'kind':kw['resource_type'],'rid':str(kw['resource_id']),'details':kw['details'],'time':NOW.isoformat()})
+   c.execute(text('INSERT INTO activity_log(employee_id,employee_work_id,event_type,role_at_event,resource_type,resource_id,details,occurred_at_utc) VALUES(:uid,:badge,:event,:role,:kind,:rid,:details,:time)'),{'uid':kw['employee_id'],'badge':kw['employee_work_id'],'event':kw['event_type'],'role':kw['role'],'kind':kw['resource_type'],'rid':str(kw['resource_id']),'details':kw['details'],'time':NOW.isoformat()})
   def resolve(mid):
    if mid not in CATALOG:raise HTTPException(404,'Machine not found')
    return CATALOG[mid]
@@ -65,11 +67,53 @@ class ReadinessWorkflowTests(unittest.TestCase):
   register(app,{'get_current_user':auth,'require_roles':require,'_sql_text':lambda s:text(s.replace(' FOR UPDATE','')),'get_telemetry_engine':lambda:self.db,
       'load_available_machine_master':lambda:CATALOG,'_utcnow':lambda:NOW,'resolve_canonical_machine':resolve,'_iso_utc':str,'_audit_insert':audit,
       'get_simulator_fleet_latest_readings':lambda user:[]})
+  self.sender_patch=patch('api_server.operational_readiness.sender_health',return_value={'status':'reachable','paused':True,'pending':7,'failed':2});self.sender_patch.start()
   self.client=TestClient(app,raise_server_exceptions=False)
- def tearDown(self):self.client.close();self.db.dispose()
+ def tearDown(self):self.client.close();self.db.dispose();self.sender_patch.stop()
  def publish(self):return self.client.post('/api/v1/operations/handovers',json={'machine_id':'M1','note':'Check fixture on next shift','restrictions':'Await inspection'})
  def test_readiness_scoped_to_operator(self):
-  r=self.client.get('/api/v1/operations/readiness').json();self.assertEqual(r['mysql'],'reachable');self.assertEqual([m['machine_id'] for m in r['machines']],['M1']);self.assertNotIn('sender',r)
+  r=self.client.get('/api/v1/operations/readiness').json();self.assertEqual(r['status'],'Live');self.assertEqual([m['machine_id'] for m in r['machines']],['M1']);self.assertEqual(set(r),{'status','checked_at','machines'});self.assertEqual(set(r['machines'][0]),{'machine_id','machine_code','status'})
+ def test_monitor_denied_for_all_workplace_roles_before_any_database_check(self):
+  with patch('api_server.operational_readiness.scoped_catalog',side_effect=AssertionError('Must not read diagnostics')):
+   for role in ['Operator','Supervisor','Maintenance','Manager']:
+    self.user['role']=role
+    self.assertEqual(self.client.get('/api/v1/operations/pipeline-monitor').status_code,403)
+ def test_monitor_permits_only_admins_and_returns_actual_counts(self):
+  for role in ['Admin','Super Admin']:
+   self.user['role']=role
+   r=self.client.get('/api/v1/operations/pipeline-monitor')
+   self.assertEqual(r.status_code,200)
+   d=r.json();self.assertEqual(d['machines_in_scope'],2);self.assertEqual(d['sensor_streams'],2)
+   self.assertEqual(d['sender']['pending'],7);self.assertEqual(d['sender']['failed'],2)
+   self.assertIn('query_ms',d);self.assertIn('latest_saved_at',d)
+ def test_workplace_response_never_contains_technical_details(self):
+  for role in ['Operator','Supervisor','Maintenance','Manager']:
+   self.user['role']=role
+   r=self.client.get('/api/v1/operations/readiness')
+   self.assertEqual(r.status_code,200)
+   self.assertEqual(set(r.json()),{'status','checked_at','machines'})
+ def test_simple_status_does_not_label_database_failure_paused(self):
+  result={'mysql':'unavailable','checked_at':NOW.isoformat(),'machines':[]}
+  self.assertEqual(machine_status_summary(result,{'status':'reachable','paused':True})['status'],'Data unavailable')
+  result={'mysql':'reachable','checked_at':NOW.isoformat(),'machines':[{'machine_id':'M1','machine_code':'CNC-1','state':'stale','streams':99,'age_seconds':60}]}
+  d=machine_status_summary(result,{'status':'reachable','paused':True})
+  self.assertEqual(d['machines'][0]['status'],'Paused');self.assertNotIn('streams',d['machines'][0])
+ def test_acknowledgement_tracking_preserves_role_at_event_and_machine_scope(self):
+  url='/api/v1/operations/incidents/1'
+  with patch('api_server.operational_readiness.retrieve_sop',return_value={'notice':'Test','sources':[]}):
+   self.assertEqual(self.client.post(url+'/acknowledge',json={'note':'Checked machine condition'}).status_code,200)
+   # Changing the current account role does not rewrite the historical role.
+   self.user['role']='Admin'
+   data=self.client.get(url+'/response').json()
+   tracking={r['role']:r for r in data['acknowledgements']['roles']}
+   self.assertEqual(tracking['Operator']['status'],'Acknowledged')
+   self.assertEqual(tracking['Supervisor']['status'],'Not recorded')
+   self.user['role']='Operator'
+   self.assertEqual(self.client.get('/api/v1/operations/incidents/2/response').status_code,403)
+ def test_handover_unfinished_repairs_are_machine_scoped(self):
+  result=self.client.get('/api/v1/operations/handover/M1').json()
+  self.assertEqual([w['order_code'] for w in result['unfinished_work']],['WO-1'])
+  self.assertEqual(len(result['next_actions']),3)
  def test_handover_authorization_acknowledgement_and_duplicate(self):
   self.assertEqual(self.client.get('/api/v1/operations/handover/M2').status_code,403)
   self.assertEqual(self.publish().status_code,201)
@@ -101,9 +145,9 @@ class ReadinessWorkflowTests(unittest.TestCase):
   from sqlalchemy import event
   @event.listens_for(original,'before_cursor_execute',retval=True)
   def legacy_writer(conn,cursor,statement,parameters,context,executemany):
-   if statement.startswith('INSERT INTO activity_log(employee_id,employee_work_id,event_type,resource_type,resource_id,details,occurred_at_utc)'):
-    statement='INSERT INTO activity_log(employee_id,employee_work_id,event_type,details,occurred_at_utc) VALUES(?,?,?,?,?)'
-    parameters=tuple(parameters[i] for i in (0,1,2,5,6))
+   if statement.startswith('INSERT INTO activity_log(employee_id,employee_work_id,event_type,role_at_event,resource_type,resource_id,details,occurred_at_utc)'):
+    statement='INSERT INTO activity_log(employee_id,employee_work_id,event_type,role_at_event,details,occurred_at_utc) VALUES(?,?,?,?,?,?)'
+    parameters=tuple(parameters[i] for i in (0,1,2,3,6,7))
    return statement,parameters
   self.assertEqual(self.publish().status_code,201)
   hid=self.client.get('/api/v1/operations/handover/M1').json()['history'][0]['id']

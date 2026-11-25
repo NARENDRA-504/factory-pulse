@@ -21,6 +21,7 @@ MODULE = {'dashboard': None, 'production': 'production', 'machines': 'machines',
 def guidance(role, module):
     display_role = role
     role = 'Admin' if role == 'Super Admin' else role
+    if module == 'readiness-review' and role == 'Admin':module='users'
     if module == 'readiness': module = 'machines'
     if module == 'machine-changes' and role in {'Operator','Supervisor','Admin'}: module = 'users' if role == 'Admin' else 'incidents'
     allowed = set().union(*ALLOWED.values()) if display_role == 'Super Admin' else ALLOWED.get(role, set())

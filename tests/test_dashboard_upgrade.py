@@ -120,7 +120,7 @@ class TestDashboardUpgrade(unittest.TestCase):
         with open(boundary_file, "r", encoding="utf-8") as f:
             b_content = f.read()
         self.assertIn("componentDidCatch", b_content)
-        self.assertIn("SYSTEM RECOVERABLE FAULT", b_content)
+        self.assertIn("PAGE DISPLAY ERROR", b_content)
 
         with open(main_file, "r", encoding="utf-8") as f:
             m_content = f.read()

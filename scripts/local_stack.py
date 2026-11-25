@@ -10,9 +10,10 @@ import urllib.request
 from urllib.parse import urlparse
 
 from dotenv import dotenv_values
+from connect_local_apps import simulator_root
 
 ROOT = Path(__file__).resolve().parents[1]
-SIM = ROOT.parent / 'AI Simulator'
+SIM = simulator_root(ROOT)
 # Fail clearly before launching if separate apps disagree on available identities.
 main_roster=json.loads((ROOT/'public/available-machine-ids.json').read_text(encoding='utf-8'))['machine_ids']
 sim_roster=json.loads((SIM/'available-machine-ids.json').read_text(encoding='utf-8'))['machine_ids']
@@ -37,6 +38,12 @@ if os.name == 'nt':
         raise SystemExit('The local stack monitor is already running.')
     ctypes.windll.kernel32.SetThreadExecutionState(0x80000001)
 sim_env = dotenv_values(SIM / 'backend' / '.env')
+main_env = dotenv_values(ROOT / '.env')
+if (not main_env.get('SIMULATOR_API_KEY')
+        or main_env.get('SIMULATOR_API_KEY') != sim_env.get('TELEMETRY_API_KEY')
+        or sim_env.get('TELEMETRY_RECEIVER_URL') != 'http://127.0.0.1:8001/api/v1/telemetry'
+        or sim_env.get('TELEMETRY_AUTH_HEADER') != 'X-Simulator-API-Key'):
+    raise SystemExit('Local receiver settings do not match. Stop running backends and run scripts/Connect-LocalApps.ps1 first. No services or telemetry were started.')
 key = sim_env.get('SIMULATOR_API_KEY', '')
 headers = {'X-API-Key': key} if key else {}
 node = shutil.which('node.exe') or shutil.which('node')

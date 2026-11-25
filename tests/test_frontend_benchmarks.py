@@ -20,8 +20,10 @@ class TestFrontendBenchmarks(unittest.TestCase):
             self.types_code = f.read()
 
     def test_role_definitions(self):
-        """TC-FE-001: Verifies 5 approved user roles in TypeScript definitions."""
-        self.assertIn("export type UserRole = 'Operator' | 'Supervisor' | 'Manager' | 'Maintenance' | 'Admin';", self.types_code)
+        """TC-FE-001: Preserves the five workplace roles and explicit Super Admin."""
+        declaration = re.search(r'export type UserRole\s*=([^;]+);', self.types_code).group(1)
+        self.assertEqual(set(re.findall(r"'([^']+)'", declaration)),
+                         {'Operator', 'Supervisor', 'Manager', 'Maintenance', 'Admin', 'Super Admin'})
 
     def test_data_provenance_types(self):
         """TC-FE-002: Verifies strict provenance types."""

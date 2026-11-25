@@ -1,0 +1,41 @@
+# Local acceptance only. Existing demo ports, environment files and SQLite stay untouched.
+# This uses the existing MySQL records: do not run mutation tests until backed up.
+name: factorypulse-staging
+services:
+  api:
+    image: factorypulse-api:verification
+    env_file: .local/staging/api.env
+    environment:
+      DEPLOYMENT_MODE: local
+      APP_ENV: production
+      DEMO_AUTH_ENABLED: 'false'
+      PORT: '8000'
+    volumes:
+      - runtime:/app/.local
+      - workforce-config:/app/config
+    init: true
+    security_opt: [no-new-privileges:true]
+  web:
+    image: factorypulse-web:verification
+    ports: ['127.0.0.1:18080:80']
+    depends_on:
+      api:
+        condition: service_healthy
+  simulator-api:
+    image: ai-simulator-api:verification
+    env_file: .local/staging/simulator.env
+    environment:
+      DATABASE_PATH: /app/data/simulator.db
+    volumes:
+      - simulator-data:/app/data
+    init: true
+    security_opt: [no-new-privileges:true]
+  simulator-web:
+    image: ai-simulator-web:staging
+    env_file: .local/staging/simulator-web.env
+    ports: ['127.0.0.1:15175:80']
+    depends_on: [simulator-api]
+volumes:
+  runtime:
+  workforce-config:
+  simulator-data:

@@ -20,7 +20,7 @@ class SopRetrievalTests(unittest.TestCase):
         self.assertFalse(result['notifications_sent'])
 
     def test_no_reading_or_stale_reading_is_not_normal(self):
-        fact={'machine_id':'MCH-001','sensor_name':'Temperature','sensor_value':70.,'data_quality':'GOOD',
+        fact={'machine_id':'MCH-001','sensor_name':'Temperature','sensor_value':70.,'sensor_unit':'°C','data_quality':'GOOD',
               'machine_status':'CRITICAL','timestamp':(NOW-dt.timedelta(seconds=31)).isoformat()}
         self.assertEqual(retrieve_sop('temperature','Operator','MCH-001',[fact],NOW)['level'],'Unavailable')
         fact['timestamp']=NOW.isoformat()

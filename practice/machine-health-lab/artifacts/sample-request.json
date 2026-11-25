@@ -1,0 +1,12 @@
+{
+  "temperature_c": 57.87,
+  "vibration": 2.039,
+  "spindle_rpm": 3819.8,
+  "motor_current_a": 58.11,
+  "motor_load_pct": 59.6,
+  "pressure_bar": 5.398,
+  "coolant_flow_l_min": 26.91,
+  "ambient_temperature_c": 26.35,
+  "hours_since_service": 13.83,
+  "machine_type": "Milling"
+}

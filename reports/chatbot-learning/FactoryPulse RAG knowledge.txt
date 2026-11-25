@@ -1,0 +1,72 @@
+FACTORYPULSE CLIENT KNOWLEDGE
+Prepared 13 November 2026
+Project capabilities and explicitly fictional practice scenarios
+
+[FP-001] What FactoryPulse does
+FactoryPulse is a manufacturing monitoring and incident response project. It brings machine readings, production counters, maintenance work and employee responsibilities into authorized role dashboards. Its practical purpose is to help people spot abnormal conditions, report problems, assign repairs and review production. Visibility and traceability can support better decisions; they do not guarantee reduced downtime or increased profit.
+
+[FP-002] Who operates the machines
+FactoryPulse is software, not a factory and not a machine manufacturer. It does not itself produce physical components. The separate AI Simulator generates synthetic machine readings for development and demonstrations. FactoryPulse receives and stores those readings in MySQL. Any fictional customer factory and its parts in this guide are invented for practice, not actual clients or business achievements.
+
+[FP-003] Current demonstration fleet and shift assumptions
+The inspected project uses a matching 40-machine demonstration roster. One example is MCH-001, station CNC-5AX-001. A demonstration shift lasts 12 hours, with starts at 06:00 and 18:00 in the configured factory timezone. The planning target is 120 parts per machine per shift: 10 parts per hour, or 360 seconds per part. These are configurable project assumptions, not an industry-wide average or guaranteed good-part output. The physical process, material and component determine real capacity.
+
+[FP-004] Client explanation
+FactoryPulse gives each employee a focused view of the information and actions they are permitted to use. An operator sees their workstation; supervisors coordinate their teams; maintenance staff investigate assigned equipment; managers compare operational performance; administrators manage access and audit records. The strongest current demonstration is the link between saved machine evidence, role-specific dashboards, incident work and traceable guidance.
+
+[FP-005] Operator workspace
+An Operator signs in with an assigned employee ID and password and sees their authorized machine. The workspace includes current readings and separate sensor trends, session details, production counts, good and scrap parts, target progress, recorded downtime and incident reporting. A machine-change request can be raised for supervisor review. A normal operator cannot switch accounts or gain another machine by changing a URL. Missing production history must be shown as unavailable rather than invented.
+
+[FP-006] Supervisor workspace
+A Supervisor reviews assigned machines and operators, machine condition, output and open incidents. The supervisor prioritizes work, assigns an authorized technician and reviews machine-change requests within the permitted team. Team checks belong in backend queries and actions, not only in navigation. The historical team design groups four machines per supervisor; actual people and allocations must be read from trusted account records rather than assumed from this document.
+
+[FP-007] Maintenance workspace
+Maintenance staff use sensor evidence, the active fault queue, work orders, inspection guidance and repair history. An assigned technician records findings, updates repair work and can resolve an incident through the permitted closure action. Resolution updates the shared incident record so other authorized roles can see it. An application status change is not proof of physical repair and does not by itself authorize equipment restart.
+
+[FP-008] Manager and administrator workspaces
+A Manager reviews permitted plant and line comparisons, production, quality, downtime and cost scenarios. An Admin manages personnel, role access, machine registration and allocation, incidents and activity records. Super Admin has additional authorized management and audited employee-view capability; ordinary roles do not receive that dropdown. Existing passwords are stored as one-way hashes and are not displayed; authorized administrators can reset passwords. Never retrieve or expose credentials through a chatbot.
+
+[FP-009] A complete incident journey
+A typical workflow is reading or observation, operator report, supervisor triage and assignment, technician investigation and repair update, then permitted incident resolution. Incident and linked work-order states are stored centrally and read by authorized dashboards. Record what happened, which machine was affected, the severity, who acted and when. A real response may require equipment isolation and site approval independently of the app.
+
+[FP-010] How data reaches the main app
+The demonstration path is separate AI Simulator, authenticated FactoryPulse telemetry receiver, committed MySQL reading, authorized read API, then dashboard. The Simulator has its own SQLite storage and delivery outbox. MySQL remains the operational source of truth for FactoryPulse machines, telemetry, incidents and work orders. Secrets stay in backend configuration. Supabase is reserved for notification delivery and must not proxy MySQL or replace the notebook and Power BI data path.
+
+[FP-011] Meaning of the readings
+Examples include RPM in RPM, vibration in mm/s, temperature in degrees Celsius, pressure in bar, current in A, voltage in V, torque in Nm and coolant flow in L/min. Separate machine temperature, motor temperature and coolant temperature where supplied. Torque multiplied by angular speed gives derived shaft power, not measured electrical consumption. A torque-based motor-load estimate is a proxy, not a VFD measurement. Preserve each reading ID, machine identity, timestamp, unit, quality and expected range.
+
+[FP-012] How to interpret the charts
+Line and area charts explain timestamped changes, bars compare values across authorized machines or plants, donuts show proportions such as good versus scrap, and progress bars compare output with a target. A single sample is a current value, not a trend. Repeated identical values must not be embellished with artificial variation. A chart can remain still when the Simulator is intentionally stopped. Sampling interval, delivery delay, API polling and browser refresh all affect when a value appears; one-second sampling is not a guaranteed one-second end-to-end response.
+
+[FP-013] Production and reliability definitions
+Actual parts equal good parts plus scrap parts. Quality percentage equals good divided by total parts times 100 when total is positive. Cumulative counter samples must not be summed; use observed deltas and handle resets and gaps. OEE equals Availability multiplied by Performance multiplied by Quality, using compatible fractions and an explicit time window. MTBF needs observed operating time and a defined failure count; MTTR needs consistent repair durations. Do not calculate these metrics from incomplete unrelated readings.
+
+[FP-014] SOP guidance and safety boundaries
+Nine built-in training topics cover general response, temperature, vibration, RPM, pressure, coolant, electrical readings, torque or load, and unreliable data. The guidance explains first response, responsible team, evidence to capture and restart conditions. It checks the individual sensor rather than assuming every channel failed because a machine round is Critical. Stale, nonfinite, wrong-unit or bad-quality readings cannot establish current condition. Training guidance is not an approved equipment manual. Operators should follow approved site procedures, avoid guards or live electrical and pressure systems, and contact authorized staff. Never invent an isolation sequence or claim it is safe to restart.
+
+[DEMO-001] Fictional example identity and scope
+FICTIONAL PRACTICE EXAMPLE ONLY. Sahyadri Precision Components is an invented customer factory, not a verified FactoryPulse customer. The example covers one 26-day month with 40 machines, two 12-hour shifts per day and a target of 120 parts per machine per shift. Every machine is assumed scheduled throughout. All production, financial, energy and improvement numbers in DEMO sections are synthetic training assumptions, not MySQL exports, approved rates or measured results.
+
+[DEMO-002] Fictional monthly target and actual output
+FICTIONAL PRACTICE EXAMPLE ONLY. Scheduled machine shifts equal 40 x 2 x 26 = 2,080. The monthly target is 2,080 x 120 = 249,600 parts. Actual total output is assumed to be 240,000 parts: 235,200 good and 4,800 scrap. Target attainment using total parts is 240,000 / 249,600 = 96.15 percent. Good output against the total-part target is 94.23 percent. Quality is 235,200 / 240,000 = 98 percent; scrap rate is 2 percent. The gap to the total-part target is 9,600 parts.
+
+[DEMO-003] Fictional parts and energy
+FICTIONAL PRACTICE EXAMPLE ONLY. The invented product mix totals 240,000 parts: 96,000 mounting brackets, 72,000 precision housings, 48,000 shaft collars and 24,000 fixture plates. This is a factory-level product mix and is not mapped to individual project machines. Assumed monthly metered electricity is 250,000 kWh, equivalent to 1.0417 kWh per total part or 1.0629 kWh per good part. These electricity figures are independent fictional meter inputs and cannot be inferred from the Simulator shaft-power channel.
+
+[DEMO-004] Fictional comparison and limits
+FICTIONAL PRACTICE EXAMPLE ONLY. An independent comparison assumes scrap falls from 7,200 to 4,800 parts, a reduction of 2,400 parts or 33.33 percent. At an assumed net scrap loss of INR 65 per rejected part, the modeled avoided scrap loss is INR 156,000. This is a scenario calculation, not proof that FactoryPulse caused an improvement. Do not add this avoided cost again to the next section operating surplus, which already uses the lower scrap quantity. No downtime saving, predictive accuracy or investment payback is claimed without additional evidence.
+
+[DEMO-005] Fictional revenue assumptions
+FICTIONAL PRACTICE EXAMPLE ONLY. Assume every one of the 235,200 good parts is sold in the same month at an average INR 500 per good part. Revenue is 235,200 x 500 = INR 117,600,000, or INR 11.76 crore. Production is not normally the same as sales; this example explicitly assumes all good output is sold. Scrap recovery, if any, is already netted into the separate scrap-loss rate. Revenue excludes GST and other taxes collected on behalf of the government.
+
+[DEMO-006] Fictional monthly expense assumptions
+FICTIONAL PRACTICE EXAMPLE ONLY. Variable good-part cost is INR 320 per sold good part, totaling INR 75,264,000; this excludes the separately listed wages, overhead, electricity, software and scrap costs. Net scrap loss is 4,800 x INR 65 = INR 312,000. Monthly wages are INR 18,000,000. Other cash operating overhead is INR 12,000,000. Electricity is 250,000 kWh x INR 8 = INR 2,000,000. Software and support cost is INR 150,000 per month. These are invented inputs, not market quotations, salaries, approved factory rates or actual FactoryPulse pricing.
+
+[DEMO-007] Fictional operating surplus and margin
+FICTIONAL PRACTICE EXAMPLE ONLY. Total listed costs are INR 107,726,000. Revenue of INR 117,600,000 minus listed costs gives a modeled cash operating surplus of INR 9,874,000, or INR 98.74 lakh. The surplus margin is 9,874,000 / 117,600,000 x 100 = 8.40 percent. This is before depreciation, interest, tax, exceptional charges and working-capital effects; it is not audited net profit or cash collected. FactoryPulse and its developer have not been shown to earn this amount. Do not claim guaranteed returns or annualize the example as an achieved result.
+
+[DEMO-008] Fictional sensitivity example
+FICTIONAL PRACTICE EXAMPLE ONLY. If selling price falls by INR 10 per good part and volumes and all listed costs remain unchanged, revenue falls by INR 2,352,000. Revenue becomes INR 115,248,000 and the modeled operating surplus becomes INR 7,522,000. Changing prices, demand, material costs, labor or utilization can change the outcome. There is no universal rate that guarantees high manufacturing profits.
+
+[FP-015] Existing FactoryPulse assistant depth
+As inspected on 12 November 2026, the app assistant uses bounded local BM25 and keyword retrieval over five curated Markdown files and scoped machine facts, with optional Gemini generation per question. It exposes source references, document fingerprints and freshness checks. The app is not currently described as using a LangChain vector database or autonomous LangGraph agent. A checked citation ID does not prove every generated sentence. The current health model remains shadow-only and is not demonstrated to reliably predict critical failures.

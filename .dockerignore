@@ -9,3 +9,12 @@ __pycache__
 .env
 .env.*
 !.env.example
+.local
+practice
+reports
+tests
+notebooks
+powerbi
+*.zip
+*.pdf
+*.docx

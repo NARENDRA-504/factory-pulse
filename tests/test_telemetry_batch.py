@@ -12,6 +12,7 @@ class BatchIngestionTests(unittest.TestCase):
     def setUp(self):
         self.engine=create_engine('sqlite://',poolclass=StaticPool,connect_args={'check_same_thread':False})
         with self.engine.begin() as c:
+            c.execute(text('CREATE TABLE telemetry_archived_ids (reading_id TEXT PRIMARY KEY, payload_hash TEXT NOT NULL)'))
             c.execute(text('''CREATE TABLE simulator_sensor_readings (
                 id INTEGER PRIMARY KEY AUTOINCREMENT, reading_id TEXT UNIQUE, machine_id TEXT,
                 machine_code TEXT, reading_timestamp TIMESTAMP, machine_type TEXT, department TEXT,

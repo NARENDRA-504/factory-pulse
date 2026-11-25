@@ -3,6 +3,7 @@ import hashlib
 import datetime as dt
 import json
 import math
+import os
 import shutil
 import sqlite3
 import threading
@@ -81,6 +82,24 @@ def prune_sender(path, accepted_lookup, cutoff, batch=500):
     finally:db.close()
 
 
+def preview_compaction(engine,sql,policy,now):
+    """Bounded SELECT-only preview; does not lock rows, advance the cursor or delete."""
+    cutoff=now.astimezone(dt.timezone.utc).replace(tzinfo=None)-dt.timedelta(days=policy.raw_days)
+    candidates=[];checked=0
+    with engine.connect() as c:
+        streams=c.execute(sql('SELECT machine_id,sensor_name,reading_row_id FROM simulator_sensor_latest ORDER BY machine_id,sensor_name LIMIT 32')).mappings().all()
+        for stream in streams:
+            remaining=policy.batch_size+1-len(candidates)
+            candidates.extend(c.execute(sql("SELECT id FROM simulator_sensor_readings WHERE machine_id=:mid AND sensor_name=:sensor AND reading_timestamp<:cutoff AND id<>:latest ORDER BY reading_timestamp,id LIMIT :batch"),
+                {'mid':stream['machine_id'],'sensor':stream['sensor_name'],'latest':stream['reading_row_id'],'cutoff':cutoff,'batch':remaining}).scalars().all())
+            checked+=1
+            if len(candidates)>policy.batch_size:break
+    return {'candidate_rows':min(len(candidates),policy.batch_size),'more_candidates_in_sample':len(candidates)>policy.batch_size,
+        'streams_checked':checked,'stream_limit':32,'batch_limit':policy.batch_size,'cutoff_utc':cutoff.isoformat()+'Z',
+        'policy_enabled':policy.enabled,'deletes_performed':0,
+        'notice':'Read-only sample of the first 32 registered sensor streams, capped to one batch; not a full-database total. Latest pointers, business/audit records and the Simulator outbox are excluded. Archiving/deletion runs only through the configured worker. Freed disk space is not guaranteed.'}
+
+
 def compact(engine,sql,policy):
     """Never deletes latest pointers, accounts, incidents, audit or sender outbox."""
     cutoff=dt.datetime.now(dt.timezone.utc).replace(tzinfo=None)-dt.timedelta(days=policy.raw_days)
@@ -147,7 +166,7 @@ def register(app,api):
             sender_deleted=0
             if policy.sender_cleanup:
                 from dotenv import dotenv_values
-                simulator=ROOT.parent/'AI Simulator'
+                simulator=Path(os.getenv('SIMULATOR_PROJECT_PATH') or ROOT.parent/'AI Simulator')
                 configured=dotenv_values(simulator/'backend/.env').get('DATABASE_PATH')
                 path=Path(configured) if configured else simulator/'data/simulator.db'
                 if not path.is_absolute():path=simulator/'backend'/path
@@ -180,6 +199,10 @@ def register(app,api):
         return {'policy':policy.model_dump(),'summary_table_ready':ready(),'worker':STATE,
                 'free_gb':round(disk.free/1024**3,2),'low_space':disk.free<policy.low_disk_gb*1024**3,
                 'note':'Cleanup reuses MySQL space; it does not necessarily shrink database files on disk. Undelivered Simulator records are never touched.'}
+    @app.get('/api/v1/admin/storage/preview')
+    def preview(user=Depends(api['require_roles'](['Admin']))):
+        if not ready():raise HTTPException(409,'Hourly summaries and duplicate protection are not installed; cleanup preview is unavailable.')
+        return preview_compaction(api['get_telemetry_engine'](),sql,load_policy(),api['_utcnow']())
     @app.put('/api/v1/admin/storage')
     def configure(payload:Policy,request:Request,user=Depends(api['require_roles'](['Admin']))):
         if payload.enabled and not ready():raise HTTPException(409,'Run 20261102_operational_readiness.sql with your schema-owner account before enabling cleanup.')

@@ -1,0 +1,19 @@
+{
+  "id": "SITE-REPLACE-001",
+  "title": "Replace with equipment-specific procedure title",
+  "revision": "DRAFT-1",
+  "status": "training",
+  "category": "temperature",
+  "keywords": ["temperature"],
+  "machine_ids": [],
+  "approved_by": null,
+  "manual_reference": null,
+  "effective_date": null,
+  "review_due": null,
+  "scope_notice": "Draft only. Site owner must supply applicable equipment instructions and review them before approval.",
+  "roles": {
+    "Operator": ["Follow the existing site emergency procedure; do not operate or restart equipment based on this draft."],
+    "Supervisor": ["Arrange review by the responsible qualified site personnel."],
+    "Maintenance": ["Use the approved equipment manual and site isolation procedure; this draft is not a repair authorization."]
+  }
+}

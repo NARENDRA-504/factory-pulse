@@ -5,6 +5,8 @@ import json
 import math
 import re
 from pathlib import Path
+from .sop_evidence import assess, response_plan
+from .sop_governance import approval_review
 
 CATALOG = Path(__file__).resolve().parents[1] / 'knowledge/sop/catalog.json'
 
@@ -19,7 +21,14 @@ def retrieve_sop(question, role, machine_id=None, facts=(), now=None):
         if not isinstance(documents,list): raise ValueError('invalid catalog')
     except (OSError,ValueError,KeyError,TypeError):
         return {'status':'unavailable','notice':'SOP catalog unavailable. Contact your supervisor for the approved procedure.', 'sources':[], 'machine_id':machine_id}
+    assessment=assess(facts,machine_id,now)
     query=set(re.findall(r'[a-z]+',question.lower()))
+    aliases={'hot':'temperature','heat':'temperature','overheating':'temperature','chatter':'vibration','speed':'rpm','amps':'current','electrical':'voltage','offline':'missing'}
+    query.update(aliases[word] for word in list(query) if word in aliases)
+    auto=question.strip().lower() in {'general sop machine response','general sop','sop','what should i do','what should i do?'}
+    if auto:
+        query.update(assessment['suggested_topics'])
+        if assessment['unreliable'] and not assessment['fresh_valid']:query.update({'missing','quality'})
     for doc in documents[:100]:
         try:
             if doc['status'] not in {'training','approved'}: continue
@@ -28,10 +37,7 @@ def retrieve_sop(question, role, machine_id=None, facts=(), now=None):
             # Approved operational instructions require an explicit machine mapping and approval metadata.
             if doc['status']=='approved':
                 if not machine_id or machine_id not in doc.get('machine_ids',[]): continue
-                if not doc.get('approved_by') or not doc.get('manual_reference'): continue
-                effective=dt.date.fromisoformat(doc['effective_date'])
-                expires=dt.date.fromisoformat(doc['review_due'])
-                if not effective<=now.date()<=expires: continue
+                if not approval_review(doc,now)['usable_approved']: continue
             elif doc.get('machine_ids') and machine_id not in doc['machine_ids']: continue
             score=len(query & set(doc['keywords']))
             if score or doc['category']=='general': eligible.append((doc,score))
@@ -41,7 +47,12 @@ def retrieve_sop(question, role, machine_id=None, facts=(), now=None):
     specific=[pair for pair in eligible if pair[0]['category']!='general' and pair[1]>0]
     if specific:eligible=specific
     eligible.sort(key=lambda pair:(-pair[1],pair[0]['status']!='approved',pair[0]['id']))
-    chosen=eligible[:1]
+    chosen=[]; categories=set()
+    for pair in eligible:
+        if pair[0]['category'] in categories:continue
+        approved=[candidate for candidate in eligible if candidate[0]['category']==pair[0]['category'] and candidate[0]['status']=='approved']
+        chosen.append(approved[0] if approved else pair);categories.add(pair[0]['category'])
+        if len(chosen)==(2 if auto and len(assessment['suggested_topics'])>1 else 1):break
     sources=[]
     for doc,_ in chosen:
         excerpt=('Approval: '+doc['status']+'. '+doc['scope_notice']+'\n'+
@@ -53,24 +64,16 @@ def retrieve_sop(question, role, machine_id=None, facts=(), now=None):
             'source':'knowledge/sop/catalog.json#'+doc['id'],'section':role+' response',
             'excerpt':excerpt,'steps':doc['roles'][role][:8],
             'sha256':hashlib.sha256(json.dumps(doc,sort_keys=True).encode()).hexdigest()})
-    fresh=[]
-    for fact in facts:
-        if fact.get('machine_id')!=machine_id or fact.get('data_quality')!='GOOD': continue
-        try:
-            stamp=dt.datetime.fromisoformat(str(fact['timestamp']).replace('Z','+00:00'))
-            if stamp.tzinfo is None:stamp=stamp.replace(tzinfo=dt.timezone.utc)
-            age=(now-stamp).total_seconds()
-            value=fact.get('sensor_value')
-            if not 0<=age<=30 or isinstance(value,bool) or not isinstance(value,(int,float)) or not math.isfinite(value):continue
-            fresh.append(fact)
-        except (ValueError,KeyError,TypeError):continue
+    fresh=[r for r in assessment['checks'] if r['usable']]
     level='Unavailable'
     if fresh:
         states={r.get('machine_status') for r in fresh}
         level='Critical' if 'CRITICAL' in states else 'Suspect' if 'WARNING' in states else 'Normal' if states=={'NORMAL'} else 'Other'
     status='approved' if sources and sources[0]['approval_status']=='approved' else 'training_only' if sources else 'missing'
     return {'status':status,'machine_id':machine_id,'level':level,
-        'detection_source':'Latest received GOOD sensor status within 30 seconds; not an ML diagnosis or failure forecast.',
+        'detection_source':'Latest received status using fresh, finite, GOOD physical readings with exact canonical units within 30 seconds; not an ML diagnosis or failure forecast.',
+        'assessment':assessment,'response_plan':response_plan(role,assessment,level),
+        'selection_reason':'Current validated range comparisons' if auto and assessment['suggested_topics'] else 'Requested topic or general role guidance',
         'notice':('Approved procedure retrieved; follow its equipment/site authorization requirements.' if status=='approved' else
                   'No approved machine-specific SOP was retrieved. Training guidance only; contact your supervisor for the approved procedure.'),
         'sources':sources,'evidence':[{'reading_id':r.get('reading_id'),'sensor_name':r.get('sensor_name'),

@@ -1,0 +1,29 @@
+name: Deployment checks
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      APP_ENV: test
+      DEMO_AUTH_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r api_server/requirements-deploy.txt
+      - run: python -m unittest discover -s tests
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile --ignore-scripts
+      - run: npm run lint
+      - run: npm run build
+        env:
+          VITE_API_BASE_URL: /backend
+      - run: node --test tests/chart_timeline.test.mjs tests/operations_model.test.mjs tests/production_rate.test.mjs tests/role_report_data.test.mjs tests/voice_playback.test.mjs
+      - run: docker build -t factorypulse-api:check .
+      - run: docker build -f deploy/Dockerfile.web -t factorypulse-web:check .

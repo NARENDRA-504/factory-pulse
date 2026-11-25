@@ -2,15 +2,18 @@
 import datetime as dt
 import os
 import re
+from typing import Literal
 from fastapi import Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from .live_analytics import summarize_downtime
 from .chat_scope import in_scope
+from .chat_language import retrieval_text
 from .team_access import check_machine,sql_scope,scoped_catalog
 from .conversation import conversation_reply, private_request
 from .gemini_insights import generate_selected_analysis, provider_configuration
-from .rag import retrieve_context, local_knowledge_answer, resolve_retrieval_question
+from .rag import retrieve_context, local_knowledge_answer, resolve_retrieval_question, requested_sensors
 from .sop_retrieval import retrieve_sop
+from .voice_chat import register_voice, limit_voice, spoken_audio, localized_notice, language_matches, quick_voice_greeting
 
 
 def as_utc(value):
@@ -23,6 +26,12 @@ class FactoryQuestion(BaseModel):
     machine_id: str | None = None
     use_ai: bool = False
     prior_questions: list[str] = Field(default_factory=list,max_length=4)
+    response_language: Literal['en','te','hi'] | None = None
+
+
+class VoiceQuestion(FactoryQuestion):
+    response_language: Literal['en','te','hi']
+    include_audio: bool = True
 
 
 def register(app, api):
@@ -30,6 +39,7 @@ def register(app, api):
     sql = api['_sql_text']
     engine = api['get_telemetry_engine']
     fleet = api['get_simulator_fleet_latest_readings']
+    register_voice(app,current)
 
     @app.get('/api/v1/telemetry/downtime/{machine_id}')
     def downtime(machine_id: str, minutes: int = Query(60, ge=1, le=1440), user=Depends(current)):
@@ -92,7 +102,7 @@ def register(app, api):
                 # Only conversational questions are carried over; machine evidence never enters this path.
                 prior=[q for q in payload.prior_questions if not in_scope(q) and not private_request(q)]
                 prompt=('Previous questions: '+repr(prior)+'\nCurrent question: '+payload.question) if prior else payload.question
-                generated=generate_selected_analysis(prompt,None,[],conversation=True)
+                generated=generate_selected_analysis(prompt,None,[],conversation=True,response_language=payload.response_language)
             return {'answer':answer,'facts':[],'calculation':None,'limitations':[],**generated,
                     'evidence_source':'Conversation · no factory records accessed',
                     'generated_at':api['_utcnow']().isoformat()}
@@ -108,7 +118,8 @@ def register(app, api):
             if user['role']=='Operator' and machine['machineCode']!=user.get('assigned_machine'):
                 raise HTTPException(403,'Operators may only ask about their assigned machine')
         safe_prior=[q for q in safe_prior if all(id==machine_id for id in re.findall(r'\bMCH-\d{3}\b',q.upper()))]
-        retrieval_question=resolve_retrieval_question(payload.question,safe_prior)
+        contextual_question=resolve_retrieval_question(payload.question,safe_prior)
+        retrieval_question=retrieval_text(contextual_question)
         rows=fleet(user=user)
         if machine_id: rows=[row for row in rows if row.machine_id==machine_id]
         question=retrieval_question.lower()
@@ -117,6 +128,10 @@ def register(app, api):
             sources=procedure['sources']
             answer=procedure['notice']
             if machine_id:answer+='\nMachine: '+machine_id+' · Received status: '+procedure.get('level','Unavailable')+'.'
+            plan=procedure.get('response_plan')
+            if plan:
+                answer+='\n\nEvidence review: '+plan['summary']+'\nFirst response: '+plan['immediate_action']
+                answer+='\nResponsible team: '+plan['owner']+'\nBefore restart: '+plan['release_gate']
             for source in sources:
                 answer+='\n\n['+source['id']+'] '+source['title']+' · Revision '+source['revision']+' · '+source['section']+'\n'
                 answer+='\n'.join(f'{i+1}. {step}' for i,step in enumerate(source['steps']))
@@ -130,10 +145,9 @@ def register(app, api):
         if 'critical' in question: rows=[row for row in rows if row.machine_status=='CRITICAL']
         elif 'warning' in question: rows=[row for row in rows if row.machine_status in {'WARNING','CRITICAL'}]
         sensor_filters=[('motor temperature','Motor Temperature'),('coolant flow','Coolant Flow'),('motor load','Motor Load'),('motor power','Motor Power'),('rpm','RPM'),('spindle','RPM'),('vibration','Vibration'),('temperature','Temperature'),('pressure','Pressure'),('voltage','Voltage'),('torque','Torque'),('current draw','Current')]
-        for term,sensor in sensor_filters:
-            if term in question:
-                rows=[row for row in rows if row.sensor_name==sensor]
-                break
+        channels=requested_sensors(retrieval_question)
+        if channels:
+            rows=[row for row in rows if row.sensor_name in channels]
         facts=[row.model_dump() for row in rows[:60]]
         answer=f'Found {len(rows)} latest saved sensor readings for {len({row.machine_id for row in rows})} authorized machines.' if facts else 'No saved readings match this question in your authorized scope.'
         if facts:
@@ -153,7 +167,7 @@ def register(app, api):
         context_question=('Previous manufacturing questions (context only): '+repr(safe_prior)+'\nCurrent question: '+payload.question) if safe_prior else payload.question
         retrieval=retrieve_context(retrieval_question,facts,machine_id,api['_utcnow'](),
             stale_seconds=max(2,int(os.getenv('TELEMETRY_STALE_SECONDS','30'))))
-        retrieval['followup_context_used']=retrieval_question!=payload.question
+        retrieval['followup_context_used']=contextual_question!=payload.question
         limitations.extend(retrieval['warnings'])
         sources=retrieval['sources']
         if calculation is not None:
@@ -176,11 +190,33 @@ def register(app, api):
         knowledge_sources=[s for s in sources if s['kind']=='project_knowledge']
         if retrieved_facts and knowledge_sources:
             answer+='\n\nRelevant project guidance\n'+local_knowledge_answer(knowledge_sources[:1])
-        generated=generate_selected_analysis(context_question,machine_id,retrieved_facts,calculation,retrieved_sources=sources) if payload.use_ai else {
+        generated=generate_selected_analysis(context_question,machine_id,retrieved_facts,calculation,retrieved_sources=sources,response_language=payload.response_language) if payload.use_ai else {
             'provider_status':'disabled','generated_analysis':None,'provider_message':'Local SQL evidence only; Gemini was not requested.'}
         return {'answer':answer,'facts':retrieved_facts,'calculation':calculation,'limitations':limitations,
                 'sources':sources,'retrieval':{key:value for key,value in retrieval.items() if key!='sources'},
                 **generated,'evidence_source':'Authorized MySQL and locally retrieved project knowledge','generated_at':api['_utcnow']().isoformat()}
+
+    @app.post('/api/v1/intelligence/voice-answer')
+    def voice_answer(payload:VoiceQuestion,user=Depends(current)):
+        limit_voice(user)
+        language=payload.response_language
+        greeting=quick_voice_greeting(payload.question,language)
+        result=({'answer':greeting,'facts':[],'sources':[],'calculation':None,'limitations':[],
+                 'provider_status':'local_conversation','evidence_source':'Local greeting · no factory records accessed',
+                 'generated_at':api['_utcnow']().isoformat()} if greeting else
+                intelligence(payload.model_copy(update={'use_ai':True}),user=user))
+        text=result.get('generated_analysis') or result['answer']
+        if private_request(payload.question):text=localized_notice(language,'private')
+        elif result.get('procedure'):
+            # Keep original safety steps intact; do not generatively rewrite equipment instructions.
+            result['original_procedure_text']=result['answer']
+            text=localized_notice(language,'sop')
+        elif (not greeting and not result.get('generated_analysis') and language!='en') or not language_matches(text,language):
+            text=localized_notice(language,'unavailable')
+        result.update(answer=text,generated_analysis=None,voice_input=True,response_language=language,
+                      spoken_text=text,audio=spoken_audio(text,language) if payload.include_audio else
+                      {'status':'device','language':language})
+        return result
 
     @app.get('/api/v1/analytics/fleet-statistics')
     def fleet_statistics(user=Depends(api['require_roles'](['Supervisor', 'Manager', 'Maintenance', 'Admin']))):

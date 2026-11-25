@@ -26,6 +26,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).resolve().parents[1] / ".env")
+from .deployment import validate_hosted_environment, database_ready, assets_ready
+validate_hosted_environment(os.environ)
 
 app = FastAPI(
     title="ZIRO Manufacturing Incident & Maintenance Response Platform API",
@@ -37,6 +39,12 @@ app = FastAPI(
 def health_check():
     """Liveness probe for the API process; database readiness is checked by DB-backed endpoints."""
     return {"status": "ok"}
+
+@app.get("/ready", tags=["Operations"])
+def readiness_check():
+    if not assets_ready(Path(__file__).resolve().parents[1]) or not database_ready(get_telemetry_engine):
+        raise HTTPException(status_code=503, detail="Operational database is not ready")
+    return {"status": "ready"}
 
 # Allow only explicitly configured frontend origins. Bearer tokens do not use cookies.
 CORS_ORIGINS = [origin.strip() for origin in os.environ.get("CORS_ORIGINS", "http://127.0.0.1:3000,http://localhost:3000").split(",") if origin.strip()]
@@ -1689,21 +1697,10 @@ def get_cycle_to_failure_analytics(user: Dict[str, Any] = Depends(require_roles(
     }
 
 @app.get("/api/v1/analytics/pipeline-health")
-def get_pipeline_health(user: Dict[str, Any] = Depends(require_roles(["Supervisor", "Manager", "Maintenance", "Admin"]))):
-    """Raw vs Processed Data Pipeline Health Audit."""
-    return {
-        "raw_counts": {
-            "raw_cnc_tool_wear": 2054,
-            "raw_turning_roughness": 612,
-            "raw_mill_telemetry": 25286,
-            "raw_milling_cycles": 968,
-            "total_raw_rows": 28920
-        },
-        "sim_telemetry_events": 142,
-        "validation_passed": True,
-        "total_empirical_rows": 28920,
-        "calculation_formula": "2,054 (D1) + 612 (D2) + 25,286 (D3) + 968 (D4) = 28,920 raw empirical rows"
-    }
+def get_pipeline_health(user: Dict[str, Any] = Depends(require_roles(["Admin"]))):
+    """Compatibility route: administrator-only current diagnostics, never seed totals."""
+    route=next(r for r in app.routes if getattr(r,'path',None)=='/api/v1/operations/pipeline-monitor')
+    return route.endpoint(user=user)
 
 from .operational_insights import register as register_operational_insights
 register_operational_insights(app, globals())
@@ -1749,3 +1746,9 @@ register_operational_readiness(app, globals())
 
 from .reliability_operations import register as register_reliability_operations
 register_reliability_operations(app, globals())
+
+from .readiness_review import register as register_readiness_review
+register_readiness_review(app, globals())
+
+from .demo_control import register as register_demo_control
+register_demo_control(app, globals())

@@ -38,7 +38,7 @@ class RetrievalTests(unittest.TestCase):
 
     def test_freshness_and_quality_are_not_confidence(self):
         now=dt.datetime(2026,11,12,10,tzinfo=dt.timezone.utc)
-        base={'machine_id':'MCH-001','sensor_name':'RPM','sensor_value':2400,'data_quality':'GOOD'}
+        base={'machine_id':'MCH-001','sensor_name':'RPM','sensor_value':2400,'sensor_unit':'RPM','data_quality':'GOOD'}
         for timestamp,quality,expected in [(now,'GOOD','fresh_measurements'),
                 (now-dt.timedelta(seconds=90),'GOOD','last_known_only'),
                 (now,'BAD','last_known_only'),(now+dt.timedelta(minutes=5),'GOOD','last_known_only')]:
@@ -66,7 +66,7 @@ class RetrievalTests(unittest.TestCase):
 
     def test_relevant_chunks_citations_and_hash(self):
         result=retrieve_context('How is shift production target calculated?', [])
-        self.assertEqual(result['method'], 'local_bm25_and_authorized_sql')
+        self.assertIn(result['method'], ('local_bm25_and_authorized_sql', 'local_hybrid_vectors_and_authorized_sql'))
         self.assertTrue(result['sources'])
         self.assertIn('shift', result['sources'][0]['title'].lower())
         self.assertEqual(len(result['sources'][0]['sha256']),64)

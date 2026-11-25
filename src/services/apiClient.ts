@@ -16,7 +16,6 @@ import {
   Dataset2RoughnessSummary,
   Dataset3TelemetrySummary,
   Dataset4CycleToFailureSummary,
-  PipelineHealthAudit,
   UserRole,
   MachineInventoryRecord,
   NewMachineInput,
@@ -31,7 +30,6 @@ import {
   DATASET_2_SUMMARY,
   DATASET_3_SUMMARY,
   DATASET_4_SUMMARY,
-  PIPELINE_AUDIT,
 } from '../data/seedData';
 import { notificationService } from './notificationService';
 const STORAGE_KEYS = {
@@ -387,6 +385,14 @@ export const apiClient = {
     if (!response.ok) throw new Error(body.detail || 'Factory evidence is unavailable');
     return body;
   },
+  async transcribeVoice(audio:Blob,signal?:AbortSignal):Promise<{text:string;language:'en'|'te'|'hi';language_name:string}> {
+    const response=await fetch(`${API_BASE_URL}/api/v1/intelligence/transcribe`,{method:'POST',headers:{...authHeaders(),'Content-Type':audio.type},body:audio,signal:signal||AbortSignal.timeout(55000)});
+    const body=await response.json();if(!response.ok)throw new Error(body.detail||'Voice transcription is unavailable');return body;
+  },
+  async queryFactoryVoice(question:string,language:'en'|'te'|'hi',machineId?:string,priorQuestions:string[]=[],signal?:AbortSignal,includeAudio=true):Promise<any> {
+    const response=await fetch(`${API_BASE_URL}/api/v1/intelligence/voice-answer`,{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({question,machine_id:machineId,use_ai:true,prior_questions:priorQuestions,response_language:language,include_audio:includeAudio}),signal:signal?AbortSignal.any([signal,AbortSignal.timeout(70000)]):AbortSignal.timeout(70000)});
+    const body=await response.json();if(!response.ok)throw new Error(body.detail||'Voice answer is unavailable');return body;
+  },
   async getSystemHealth(): Promise<any> {
     const response = await fetch(`${API_BASE_URL}/api/v1/admin/system-health`, { headers: authHeaders(), signal: AbortSignal.timeout(20000) });
     const body = await response.json();
@@ -444,8 +450,9 @@ export const apiClient = {
   },
   async getCurrentUser(): Promise<UserProfile | null> {
     if (!getSessionToken()) return null;
-    const response = await fetch(`${API_BASE_URL}/api/v1/auth/me`, { headers: authHeaders() });
-    if (!response.ok) { setSessionToken(null); return null; }
+    const response = await fetch(`${API_BASE_URL}/api/v1/auth/me`, { headers: authHeaders(), signal: AbortSignal.timeout(8000) });
+    if (response.status === 401) { setSessionToken(null); return null; }
+    if (!response.ok) throw new Error('Session verification is temporarily unavailable. Please retry.');
     return toUserProfile(await response.json());
   },
   async logout(): Promise<void> {
@@ -463,8 +470,8 @@ export const apiClient = {
     if (!response.ok) throw new Error(body.detail || `Activity log request failed (${response.status})`);
     return body;
   },
-  async operationRequest(path:string,method='GET',data?:any): Promise<any> {
-    const response=await fetch(`${API_BASE_URL}/api/v1/${path}`,{method,headers:{...authHeaders(),...(data?{'Content-Type':'application/json'}:{})},...(data?{body:JSON.stringify(data)}:{}),signal:AbortSignal.timeout(30000)});
+  async operationRequest(path:string,method='GET',data?:any,timeoutMs=30000): Promise<any> {
+    const response=await fetch(`${API_BASE_URL}/api/v1/${path}`,{method,headers:{...authHeaders(),...(data?{'Content-Type':'application/json'}:{})},...(data?{body:JSON.stringify(data)}:{}),signal:AbortSignal.timeout(timeoutMs)});
     const body=await response.json();if(!response.ok)throw new Error(body.detail||'Operation could not be completed');return body;
   },
   async getShift(machineId?: string, offset=0): Promise<any> {
@@ -763,8 +770,5 @@ export const apiClient = {
   async getSimulatedEvents(): Promise<any[]> {
     const raw = safeGetItem(STORAGE_KEYS.SIM_EVENTS);
     return raw ? JSON.parse(raw) : [];
-  },
-  async getPipelineHealth(): Promise<PipelineHealthAudit> {
-    return PIPELINE_AUDIT;
   },
 };

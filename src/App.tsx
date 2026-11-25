@@ -1,13 +1,12 @@
 import { useOperationalInbox, OperationalAlertCenter } from './components/ReliabilityPanels';
-import { OperationalReadiness } from './components/OperationalReadiness';
+import { AlertSoundControl } from './components/AlertSoundControl';
 import { SuperAdminUserSwitcher } from './components/SuperAdminUserSwitcher';
-import { MachineChangeView } from './views/MachineChangeView';
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { lazy, Suspense, useState, useEffect, useRef } from 'react';
 import { UserProfile, Machine, Incident, MaintenanceWorkOrder, TelemetryReading } from './types';
 import { apiClient } from './services/apiClient';
 import { SEED_MACHINES, SEED_INCIDENTS, SEED_WORK_ORDERS } from './data/seedData';
@@ -18,26 +17,37 @@ import { RaiseAlertModal } from './components/RaiseAlertModal';
 import { UserProfileModal } from './components/UserProfileModal';
 import { ShieldAlert } from 'lucide-react';
 import { DraggableAssistant } from './components/DraggableAssistant';
-import { FactoryChat } from './components/FactoryChat';
 import { SopGuidancePanel } from './components/SopGuidancePanel';
 import { LoginView } from './views/LoginView';
-import { DashboardView } from './views/DashboardView';
-import { MachineConditionView } from './views/MachineConditionView';
-import { IncidentsView } from './views/IncidentsView';
-import { AnalyticsView } from './views/AnalyticsView';
-import { UsersView } from './views/UsersView';
-import { ActivityLogView } from './views/ActivityLogView';
-import { MachineManagementView } from './views/MachineManagementView';
-import { MaintenanceManagementView } from './views/MaintenanceManagementView';
-import { RoleOperationsView } from './views/RoleOperationsView';
 import { AppScreen, canOpenScreen } from './roleNavigation';
+
+
+// Load operational pages only when opened; server authorization remains unchanged.
+const ReadinessReview = lazy(() => import('./components/ReadinessReview').then(module => ({ default: module.ReadinessReview })));
+const CompletionEvidence = lazy(() => import('./components/CompletionEvidence').then(module => ({ default: module.CompletionEvidence })));
+const OperationalReadiness = lazy(() => import('./components/OperationalReadiness').then(module => ({ default: module.OperationalReadiness })));
+const MachineChangeView = lazy(() => import('./views/MachineChangeView').then(module => ({ default: module.MachineChangeView })));
+const FactoryChat = lazy(() => import('./components/FactoryChat').then(module => ({ default: module.FactoryChat })));
+const DashboardView = lazy(() => import('./views/DashboardView').then(module => ({ default: module.DashboardView })));
+const MachineConditionView = lazy(() => import('./views/MachineConditionView').then(module => ({ default: module.MachineConditionView })));
+const IncidentsView = lazy(() => import('./views/IncidentsView').then(module => ({ default: module.IncidentsView })));
+const AnalyticsView = lazy(() => import('./views/AnalyticsView').then(module => ({ default: module.AnalyticsView })));
+const UsersView = lazy(() => import('./views/UsersView').then(module => ({ default: module.UsersView })));
+const ActivityLogView = lazy(() => import('./views/ActivityLogView').then(module => ({ default: module.ActivityLogView })));
+const MachineManagementView = lazy(() => import('./views/MachineManagementView').then(module => ({ default: module.MachineManagementView })));
+const MaintenanceManagementView = lazy(() => import('./views/MaintenanceManagementView').then(module => ({ default: module.MaintenanceManagementView })));
+const RoleOperationsView = lazy(() => import('./views/RoleOperationsView').then(module => ({ default: module.RoleOperationsView })));
+
+function PageLoading() {
+  return <div role="status" className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600">Loading workspace…</div>;
+}
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [sessionRestoring, setSessionRestoring] = useState(true);
   const [chatOpen, setChatOpen] = useState(false);
   const [currentScreen, setCurrentScreen] = useState<AppScreen>('dashboard');
-  const [machines, setMachines] = useState<Machine[]>(SEED_MACHINES);
+  const [machines, setMachines] = useState<Machine[]>([]);
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [workOrders, setWorkOrders] = useState<MaintenanceWorkOrder[]>([]);
   const [selectedMachineCode, setSelectedMachineCode] = useState<string>('CNC-MILL-01');
@@ -46,6 +56,10 @@ export default function App() {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
   const [isNotificationCenterOpen, setIsNotificationCenterOpen] = useState<boolean>(false);
   const alertInbox=useOperationalInbox(currentUser);
+  const [dataError,setDataError]=useState('');
+  const ownerKey=currentUser?[currentUser.id,currentUser.role,currentUser.assignedMachine,currentUser.department].join('|'):'';
+  const ownerRef=useRef(ownerKey);ownerRef.current=ownerKey;
+  const refreshingOwner=useRef<string|null>(null);
 
   // Handoff state for filing incident from telemetry anomaly snapshot
   const [handoffMachine, setHandoffMachine] = useState<string | undefined>(undefined);
@@ -53,15 +67,23 @@ export default function App() {
 
   // Load initial data
   const refreshData = async () => {
-    if (!currentUser) return;
+    if (!currentUser || refreshingOwner.current===ownerKey) return;
+    const requestedOwner=ownerKey;refreshingOwner.current=requestedOwner;
+    try {
     const [machList, incList, woList] = await Promise.all([
       apiClient.getMachines(),
       apiClient.getIncidents(),
       currentUser.role === 'Operator' ? Promise.resolve([]) : apiClient.getWorkOrders(),
     ]);
-    if (machList && machList.length > 0) setMachines(machList);
+    if(ownerRef.current!==requestedOwner)return;
+    setMachines(machList||[]);
     if (incList) setIncidents(incList);
     if (woList) setWorkOrders(woList);
+    setDataError('');
+    } catch(error) {
+      if(ownerRef.current===requestedOwner)setDataError('Operations data could not refresh. Previously loaded records may be out of date. Check machine availability and retry.');
+      throw error;
+    } finally {if(refreshingOwner.current===requestedOwner)refreshingOwner.current=null;}
   };
 
   useEffect(() => {
@@ -76,6 +98,8 @@ export default function App() {
     return () => { active = false; };
   }, []);
 
+  useEffect(()=>{setMachines([]);setIncidents([]);setWorkOrders([]);setDataError('');},[ownerKey]);
+
   useEffect(() => {
     refreshData().catch(console.error);
     const timer=window.setInterval(()=>refreshData().catch(console.error),10000);
@@ -87,13 +111,14 @@ export default function App() {
   // Account assignments can change while an employee is signed in.
   useEffect(() => {
     if (!currentUser) return;
+    let active=true;
     const timer = window.setInterval(async () => {
       try {
         const next = await apiClient.getCurrentUser();
-        setCurrentUser(previous => JSON.stringify(previous) === JSON.stringify(next) ? previous : next);
+        if(active)setCurrentUser(previous => JSON.stringify(previous) === JSON.stringify(next) ? previous : next);
       } catch { /* Keep the current page visible during a temporary API outage. */ }
     }, 10000);
-    return () => window.clearInterval(timer);
+    return () => {active=false;window.clearInterval(timer);};
   }, [currentUser?.workId]);
 
   const handleLoginSuccess = (user: UserProfile) => {
@@ -167,10 +192,13 @@ export default function App() {
           onOpenNotifications={() => setIsNotificationCenterOpen(true)}
         />
 
+        <AlertSoundControl key={alertInbox.owner} owner={alertInbox.owner} alerts={alertInbox.data?.alerts??null}/>
         {/* Viewport Content */}
         <main className="flex-1 w-full max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-8 py-5">
+          {dataError&&<div role="alert" className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"><p>{dataError}</p><button className="rounded-lg border border-amber-300 bg-white px-3 py-2 font-medium" onClick={()=>void refreshData().catch(console.error)}>Retry operations refresh</button></div>}
           <SopGuidancePanel screen={currentScreen} user={currentUser} machineId={(currentUser.role === 'Operator' ? machines.find(machine => machine.machineCode === currentUser.assignedMachine || machine.code === currentUser.assignedMachine) : machines.find(machine => machine.machineCode === selectedMachineCode || machine.code === selectedMachineCode))?.machineId}/>
-          <ErrorBoundary fallbackTitle="View Rendering Interrupted">
+          <ErrorBoundary key={currentScreen} fallbackTitle="Unable to display this page">
+          <Suspense fallback={<PageLoading />}>
             {(['production', 'coverage', 'downtime', 'quality', 'reports'] as const).map(page => currentScreen === page && (canOpenScreen(currentUser.role, page) ? <RoleOperationsView key={page} screen={page} user={currentUser} machines={machines} incidents={incidents} workOrders={workOrders} onNavigate={setCurrentScreen} /> : <p key={page} role="alert" className="rounded-lg bg-rose-50 p-4 text-rose-800">This page is unavailable for your role.</p>))}
             {currentScreen === 'dashboard' && (
               <DashboardView
@@ -249,7 +277,8 @@ export default function App() {
                 />
               )
             )}
-            {currentScreen === 'readiness' && <OperationalReadiness user={currentUser}/>}
+            {currentScreen === 'readiness-review' && <React.Fragment key={ownerKey}><ReadinessReview user={currentUser}/><CompletionEvidence/></React.Fragment>}
+            {currentScreen === 'readiness' && <OperationalReadiness key={ownerKey} user={currentUser} onNavigate={setCurrentScreen}/>}
             {currentScreen === 'machine-changes' && <MachineChangeView user={currentUser} />}
             {currentScreen === 'inventory' && (['Admin', 'Super Admin'].includes(currentUser.role)
               ? <MachineManagementView user={currentUser} machines={machines}/>
@@ -273,20 +302,12 @@ export default function App() {
                 <div className="m-12 rounded-xl border border-rose-200 bg-white p-8 text-center"><h2 className="font-bold text-slate-900">Admin access required</h2><p className="mt-2 text-sm text-slate-600">This activity log is restricted to administrators.</p></div>
               ) : <ActivityLogView />
             )}
+          </Suspense>
           </ErrorBoundary>
         </main>
 
-        {/* Industrial Platform Status Footer */}
-        <footer className="border-t border-slate-200 py-3.5 bg-slate-50 text-center text-xs text-slate-600 font-mono">
-          <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-            <span className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-              <span>FactoryPulse · Manufacturing operations</span>
-            </span>
-            <span className="text-slate-600">
-              Machine telemetry · readings and history stored in MySQL
-            </span>
-          </div>
+        <footer className="border-t border-slate-200 bg-slate-50 px-4 py-3 text-center text-xs text-slate-500">
+          FactoryPulse · Manufacturing operations
         </footer>
       </div>
 
@@ -305,7 +326,7 @@ export default function App() {
       />
 
       <DraggableAssistant open={chatOpen} onOpenChange={setChatOpen} role={currentUser.role}>
-        <FactoryChat machineId={(currentUser.role === 'Operator' ? machines.find(machine => machine.machineCode === currentUser.assignedMachine || machine.code === currentUser.assignedMachine) : machines.find(machine => machine.machineCode === selectedMachineCode || machine.code === selectedMachineCode))?.machineId} />
+        <ErrorBoundary fallbackTitle="Unable to load the assistant"><Suspense fallback={<PageLoading />}><FactoryChat machineId={(currentUser.role === 'Operator' ? machines.find(machine => machine.machineCode === currentUser.assignedMachine || machine.code === currentUser.assignedMachine) : machines.find(machine => machine.machineCode === selectedMachineCode || machine.code === selectedMachineCode))?.machineId} /></Suspense></ErrorBoundary>
       </DraggableAssistant>
 
       {/* User Profile & Permissions Modal */}

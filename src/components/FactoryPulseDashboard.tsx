@@ -1,5 +1,6 @@
+import { DashboardMasthead } from './DashboardMasthead';
 import React, { useEffect, useRef, useState } from 'react';
-import { Activity, AlertTriangle, ArrowRight, CheckCircle2, ClipboardList, Cpu, Users } from 'lucide-react';
+import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { SimulatorFleetTelemetryDashboard } from './SimulatorFleetTelemetryDashboard';
 import { RoleDashboardHighlights } from './RoleDashboardHighlights';
 import { RoleReportDashboard } from './RoleReportDashboard';
@@ -99,47 +100,6 @@ const RoleActions: React.FC<{
   );
   const openOrders = workOrders.filter((o) => o.status !== 'Completed');
 
-  const actions: Record<UserRole, { label: string; target: Screen; icon: React.ReactNode; note: string }> = {
-    Operator: {
-      label: 'Report a machine issue',
-      target: 'incidents',
-      icon: <AlertTriangle className="h-4 w-4" />,
-      note: 'Report abnormal readings or a safety concern for your assigned workstation.',
-    },
-    Supervisor: {
-      label: 'Prioritize open incidents',
-      target: 'incidents',
-      icon: <ClipboardList className="h-4 w-4" />,
-      note: 'Review open and high-severity incidents, then assign the next response.',
-    },
-    Maintenance: {
-      label: 'Open maintenance queue',
-      target: 'maintenance',
-      icon: <ClipboardList className="h-4 w-4" />,
-      note: 'Review work orders and update their status from the maintenance board.',
-    },
-    Manager: {
-      label: 'Review operations analytics',
-      target: 'analytics',
-      icon: <Activity className="h-4 w-4" />,
-      note: 'Compare verified plant condition and review open operational risks. Production and financial KPIs appear when their source data is available.',
-    },
-    Admin: {
-      label: 'Manage users and access',
-      target: 'users',
-      icon: <Users className="h-4 w-4" />,
-      note: 'Administer employee accounts, permissions, and role access.',
-    },
-  'Super Admin': {
-      label: 'Manage users and access',
-      target: 'users',
-      icon: <Users className="h-4 w-4" />,
-      note: 'Administer employee accounts, permissions, and role access.',
-    },
-  };
-
-  const action = actions[user.role];
-
   const update = async (order: MaintenanceWorkOrder, status: MaintenanceWorkOrder['status']) => {
     try {
       await apiClient.updateWorkOrderStatus(order.id, status);
@@ -152,30 +112,6 @@ const RoleActions: React.FC<{
 
   return (
     <aside className="space-y-3">
-      <section className="rounded-xl border border-slate-200 bg-white p-4">
-        <div className="flex items-center gap-2 text-teal-800">
-          {action.icon}
-          <h2 className="text-sm font-semibold text-slate-900">Your next step</h2>
-        </div>
-        <p className="mt-2 text-xs leading-relaxed text-slate-600">{action.note}</p>
-        <button
-          onClick={() => onNavigate(action.target)}
-          className="mt-3 inline-flex items-center gap-2 rounded-lg bg-teal-600 px-3 py-2 text-xs font-semibold text-slate-950 hover:bg-teal-500"
-        >
-          {action.label}
-          <ArrowRight className="h-3.5 w-3.5" />
-        </button>
-        {user.role !== 'Operator' && (
-          <button
-            onClick={() => onNavigate('machines')}
-            className="ml-2 mt-3 inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
-          >
-            <Cpu className="h-3.5 w-3.5" />
-            Machine roster
-          </button>
-        )}
-      </section>
-
       {user.role === 'Maintenance' ? (
         <section className="rounded-xl border border-slate-200 bg-white p-4">
           <div className="flex items-center justify-between">
@@ -250,11 +186,6 @@ const RoleActions: React.FC<{
         </section>
       )}
 
-      {user.role === 'Manager' && (
-        <p className="rounded-lg border border-slate-200 bg-amber-50 p-3 text-[11px] leading-relaxed text-slate-700">
-          Available machine data includes sensor readings and status, but not verified production totals or downtime duration. Those KPIs are not inferred.
-        </p>
-      )}
     </aside>
   );
 };
@@ -299,40 +230,17 @@ export const FactoryPulseDashboard: React.FC<FactoryPulseDashboardProps> = ({
   }, [activeTab, currentUser.id]);
 
   return (
-    <div className="mx-auto w-full max-w-[1600px] space-y-4 pb-6 text-slate-900">
-      <header className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-teal-800 font-mono">
-            {copy.eyebrow}
-          </p>
-          <h1 className="mt-1 text-xl font-semibold sm:text-2xl font-display">{copy.title}</h1>
-          <p className="mt-1 max-w-3xl text-xs leading-relaxed text-slate-600">{copy.description}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="rounded-full border border-slate-200 px-3 py-1.5 text-xs text-slate-700 font-mono">
-            {currentUser.role}
-          </span>
-          {onRefreshData && (
-            <button
-              onClick={onRefreshData}
-              className="rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-700 hover:bg-slate-100 font-mono"
-            >
-              Refresh Operations Data
-            </button>
-          )}
-        </div>
-      </header>
+    <div className="mx-auto w-full max-w-[1600px] space-y-4 pb-6 text-slate-900 fp-dashboard">
+      <DashboardMasthead user={currentUser} machines={machines} incidents={incidents} workOrders={workOrders} title={copy.title} onNavigate={onNavigate} onRefresh={onRefreshData}/>
 
-      <nav aria-label="Dashboard views" className="flex flex-wrap gap-2 rounded-xl border border-slate-200 bg-white p-2">
+
+      <nav aria-label="Dashboard views" className="fp-dashboard-tabs flex flex-wrap gap-2 rounded-xl border border-slate-200 bg-white p-2">
         {([{ id: 'report', label: 'My report dashboard' }, { id: 'overview', label: `${currentUser.role} overview` }, { id: 'telemetry', label: 'Live machine telemetry' }] as const).filter(tab => currentUser.role !== 'Maintenance' || tab.id !== 'report').map((tab) => <button key={tab.id} onClick={() => setActiveTab(tab.id)} aria-current={activeTab === tab.id ? 'page' : undefined} className={`rounded-lg px-3 py-2 text-xs font-semibold ${activeTab === tab.id ? 'bg-teal-700 text-white' : 'text-slate-700 hover:bg-slate-100'}`}>{tab.label}</button>)}
       </nav>
       {activeTab === 'report' ? <RoleReportDashboard key={currentUser.id} user={currentUser} machines={machines} incidents={incidents} readings={readings} error={readingsError} onNavigate={onNavigate} /> : activeTab === 'overview' ? <>
         <RoleDashboardHighlights user={currentUser} machines={machines} incidents={incidents} workOrders={workOrders} readings={readings} />
         <div className="grid grid-cols-1 gap-4 2xl:grid-cols-12"><div className="2xl:col-span-8"><section className="rounded-xl border border-slate-200 bg-white p-4"><h2 className="text-sm font-semibold text-slate-900">Live telemetry preview</h2><p className="mt-1 text-xs text-slate-600">Saved machine readings for the authorized machine or role scope.</p><button onClick={() => setActiveTab('telemetry')} className="mt-3 inline-flex items-center gap-2 rounded-lg bg-teal-700 px-3 py-2 text-xs font-semibold text-white">Open live charts <ArrowRight className="h-3.5 w-3.5" /></button></section></div><div className="2xl:col-span-4"><RoleActions user={currentUser} incidents={incidents} workOrders={workOrders} onNavigate={onNavigate} onSelectMachine={onSelectMachine} onRefreshData={onRefreshData} /></div></div>
       </> : <SimulatorFleetTelemetryDashboard user={currentUser} machines={machines} onReadingsChange={setReadings} />}
-      <footer className="border-t border-slate-200 pt-2 text-[10px] text-slate-500 font-mono">
-        Sensor values and trends: machine records stored in FactoryPulse MySQL. Operational queues: FactoryPulse incident and work-order records.
-      </footer>
     </div>
   );
 };

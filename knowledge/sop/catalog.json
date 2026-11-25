@@ -4,7 +4,7 @@
     {
       "id": "FP-GENERAL-001",
       "title": "General machine-condition response",
-      "revision": "0.1",
+      "revision": "0.2",
       "status": "training",
       "machine_ids": [],
       "category": "general",
@@ -16,50 +16,65 @@
         "machine",
         "abnormal"
       ],
-      "scope_notice": "Generic training draft. No approved numeric limits, isolation sequence or equipment-specific operating response is provided.",
+      "scope_notice": "Role-specific training draft. Numeric limits are configured comparisons, not approved operating limits. Use the applicable equipment manual and site procedure.",
       "roles": {
         "Operator": [
-          "Confirm the machine ID, sensor name, unit, timestamp and quality before responding.",
-          "For a Suspect condition, report the observation to your assigned supervisor and responsible maintenance team. Continue operation only if the approved site procedure permits it.",
-          "For a Critical condition, follow the equipment-specific approved safe-stop procedure. This draft does not specify a stop button, emergency-stop action or power-isolation sequence.",
-          "Keep clear of moving equipment. Do not bypass guards, open electrical panels or attempt unauthorized repair.",
-          "Record symptoms and reading references in the incident. Restart only through the approved authorization process, even if the reading returns to normal."
+          "Verify your assigned machine ID, exact sensor, timestamp, unit and data-quality flag. Preserve the reading ID and controller alarm text.",
+          "Record the alarm text, operating mode, recent job or tooling change and any visible symptoms from a safe observation point.",
+          "For Suspect, report the evidence to your supervisor and responsible maintenance team. Continue only as permitted by the approved site procedure.",
+          "For Critical or an immediate observed hazard, follow the equipment-specific approved safe-stop and site emergency procedure; keep clear and notify the responsible supervisor. This draft does not supply a button sequence or energy-isolation steps.",
+          "Do not bypass guards, open electrical panels, adjust limits, clear protective trips repeatedly or attempt unauthorized repair.",
+          "Record the concern in the incident with time, symptoms and what you observed. A normal follow-up reading is not permission to restart.",
+          "Restart only after the approved verification and release authorization; confirm the handover with your supervisor."
         ],
         "Supervisor": [
-          "Confirm the affected machine, assigned operator and freshness of the supporting evidence.",
-          "For Suspect, prioritize the concern and assign the responsible maintenance team within your scope.",
-          "For Critical, coordinate the approved machine response and escalate to the responsible plant manager.",
-          "Coordinate workstation coverage and record the handover without disclosing unrelated machine or personnel records.",
-          "Review inspection and verification findings before accepting resolution; an app status alone does not authorize restart."
+          "Verify machine/team scope, incident severity and the exact supporting readings; distinguish fresh evidence from last-known records.",
+          "Record the alarm text, operating mode, recent job or tooling change and any visible symptoms from a safe observation point.",
+          "For Suspect, identify the responsible operator and assign authorized maintenance review. For Critical, coordinate the approved safe response and escalate to the responsible plant manager.",
+          "Check for an existing open incident for the same concern before creating another; record a response owner and coverage/handover plan.",
+          "Confirm that the appropriate machine manual and approved procedure are available to the assigned technician. Do not use an app warning to authorize repair.",
+          "Review investigation notes, verification evidence and linked work-order completion before accepting resolution.",
+          "Record the required release/restart authorization. A cleared chart or resolved ticket alone does not authorize restart."
         ],
         "Maintenance": [
-          "Review the assigned incident, exact sensor, timestamps and relevant equipment manual.",
-          "Use only the approved equipment-specific isolation and inspection procedure, performed by authorized personnel.",
-          "Inspect the reported concern using the applicable approved checklist. Do not infer a failed component solely from an unusual sensor value.",
-          "Record findings, actions and verification evidence in the assigned work order.",
-          "Follow the approved release/restart authorization. Close the incident with verification notes and confirm linked work orders are complete."
+          "Review the assigned incident, reading IDs, units, controller alarms, operating mode and recent relevant history. Separate observation from a proposed cause.",
+          "Before servicing, apply the equipment/site-approved safe-stop, isolation and stored-energy verification procedure through authorized personnel; this draft supplies no isolation sequence.",
+          "Compare the event timeline with the equipment manual, controller alarms and a verified reference instrument where the approved inspection plan requires it.",
+          "Use an independent verification method only where authorized by the approved inspection plan. Record instrument/reference, time and result; do not infer failure from one sample.",
+          "Document actual findings and work performed, with parts/actions only when supported by inspection. Preserve pre- and post-action evidence.",
+          "Complete the approved verification and release process; abnormal follow-up readings or missing evidence require further review.",
+          "Update linked work orders and resolve the incident with meaningful verification notes and required authorization. The app does not release physical equipment."
         ],
         "Manager": [
-          "Review the affected machine/line and the reported severity with the responsible supervisor.",
-          "For Critical, confirm a response owner and coordinate the site escalation and recovery process.",
-          "Use verified production impact and investigation findings for operational decisions; the detector does not decide repair or replacement.",
-          "Track the resolution and any required authorization with the supervisor and maintenance lead."
+          "Review affected machine/line scope and the responsible supervisor; distinguish current evidence from historical alerts.",
+          "For Critical, confirm a response owner, site escalation and a safe recovery plan with the supervisor and maintenance lead.",
+          "Use verified downtime coverage and production impact. Treat configured financial rates as assumptions until approved.",
+          "Ask for confirmed findings, verification evidence and required recovery authorization before accepting a return-to-service plan.",
+          "Track recurrence and agreed follow-up work; do not direct a repair or replacement solely from an app reading."
         ],
         "Admin": [
-          "Check ingestion health, machine identity and user/team mappings if the alert appears incorrectly routed.",
-          "Correct only authorized configuration issues and retain the audit trail.",
-          "Direct equipment operating decisions to the responsible supervisor and maintenance team; Admin access is not operating authorization."
+          "Verify machine identity, sensor/unit mapping, ingestion health and role/team routing within your authorized scope.",
+          "If readings are stale or missing, investigate the data path without reclassifying the machine as healthy. Preserve relevant timestamps and reading IDs.",
+          "Change only authorized configuration with a reason and retain the audit trail; do not silently alter thresholds to clear an alert.",
+          "Refer operating, isolation, repair and restart decisions to the responsible supervisor and authorized maintenance personnel.",
+          "Confirm that any operational SOP has real machine mapping, owner approval, manual reference and valid review dates before marking it approved."
         ]
       },
       "approved_by": null,
       "manual_reference": null,
       "effective_date": null,
-      "review_due": null
+      "review_due": null,
+      "references": [
+        {
+          "title": "OSHA hazardous-energy control overview (general reference; not a machine procedure or site approval)",
+          "url": "https://www.osha.gov/control-hazardous-energy/"
+        }
+      ]
     },
     {
       "id": "FP-TEMP-001",
       "title": "Elevated temperature response",
-      "revision": "0.1",
+      "revision": "0.2",
       "status": "training",
       "machine_ids": [],
       "category": "temperature",
@@ -70,50 +85,65 @@
         "overheating",
         "motor"
       ],
-      "scope_notice": "Generic training draft. No approved numeric limits, isolation sequence or equipment-specific operating response is provided.",
+      "scope_notice": "Role-specific training draft. Numeric limits are configured comparisons, not approved operating limits. Use the applicable equipment manual and site procedure.",
       "roles": {
         "Operator": [
-          "Confirm the machine ID, sensor name, unit, timestamp and quality before responding.",
-          "For a Suspect condition, report the observation to your assigned supervisor and responsible maintenance team. Continue operation only if the approved site procedure permits it.",
-          "For a Critical condition, follow the equipment-specific approved safe-stop procedure. This draft does not specify a stop button, emergency-stop action or power-isolation sequence.",
-          "Keep clear of moving equipment. Do not bypass guards, open electrical panels or attempt unauthorized repair.",
-          "Record symptoms and reading references in the incident. Restart only through the approved authorization process, even if the reading returns to normal."
+          "Verify your assigned machine ID, exact sensor, timestamp, unit and data-quality flag. Preserve the reading ID and controller alarm text.",
+          "Record which channel is affected: machine temperature, motor temperature or coolant temperature. Note when the rise began, operating mode and any visible controller cooling alarm. Do not touch hot surfaces or open coolant circuits.",
+          "For Suspect, report the evidence to your supervisor and responsible maintenance team. Continue only as permitted by the approved site procedure.",
+          "For Critical or an immediate observed hazard, follow the equipment-specific approved safe-stop and site emergency procedure; keep clear and notify the responsible supervisor. This draft does not supply a button sequence or energy-isolation steps.",
+          "Do not bypass guards, open electrical panels, adjust limits, clear protective trips repeatedly or attempt unauthorized repair.",
+          "Record the concern in the incident with time, symptoms and what you observed. A normal follow-up reading is not permission to restart.",
+          "Restart only after the approved verification and release authorization; confirm the handover with your supervisor."
         ],
         "Supervisor": [
-          "Confirm the affected machine, assigned operator and freshness of the supporting evidence.",
-          "For Suspect, prioritize the concern and assign the responsible maintenance team within your scope.",
-          "For Critical, coordinate the approved machine response and escalate to the responsible plant manager.",
-          "Coordinate workstation coverage and record the handover without disclosing unrelated machine or personnel records.",
-          "Review inspection and verification findings before accepting resolution; an app status alone does not authorize restart."
+          "Verify machine/team scope, incident severity and the exact supporting readings; distinguish fresh evidence from last-known records.",
+          "Record which channel is affected: machine temperature, motor temperature or coolant temperature. Note when the rise began, operating mode and any visible controller cooling alarm. Do not touch hot surfaces or open coolant circuits.",
+          "For Suspect, identify the responsible operator and assign authorized maintenance review. For Critical, coordinate the approved safe response and escalate to the responsible plant manager.",
+          "Check for an existing open incident for the same concern before creating another; record a response owner and coverage/handover plan.",
+          "Confirm that the appropriate machine manual and approved procedure are available to the assigned technician. Do not use an app warning to authorize repair.",
+          "Review investigation notes, verification evidence and linked work-order completion before accepting resolution.",
+          "Record the required release/restart authorization. A cleared chart or resolved ticket alone does not authorize restart."
         ],
         "Maintenance": [
-          "Review the assigned incident, exact sensor, timestamps and relevant equipment manual.",
-          "Use only the approved equipment-specific isolation and inspection procedure, performed by authorized personnel.",
-          "Inspect the reported concern using the applicable approved checklist. Do not infer a failed component solely from an unusual sensor value.",
-          "Record findings, actions and verification evidence in the assigned work order.",
-          "Follow the approved release/restart authorization. Close the incident with verification notes and confirm linked work orders are complete."
+          "Review the assigned incident, reading IDs, units, controller alarms, operating mode and recent relevant history. Separate observation from a proposed cause.",
+          "Before servicing, apply the equipment/site-approved safe-stop, isolation and stored-energy verification procedure through authorized personnel; this draft supplies no isolation sequence.",
+          "After authorized safe isolation, use the manufacturer checklist to review the cooling path, permitted coolant checks, sensor connection and relevant controller alarms. These are inspection candidates, not a diagnosis.",
+          "Use an independent verification method only where authorized by the approved inspection plan. Record instrument/reference, time and result; do not infer failure from one sample.",
+          "Document actual findings and work performed, with parts/actions only when supported by inspection. Preserve pre- and post-action evidence.",
+          "Complete the approved verification and release process; abnormal follow-up readings or missing evidence require further review.",
+          "Update linked work orders and resolve the incident with meaningful verification notes and required authorization. The app does not release physical equipment."
         ],
         "Manager": [
-          "Review the affected machine/line and the reported severity with the responsible supervisor.",
-          "For Critical, confirm a response owner and coordinate the site escalation and recovery process.",
-          "Use verified production impact and investigation findings for operational decisions; the detector does not decide repair or replacement.",
-          "Track the resolution and any required authorization with the supervisor and maintenance lead."
+          "Review affected machine/line scope and the responsible supervisor; distinguish current evidence from historical alerts.",
+          "For Critical, confirm a response owner, site escalation and a safe recovery plan with the supervisor and maintenance lead.",
+          "Use verified downtime coverage and production impact. Treat configured financial rates as assumptions until approved.",
+          "Ask for confirmed findings, verification evidence and required recovery authorization before accepting a return-to-service plan.",
+          "Track recurrence and agreed follow-up work; do not direct a repair or replacement solely from an app reading."
         ],
         "Admin": [
-          "Check ingestion health, machine identity and user/team mappings if the alert appears incorrectly routed.",
-          "Correct only authorized configuration issues and retain the audit trail.",
-          "Direct equipment operating decisions to the responsible supervisor and maintenance team; Admin access is not operating authorization."
+          "Verify machine identity, sensor/unit mapping, ingestion health and role/team routing within your authorized scope.",
+          "If readings are stale or missing, investigate the data path without reclassifying the machine as healthy. Preserve relevant timestamps and reading IDs.",
+          "Change only authorized configuration with a reason and retain the audit trail; do not silently alter thresholds to clear an alert.",
+          "Refer operating, isolation, repair and restart decisions to the responsible supervisor and authorized maintenance personnel.",
+          "Confirm that any operational SOP has real machine mapping, owner approval, manual reference and valid review dates before marking it approved."
         ]
       },
       "approved_by": null,
       "manual_reference": null,
       "effective_date": null,
-      "review_due": null
+      "review_due": null,
+      "references": [
+        {
+          "title": "OSHA hazardous-energy control overview (general reference; not a machine procedure or site approval)",
+          "url": "https://www.osha.gov/control-hazardous-energy/"
+        }
+      ]
     },
     {
       "id": "FP-VIB-001",
       "title": "Abnormal vibration response",
-      "revision": "0.1",
+      "revision": "0.2",
       "status": "training",
       "machine_ids": [],
       "category": "vibration",
@@ -122,50 +152,65 @@
         "chatter",
         "oscillation"
       ],
-      "scope_notice": "Generic training draft. No approved numeric limits, isolation sequence or equipment-specific operating response is provided.",
+      "scope_notice": "Role-specific training draft. Numeric limits are configured comparisons, not approved operating limits. Use the applicable equipment manual and site procedure.",
       "roles": {
         "Operator": [
-          "Confirm the machine ID, sensor name, unit, timestamp and quality before responding.",
-          "For a Suspect condition, report the observation to your assigned supervisor and responsible maintenance team. Continue operation only if the approved site procedure permits it.",
-          "For a Critical condition, follow the equipment-specific approved safe-stop procedure. This draft does not specify a stop button, emergency-stop action or power-isolation sequence.",
-          "Keep clear of moving equipment. Do not bypass guards, open electrical panels or attempt unauthorized repair.",
-          "Record symptoms and reading references in the incident. Restart only through the approved authorization process, even if the reading returns to normal."
+          "Verify your assigned machine ID, exact sensor, timestamp, unit and data-quality flag. Preserve the reading ID and controller alarm text.",
+          "Record the affected axis or spindle, current job, RPM, recent tool change and any unusual sound from outside the guarded area. Do not reach into the machine or test at a higher speed.",
+          "For Suspect, report the evidence to your supervisor and responsible maintenance team. Continue only as permitted by the approved site procedure.",
+          "For Critical or an immediate observed hazard, follow the equipment-specific approved safe-stop and site emergency procedure; keep clear and notify the responsible supervisor. This draft does not supply a button sequence or energy-isolation steps.",
+          "Do not bypass guards, open electrical panels, adjust limits, clear protective trips repeatedly or attempt unauthorized repair.",
+          "Record the concern in the incident with time, symptoms and what you observed. A normal follow-up reading is not permission to restart.",
+          "Restart only after the approved verification and release authorization; confirm the handover with your supervisor."
         ],
         "Supervisor": [
-          "Confirm the affected machine, assigned operator and freshness of the supporting evidence.",
-          "For Suspect, prioritize the concern and assign the responsible maintenance team within your scope.",
-          "For Critical, coordinate the approved machine response and escalate to the responsible plant manager.",
-          "Coordinate workstation coverage and record the handover without disclosing unrelated machine or personnel records.",
-          "Review inspection and verification findings before accepting resolution; an app status alone does not authorize restart."
+          "Verify machine/team scope, incident severity and the exact supporting readings; distinguish fresh evidence from last-known records.",
+          "Record the affected axis or spindle, current job, RPM, recent tool change and any unusual sound from outside the guarded area. Do not reach into the machine or test at a higher speed.",
+          "For Suspect, identify the responsible operator and assign authorized maintenance review. For Critical, coordinate the approved safe response and escalate to the responsible plant manager.",
+          "Check for an existing open incident for the same concern before creating another; record a response owner and coverage/handover plan.",
+          "Confirm that the appropriate machine manual and approved procedure are available to the assigned technician. Do not use an app warning to authorize repair.",
+          "Review investigation notes, verification evidence and linked work-order completion before accepting resolution.",
+          "Record the required release/restart authorization. A cleared chart or resolved ticket alone does not authorize restart."
         ],
         "Maintenance": [
-          "Review the assigned incident, exact sensor, timestamps and relevant equipment manual.",
-          "Use only the approved equipment-specific isolation and inspection procedure, performed by authorized personnel.",
-          "Inspect the reported concern using the applicable approved checklist. Do not infer a failed component solely from an unusual sensor value.",
-          "Record findings, actions and verification evidence in the assigned work order.",
-          "Follow the approved release/restart authorization. Close the incident with verification notes and confirm linked work orders are complete."
+          "Review the assigned incident, reading IDs, units, controller alarms, operating mode and recent relevant history. Separate observation from a proposed cause.",
+          "Before servicing, apply the equipment/site-approved safe-stop, isolation and stored-energy verification procedure through authorized personnel; this draft supplies no isolation sequence.",
+          "Under the approved safe inspection plan, review tooling/workholding condition, mounting, recorded vibration units and comparable operating modes. Confirm findings before attributing the event to a bearing or imbalance.",
+          "Use an independent verification method only where authorized by the approved inspection plan. Record instrument/reference, time and result; do not infer failure from one sample.",
+          "Document actual findings and work performed, with parts/actions only when supported by inspection. Preserve pre- and post-action evidence.",
+          "Complete the approved verification and release process; abnormal follow-up readings or missing evidence require further review.",
+          "Update linked work orders and resolve the incident with meaningful verification notes and required authorization. The app does not release physical equipment."
         ],
         "Manager": [
-          "Review the affected machine/line and the reported severity with the responsible supervisor.",
-          "For Critical, confirm a response owner and coordinate the site escalation and recovery process.",
-          "Use verified production impact and investigation findings for operational decisions; the detector does not decide repair or replacement.",
-          "Track the resolution and any required authorization with the supervisor and maintenance lead."
+          "Review affected machine/line scope and the responsible supervisor; distinguish current evidence from historical alerts.",
+          "For Critical, confirm a response owner, site escalation and a safe recovery plan with the supervisor and maintenance lead.",
+          "Use verified downtime coverage and production impact. Treat configured financial rates as assumptions until approved.",
+          "Ask for confirmed findings, verification evidence and required recovery authorization before accepting a return-to-service plan.",
+          "Track recurrence and agreed follow-up work; do not direct a repair or replacement solely from an app reading."
         ],
         "Admin": [
-          "Check ingestion health, machine identity and user/team mappings if the alert appears incorrectly routed.",
-          "Correct only authorized configuration issues and retain the audit trail.",
-          "Direct equipment operating decisions to the responsible supervisor and maintenance team; Admin access is not operating authorization."
+          "Verify machine identity, sensor/unit mapping, ingestion health and role/team routing within your authorized scope.",
+          "If readings are stale or missing, investigate the data path without reclassifying the machine as healthy. Preserve relevant timestamps and reading IDs.",
+          "Change only authorized configuration with a reason and retain the audit trail; do not silently alter thresholds to clear an alert.",
+          "Refer operating, isolation, repair and restart decisions to the responsible supervisor and authorized maintenance personnel.",
+          "Confirm that any operational SOP has real machine mapping, owner approval, manual reference and valid review dates before marking it approved."
         ]
       },
       "approved_by": null,
       "manual_reference": null,
       "effective_date": null,
-      "review_due": null
+      "review_due": null,
+      "references": [
+        {
+          "title": "OSHA hazardous-energy control overview (general reference; not a machine procedure or site approval)",
+          "url": "https://www.osha.gov/control-hazardous-energy/"
+        }
+      ]
     },
     {
       "id": "FP-RPM-001",
       "title": "Abnormal spindle-speed response",
-      "revision": "0.1",
+      "revision": "0.2",
       "status": "training",
       "machine_ids": [],
       "category": "rpm",
@@ -175,50 +220,65 @@
         "speed",
         "overspeed"
       ],
-      "scope_notice": "Generic training draft. No approved numeric limits, isolation sequence or equipment-specific operating response is provided.",
+      "scope_notice": "Role-specific training draft. Numeric limits are configured comparisons, not approved operating limits. Use the applicable equipment manual and site procedure.",
       "roles": {
         "Operator": [
-          "Confirm the machine ID, sensor name, unit, timestamp and quality before responding.",
-          "For a Suspect condition, report the observation to your assigned supervisor and responsible maintenance team. Continue operation only if the approved site procedure permits it.",
-          "For a Critical condition, follow the equipment-specific approved safe-stop procedure. This draft does not specify a stop button, emergency-stop action or power-isolation sequence.",
-          "Keep clear of moving equipment. Do not bypass guards, open electrical panels or attempt unauthorized repair.",
-          "Record symptoms and reading references in the incident. Restart only through the approved authorization process, even if the reading returns to normal."
+          "Verify your assigned machine ID, exact sensor, timestamp, unit and data-quality flag. Preserve the reading ID and controller alarm text.",
+          "Compare reported RPM with the commanded spindle speed shown by the controller and the job record, without changing the speed to test the warning. Note any speed-sensor or drive alarm.",
+          "For Suspect, report the evidence to your supervisor and responsible maintenance team. Continue only as permitted by the approved site procedure.",
+          "For Critical or an immediate observed hazard, follow the equipment-specific approved safe-stop and site emergency procedure; keep clear and notify the responsible supervisor. This draft does not supply a button sequence or energy-isolation steps.",
+          "Do not bypass guards, open electrical panels, adjust limits, clear protective trips repeatedly or attempt unauthorized repair.",
+          "Record the concern in the incident with time, symptoms and what you observed. A normal follow-up reading is not permission to restart.",
+          "Restart only after the approved verification and release authorization; confirm the handover with your supervisor."
         ],
         "Supervisor": [
-          "Confirm the affected machine, assigned operator and freshness of the supporting evidence.",
-          "For Suspect, prioritize the concern and assign the responsible maintenance team within your scope.",
-          "For Critical, coordinate the approved machine response and escalate to the responsible plant manager.",
-          "Coordinate workstation coverage and record the handover without disclosing unrelated machine or personnel records.",
-          "Review inspection and verification findings before accepting resolution; an app status alone does not authorize restart."
+          "Verify machine/team scope, incident severity and the exact supporting readings; distinguish fresh evidence from last-known records.",
+          "Compare reported RPM with the commanded spindle speed shown by the controller and the job record, without changing the speed to test the warning. Note any speed-sensor or drive alarm.",
+          "For Suspect, identify the responsible operator and assign authorized maintenance review. For Critical, coordinate the approved safe response and escalate to the responsible plant manager.",
+          "Check for an existing open incident for the same concern before creating another; record a response owner and coverage/handover plan.",
+          "Confirm that the appropriate machine manual and approved procedure are available to the assigned technician. Do not use an app warning to authorize repair.",
+          "Review investigation notes, verification evidence and linked work-order completion before accepting resolution.",
+          "Record the required release/restart authorization. A cleared chart or resolved ticket alone does not authorize restart."
         ],
         "Maintenance": [
-          "Review the assigned incident, exact sensor, timestamps and relevant equipment manual.",
-          "Use only the approved equipment-specific isolation and inspection procedure, performed by authorized personnel.",
-          "Inspect the reported concern using the applicable approved checklist. Do not infer a failed component solely from an unusual sensor value.",
-          "Record findings, actions and verification evidence in the assigned work order.",
-          "Follow the approved release/restart authorization. Close the incident with verification notes and confirm linked work orders are complete."
+          "Review the assigned incident, reading IDs, units, controller alarms, operating mode and recent relevant history. Separate observation from a proposed cause.",
+          "Before servicing, apply the equipment/site-approved safe-stop, isolation and stored-energy verification procedure through authorized personnel; this draft supplies no isolation sequence.",
+          "Use the approved diagnostic plan to compare command versus feedback, units, drive alarm history and speed-sensor evidence. Do not increase RPM or bypass an interlock to reproduce the event.",
+          "Use an independent verification method only where authorized by the approved inspection plan. Record instrument/reference, time and result; do not infer failure from one sample.",
+          "Document actual findings and work performed, with parts/actions only when supported by inspection. Preserve pre- and post-action evidence.",
+          "Complete the approved verification and release process; abnormal follow-up readings or missing evidence require further review.",
+          "Update linked work orders and resolve the incident with meaningful verification notes and required authorization. The app does not release physical equipment."
         ],
         "Manager": [
-          "Review the affected machine/line and the reported severity with the responsible supervisor.",
-          "For Critical, confirm a response owner and coordinate the site escalation and recovery process.",
-          "Use verified production impact and investigation findings for operational decisions; the detector does not decide repair or replacement.",
-          "Track the resolution and any required authorization with the supervisor and maintenance lead."
+          "Review affected machine/line scope and the responsible supervisor; distinguish current evidence from historical alerts.",
+          "For Critical, confirm a response owner, site escalation and a safe recovery plan with the supervisor and maintenance lead.",
+          "Use verified downtime coverage and production impact. Treat configured financial rates as assumptions until approved.",
+          "Ask for confirmed findings, verification evidence and required recovery authorization before accepting a return-to-service plan.",
+          "Track recurrence and agreed follow-up work; do not direct a repair or replacement solely from an app reading."
         ],
         "Admin": [
-          "Check ingestion health, machine identity and user/team mappings if the alert appears incorrectly routed.",
-          "Correct only authorized configuration issues and retain the audit trail.",
-          "Direct equipment operating decisions to the responsible supervisor and maintenance team; Admin access is not operating authorization."
+          "Verify machine identity, sensor/unit mapping, ingestion health and role/team routing within your authorized scope.",
+          "If readings are stale or missing, investigate the data path without reclassifying the machine as healthy. Preserve relevant timestamps and reading IDs.",
+          "Change only authorized configuration with a reason and retain the audit trail; do not silently alter thresholds to clear an alert.",
+          "Refer operating, isolation, repair and restart decisions to the responsible supervisor and authorized maintenance personnel.",
+          "Confirm that any operational SOP has real machine mapping, owner approval, manual reference and valid review dates before marking it approved."
         ]
       },
       "approved_by": null,
       "manual_reference": null,
       "effective_date": null,
-      "review_due": null
+      "review_due": null,
+      "references": [
+        {
+          "title": "OSHA hazardous-energy control overview (general reference; not a machine procedure or site approval)",
+          "url": "https://www.osha.gov/control-hazardous-energy/"
+        }
+      ]
     },
     {
       "id": "FP-PRESSURE-001",
       "title": "Abnormal pressure response",
-      "revision": "0.1",
+      "revision": "0.2",
       "status": "training",
       "machine_ids": [],
       "category": "pressure",
@@ -228,45 +288,338 @@
         "pneumatic",
         "hydraulic"
       ],
-      "scope_notice": "Generic training draft. No approved numeric limits, isolation sequence or equipment-specific operating response is provided.",
+      "scope_notice": "Role-specific training draft. Numeric limits are configured comparisons, not approved operating limits. Use the applicable equipment manual and site procedure.",
       "roles": {
         "Operator": [
-          "Confirm the machine ID, sensor name, unit, timestamp and quality before responding.",
-          "For a Suspect condition, report the observation to your assigned supervisor and responsible maintenance team. Continue operation only if the approved site procedure permits it.",
-          "For a Critical condition, follow the equipment-specific approved safe-stop procedure. This draft does not specify a stop button, emergency-stop action or power-isolation sequence.",
-          "Keep clear of moving equipment. Do not bypass guards, open electrical panels or attempt unauthorized repair.",
-          "Record symptoms and reading references in the incident. Restart only through the approved authorization process, even if the reading returns to normal."
+          "Verify your assigned machine ID, exact sensor, timestamp, unit and data-quality flag. Preserve the reading ID and controller alarm text.",
+          "Record the pressure channel, unit and controller alarm. Observe visible external leaks only from a safe location; do not loosen a fitting, touch a suspected high-pressure leak or change a pressure setting.",
+          "For Suspect, report the evidence to your supervisor and responsible maintenance team. Continue only as permitted by the approved site procedure.",
+          "For Critical or an immediate observed hazard, follow the equipment-specific approved safe-stop and site emergency procedure; keep clear and notify the responsible supervisor. This draft does not supply a button sequence or energy-isolation steps.",
+          "Do not bypass guards, open electrical panels, adjust limits, clear protective trips repeatedly or attempt unauthorized repair.",
+          "Record the concern in the incident with time, symptoms and what you observed. A normal follow-up reading is not permission to restart.",
+          "Restart only after the approved verification and release authorization; confirm the handover with your supervisor."
         ],
         "Supervisor": [
-          "Confirm the affected machine, assigned operator and freshness of the supporting evidence.",
-          "For Suspect, prioritize the concern and assign the responsible maintenance team within your scope.",
-          "For Critical, coordinate the approved machine response and escalate to the responsible plant manager.",
-          "Coordinate workstation coverage and record the handover without disclosing unrelated machine or personnel records.",
-          "Review inspection and verification findings before accepting resolution; an app status alone does not authorize restart."
+          "Verify machine/team scope, incident severity and the exact supporting readings; distinguish fresh evidence from last-known records.",
+          "Record the pressure channel, unit and controller alarm. Observe visible external leaks only from a safe location; do not loosen a fitting, touch a suspected high-pressure leak or change a pressure setting.",
+          "For Suspect, identify the responsible operator and assign authorized maintenance review. For Critical, coordinate the approved safe response and escalate to the responsible plant manager.",
+          "Check for an existing open incident for the same concern before creating another; record a response owner and coverage/handover plan.",
+          "Confirm that the appropriate machine manual and approved procedure are available to the assigned technician. Do not use an app warning to authorize repair.",
+          "Review investigation notes, verification evidence and linked work-order completion before accepting resolution.",
+          "Record the required release/restart authorization. A cleared chart or resolved ticket alone does not authorize restart."
         ],
         "Maintenance": [
-          "Review the assigned incident, exact sensor, timestamps and relevant equipment manual.",
-          "Use only the approved equipment-specific isolation and inspection procedure, performed by authorized personnel.",
-          "Inspect the reported concern using the applicable approved checklist. Do not infer a failed component solely from an unusual sensor value.",
-          "Record findings, actions and verification evidence in the assigned work order.",
-          "Follow the approved release/restart authorization. Close the incident with verification notes and confirm linked work orders are complete."
+          "Review the assigned incident, reading IDs, units, controller alarms, operating mode and recent relevant history. Separate observation from a proposed cause.",
+          "Before servicing, apply the equipment/site-approved safe-stop, isolation and stored-energy verification procedure through authorized personnel; this draft supplies no isolation sequence.",
+          "Use the machine-specific stored-pressure isolation and verification procedure before inspection. Review the relevant circuit, approved sensor checks and controller alarm history; do not infer that a pump or valve has failed.",
+          "Use an independent verification method only where authorized by the approved inspection plan. Record instrument/reference, time and result; do not infer failure from one sample.",
+          "Document actual findings and work performed, with parts/actions only when supported by inspection. Preserve pre- and post-action evidence.",
+          "Complete the approved verification and release process; abnormal follow-up readings or missing evidence require further review.",
+          "Update linked work orders and resolve the incident with meaningful verification notes and required authorization. The app does not release physical equipment."
         ],
         "Manager": [
-          "Review the affected machine/line and the reported severity with the responsible supervisor.",
-          "For Critical, confirm a response owner and coordinate the site escalation and recovery process.",
-          "Use verified production impact and investigation findings for operational decisions; the detector does not decide repair or replacement.",
-          "Track the resolution and any required authorization with the supervisor and maintenance lead."
+          "Review affected machine/line scope and the responsible supervisor; distinguish current evidence from historical alerts.",
+          "For Critical, confirm a response owner, site escalation and a safe recovery plan with the supervisor and maintenance lead.",
+          "Use verified downtime coverage and production impact. Treat configured financial rates as assumptions until approved.",
+          "Ask for confirmed findings, verification evidence and required recovery authorization before accepting a return-to-service plan.",
+          "Track recurrence and agreed follow-up work; do not direct a repair or replacement solely from an app reading."
         ],
         "Admin": [
-          "Check ingestion health, machine identity and user/team mappings if the alert appears incorrectly routed.",
-          "Correct only authorized configuration issues and retain the audit trail.",
-          "Direct equipment operating decisions to the responsible supervisor and maintenance team; Admin access is not operating authorization."
+          "Verify machine identity, sensor/unit mapping, ingestion health and role/team routing within your authorized scope.",
+          "If readings are stale or missing, investigate the data path without reclassifying the machine as healthy. Preserve relevant timestamps and reading IDs.",
+          "Change only authorized configuration with a reason and retain the audit trail; do not silently alter thresholds to clear an alert.",
+          "Refer operating, isolation, repair and restart decisions to the responsible supervisor and authorized maintenance personnel.",
+          "Confirm that any operational SOP has real machine mapping, owner approval, manual reference and valid review dates before marking it approved."
         ]
       },
       "approved_by": null,
       "manual_reference": null,
       "effective_date": null,
-      "review_due": null
+      "review_due": null,
+      "references": [
+        {
+          "title": "OSHA hazardous-energy control overview (general reference; not a machine procedure or site approval)",
+          "url": "https://www.osha.gov/control-hazardous-energy/"
+        }
+      ]
+    },
+    {
+      "id": "FP-COOLANT-001",
+      "title": "Coolant flow and temperature response",
+      "category": "coolant",
+      "keywords": [
+        "coolant",
+        "flow",
+        "cooling",
+        "leak"
+      ],
+      "status": "training",
+      "machine_ids": [],
+      "roles": {
+        "Operator": [
+          "Verify your assigned machine ID, exact sensor, timestamp, unit and data-quality flag. Preserve the reading ID and controller alarm text.",
+          "Record coolant flow and temperature as separate measurements, plus controller alarms and visible external leakage from outside the guarded area. Do not open a hot or pressurized circuit, top up or mix fluids based on app advice.",
+          "For Suspect, report the evidence to your supervisor and responsible maintenance team. Continue only as permitted by the approved site procedure.",
+          "For Critical or an immediate observed hazard, follow the equipment-specific approved safe-stop and site emergency procedure; keep clear and notify the responsible supervisor. This draft does not supply a button sequence or energy-isolation steps.",
+          "Do not bypass guards, open electrical panels, adjust limits, clear protective trips repeatedly or attempt unauthorized repair.",
+          "Record the concern in the incident with time, symptoms and what you observed. A normal follow-up reading is not permission to restart.",
+          "Restart only after the approved verification and release authorization; confirm the handover with your supervisor."
+        ],
+        "Supervisor": [
+          "Verify machine/team scope, incident severity and the exact supporting readings; distinguish fresh evidence from last-known records.",
+          "Record coolant flow and temperature as separate measurements, plus controller alarms and visible external leakage from outside the guarded area. Do not open a hot or pressurized circuit, top up or mix fluids based on app advice.",
+          "For Suspect, identify the responsible operator and assign authorized maintenance review. For Critical, coordinate the approved safe response and escalate to the responsible plant manager.",
+          "Check for an existing open incident for the same concern before creating another; record a response owner and coverage/handover plan.",
+          "Confirm that the appropriate machine manual and approved procedure are available to the assigned technician. Do not use an app warning to authorize repair.",
+          "Review investigation notes, verification evidence and linked work-order completion before accepting resolution.",
+          "Record the required release/restart authorization. A cleared chart or resolved ticket alone does not authorize restart."
+        ],
+        "Maintenance": [
+          "Review the assigned incident, reading IDs, units, controller alarms, operating mode and recent relevant history. Separate observation from a proposed cause.",
+          "Before servicing, apply the equipment/site-approved safe-stop, isolation and stored-energy verification procedure through authorized personnel; this draft supplies no isolation sequence.",
+          "After authorized isolation and stored-energy verification, use the manufacturer cooling-system checklist and approved fluid specification. Review flow sensing, alarm history and permitted inspection points; do not invent a fluid or pressure setting.",
+          "Use an independent verification method only where authorized by the approved inspection plan. Record instrument/reference, time and result; do not infer failure from one sample.",
+          "Document actual findings and work performed, with parts/actions only when supported by inspection. Preserve pre- and post-action evidence.",
+          "Complete the approved verification and release process; abnormal follow-up readings or missing evidence require further review.",
+          "Update linked work orders and resolve the incident with meaningful verification notes and required authorization. The app does not release physical equipment."
+        ],
+        "Manager": [
+          "Review affected machine/line scope and the responsible supervisor; distinguish current evidence from historical alerts.",
+          "For Critical, confirm a response owner, site escalation and a safe recovery plan with the supervisor and maintenance lead.",
+          "Use verified downtime coverage and production impact. Treat configured financial rates as assumptions until approved.",
+          "Ask for confirmed findings, verification evidence and required recovery authorization before accepting a return-to-service plan.",
+          "Track recurrence and agreed follow-up work; do not direct a repair or replacement solely from an app reading."
+        ],
+        "Admin": [
+          "Verify machine identity, sensor/unit mapping, ingestion health and role/team routing within your authorized scope.",
+          "If readings are stale or missing, investigate the data path without reclassifying the machine as healthy. Preserve relevant timestamps and reading IDs.",
+          "Change only authorized configuration with a reason and retain the audit trail; do not silently alter thresholds to clear an alert.",
+          "Refer operating, isolation, repair and restart decisions to the responsible supervisor and authorized maintenance personnel.",
+          "Confirm that any operational SOP has real machine mapping, owner approval, manual reference and valid review dates before marking it approved."
+        ]
+      },
+      "revision": "0.2",
+      "scope_notice": "Role-specific training draft. Numeric limits are configured comparisons, not approved operating limits. Use the applicable equipment manual and site procedure.",
+      "approved_by": null,
+      "manual_reference": null,
+      "effective_date": null,
+      "review_due": null,
+      "references": [
+        {
+          "title": "OSHA hazardous-energy control overview (general reference; not a machine procedure or site approval)",
+          "url": "https://www.osha.gov/control-hazardous-energy/"
+        }
+      ]
+    },
+    {
+      "id": "FP-ELECTRICAL-001",
+      "title": "Current and voltage response",
+      "category": "electrical",
+      "keywords": [
+        "current",
+        "voltage",
+        "electrical",
+        "overcurrent",
+        "undervoltage",
+        "overvoltage"
+      ],
+      "status": "training",
+      "machine_ids": [],
+      "roles": {
+        "Operator": [
+          "Verify your assigned machine ID, exact sensor, timestamp, unit and data-quality flag. Preserve the reading ID and controller alarm text.",
+          "Record whether the concern is current or voltage, its unit, operating mode and the controller drive alarm. Keep electrical panels closed; do not reset a protective trip repeatedly or perform an electrical test.",
+          "For Suspect, report the evidence to your supervisor and responsible maintenance team. Continue only as permitted by the approved site procedure.",
+          "For Critical or an immediate observed hazard, follow the equipment-specific approved safe-stop and site emergency procedure; keep clear and notify the responsible supervisor. This draft does not supply a button sequence or energy-isolation steps.",
+          "Do not bypass guards, open electrical panels, adjust limits, clear protective trips repeatedly or attempt unauthorized repair.",
+          "Record the concern in the incident with time, symptoms and what you observed. A normal follow-up reading is not permission to restart.",
+          "Restart only after the approved verification and release authorization; confirm the handover with your supervisor."
+        ],
+        "Supervisor": [
+          "Verify machine/team scope, incident severity and the exact supporting readings; distinguish fresh evidence from last-known records.",
+          "Record whether the concern is current or voltage, its unit, operating mode and the controller drive alarm. Keep electrical panels closed; do not reset a protective trip repeatedly or perform an electrical test.",
+          "For Suspect, identify the responsible operator and assign authorized maintenance review. For Critical, coordinate the approved safe response and escalate to the responsible plant manager.",
+          "Check for an existing open incident for the same concern before creating another; record a response owner and coverage/handover plan.",
+          "Confirm that the appropriate machine manual and approved procedure are available to the assigned technician. Do not use an app warning to authorize repair.",
+          "Review investigation notes, verification evidence and linked work-order completion before accepting resolution.",
+          "Record the required release/restart authorization. A cleared chart or resolved ticket alone does not authorize restart."
+        ],
+        "Maintenance": [
+          "Review the assigned incident, reading IDs, units, controller alarms, operating mode and recent relevant history. Separate observation from a proposed cause.",
+          "Before servicing, apply the equipment/site-approved safe-stop, isolation and stored-energy verification procedure through authorized personnel; this draft supplies no isolation sequence.",
+          "Refer electrical inspection to appropriately qualified, authorized personnel under the approved electrical/energy-control procedure. Review supply/drive logs and approved measurement evidence; do not prescribe energized testing from this application.",
+          "Use an independent verification method only where authorized by the approved inspection plan. Record instrument/reference, time and result; do not infer failure from one sample.",
+          "Document actual findings and work performed, with parts/actions only when supported by inspection. Preserve pre- and post-action evidence.",
+          "Complete the approved verification and release process; abnormal follow-up readings or missing evidence require further review.",
+          "Update linked work orders and resolve the incident with meaningful verification notes and required authorization. The app does not release physical equipment."
+        ],
+        "Manager": [
+          "Review affected machine/line scope and the responsible supervisor; distinguish current evidence from historical alerts.",
+          "For Critical, confirm a response owner, site escalation and a safe recovery plan with the supervisor and maintenance lead.",
+          "Use verified downtime coverage and production impact. Treat configured financial rates as assumptions until approved.",
+          "Ask for confirmed findings, verification evidence and required recovery authorization before accepting a return-to-service plan.",
+          "Track recurrence and agreed follow-up work; do not direct a repair or replacement solely from an app reading."
+        ],
+        "Admin": [
+          "Verify machine identity, sensor/unit mapping, ingestion health and role/team routing within your authorized scope.",
+          "If readings are stale or missing, investigate the data path without reclassifying the machine as healthy. Preserve relevant timestamps and reading IDs.",
+          "Change only authorized configuration with a reason and retain the audit trail; do not silently alter thresholds to clear an alert.",
+          "Refer operating, isolation, repair and restart decisions to the responsible supervisor and authorized maintenance personnel.",
+          "Confirm that any operational SOP has real machine mapping, owner approval, manual reference and valid review dates before marking it approved."
+        ]
+      },
+      "revision": "0.2",
+      "scope_notice": "Role-specific training draft. Numeric limits are configured comparisons, not approved operating limits. Use the applicable equipment manual and site procedure.",
+      "approved_by": null,
+      "manual_reference": null,
+      "effective_date": null,
+      "review_due": null,
+      "references": [
+        {
+          "title": "OSHA hazardous-energy control overview (general reference; not a machine procedure or site approval)",
+          "url": "https://www.osha.gov/control-hazardous-energy/"
+        }
+      ]
+    },
+    {
+      "id": "FP-DATA-001",
+      "title": "Missing or unreliable sensor evidence",
+      "category": "data_quality",
+      "keywords": [
+        "missing",
+        "stale",
+        "quality",
+        "noisy",
+        "unit",
+        "sensor",
+        "timestamp",
+        "offline"
+      ],
+      "status": "training",
+      "machine_ids": [],
+      "roles": {
+        "Operator": [
+          "Verify your assigned machine ID, exact sensor, timestamp, unit and data-quality flag. Preserve the reading ID and controller alarm text.",
+          "Check the displayed age, unit, missing-value indicator and sensor identity. Report a data-quality issue; do not infer that the machine is healthy or that a component failed from an absent or invalid reading.",
+          "For Suspect, report the evidence to your supervisor and responsible maintenance team. Continue only as permitted by the approved site procedure.",
+          "For Critical or an immediate observed hazard, follow the equipment-specific approved safe-stop and site emergency procedure; keep clear and notify the responsible supervisor. This draft does not supply a button sequence or energy-isolation steps.",
+          "Do not bypass guards, open electrical panels, adjust limits, clear protective trips repeatedly or attempt unauthorized repair.",
+          "Record the concern in the incident with time, symptoms and what you observed. A normal follow-up reading is not permission to restart.",
+          "Restart only after the approved verification and release authorization; confirm the handover with your supervisor."
+        ],
+        "Supervisor": [
+          "Verify machine/team scope, incident severity and the exact supporting readings; distinguish fresh evidence from last-known records.",
+          "Check the displayed age, unit, missing-value indicator and sensor identity. Report a data-quality issue; do not infer that the machine is healthy or that a component failed from an absent or invalid reading.",
+          "For Suspect, identify the responsible operator and assign authorized maintenance review. For Critical, coordinate the approved safe response and escalate to the responsible plant manager.",
+          "Check for an existing open incident for the same concern before creating another; record a response owner and coverage/handover plan.",
+          "Confirm that the appropriate machine manual and approved procedure are available to the assigned technician. Do not use an app warning to authorize repair.",
+          "Review investigation notes, verification evidence and linked work-order completion before accepting resolution.",
+          "Record the required release/restart authorization. A cleared chart or resolved ticket alone does not authorize restart."
+        ],
+        "Maintenance": [
+          "Review the assigned incident, reading IDs, units, controller alarms, operating mode and recent relevant history. Separate observation from a proposed cause.",
+          "Before servicing, apply the equipment/site-approved safe-stop, isolation and stored-energy verification procedure through authorized personnel; this draft supplies no isolation sequence.",
+          "Review acquisition timestamps, the configured sensor/unit mapping and the approved calibration/verification record. Distinguish communication loss from a physical abnormality using independent authorized evidence.",
+          "Use an independent verification method only where authorized by the approved inspection plan. Record instrument/reference, time and result; do not infer failure from one sample.",
+          "Document actual findings and work performed, with parts/actions only when supported by inspection. Preserve pre- and post-action evidence.",
+          "Complete the approved verification and release process; abnormal follow-up readings or missing evidence require further review.",
+          "Update linked work orders and resolve the incident with meaningful verification notes and required authorization. The app does not release physical equipment."
+        ],
+        "Manager": [
+          "Review affected machine/line scope and the responsible supervisor; distinguish current evidence from historical alerts.",
+          "For Critical, confirm a response owner, site escalation and a safe recovery plan with the supervisor and maintenance lead.",
+          "Use verified downtime coverage and production impact. Treat configured financial rates as assumptions until approved.",
+          "Ask for confirmed findings, verification evidence and required recovery authorization before accepting a return-to-service plan.",
+          "Track recurrence and agreed follow-up work; do not direct a repair or replacement solely from an app reading."
+        ],
+        "Admin": [
+          "Verify machine identity, sensor/unit mapping, ingestion health and role/team routing within your authorized scope.",
+          "If readings are stale or missing, investigate the data path without reclassifying the machine as healthy. Preserve relevant timestamps and reading IDs.",
+          "Change only authorized configuration with a reason and retain the audit trail; do not silently alter thresholds to clear an alert.",
+          "Refer operating, isolation, repair and restart decisions to the responsible supervisor and authorized maintenance personnel.",
+          "Confirm that any operational SOP has real machine mapping, owner approval, manual reference and valid review dates before marking it approved."
+        ]
+      },
+      "revision": "0.2",
+      "scope_notice": "Role-specific training draft. Numeric limits are configured comparisons, not approved operating limits. Use the applicable equipment manual and site procedure.",
+      "approved_by": null,
+      "manual_reference": null,
+      "effective_date": null,
+      "review_due": null,
+      "references": [
+        {
+          "title": "OSHA hazardous-energy control overview (general reference; not a machine procedure or site approval)",
+          "url": "https://www.osha.gov/control-hazardous-energy/"
+        }
+      ]
+    },
+    {
+      "id": "FP-LOAD-001",
+      "title": "Torque and derived-load response",
+      "revision": "0.2",
+      "status": "training",
+      "machine_ids": [],
+      "category": "load",
+      "keywords": [
+        "torque",
+        "load",
+        "overload",
+        "shaft"
+      ],
+      "scope_notice": "Role-specific training draft. Numeric limits are configured comparisons, not approved operating limits. Use the applicable equipment manual and site procedure.",
+      "roles": {
+        "Operator": [
+          "Verify your assigned machine ID, exact sensor, timestamp, unit and data-quality flag. Preserve the reading ID and controller alarm text.",
+          "Record torque in Nm separately from motor-load percentage and derived shaft power. Capture operating mode and controller alarms. Do not change load settings or repeat a stalled operation to test the alert.",
+          "For Suspect, report the evidence to your supervisor and responsible maintenance team. Continue only as permitted by the approved site procedure.",
+          "For Critical or an immediate observed hazard, follow the equipment-specific approved safe-stop and site emergency procedure; keep clear and notify the responsible supervisor. This draft does not supply a button sequence or energy-isolation steps.",
+          "Do not bypass guards, open electrical panels, adjust limits, clear protective trips repeatedly or attempt unauthorized repair.",
+          "Record the concern in the incident with time, symptoms and what you observed. A normal follow-up reading is not permission to restart.",
+          "Restart only after the approved verification and release authorization; confirm the handover with your supervisor."
+        ],
+        "Supervisor": [
+          "Verify machine/team scope, incident severity and the exact supporting readings; distinguish fresh evidence from last-known records.",
+          "Record torque in Nm separately from motor-load percentage and derived shaft power. Capture operating mode and controller alarms. Do not change load settings or repeat a stalled operation to test the alert.",
+          "For Suspect, identify the responsible operator and assign authorized maintenance review. For Critical, coordinate the approved safe response and escalate to the responsible plant manager.",
+          "Check for an existing open incident for the same concern before creating another; record a response owner and coverage/handover plan.",
+          "Confirm that the appropriate machine manual and approved procedure are available to the assigned technician. Do not use an app warning to authorize repair.",
+          "Review investigation notes, verification evidence and linked work-order completion before accepting resolution.",
+          "Record the required release/restart authorization. A cleared chart or resolved ticket alone does not authorize restart."
+        ],
+        "Maintenance": [
+          "Review the assigned incident, reading IDs, units, controller alarms, operating mode and recent relevant history. Separate observation from a proposed cause.",
+          "Before servicing, apply the equipment/site-approved safe-stop, isolation and stored-energy verification procedure through authorized personnel; this draft supplies no isolation sequence.",
+          "Use the approved inspection plan to review mechanical loading, torque sensing and controller alarms. A torque-range load proxy is not a measured VFD load and shaft power is not electrical consumption; verify each independently where authorized.",
+          "Use an independent verification method only where authorized by the approved inspection plan. Record instrument/reference, time and result; do not infer failure from one sample.",
+          "Document actual findings and work performed, with parts/actions only when supported by inspection. Preserve pre- and post-action evidence.",
+          "Complete the approved verification and release process; abnormal follow-up readings or missing evidence require further review.",
+          "Update linked work orders and resolve the incident with meaningful verification notes and required authorization. The app does not release physical equipment."
+        ],
+        "Manager": [
+          "Review affected machine/line scope and the responsible supervisor; distinguish current evidence from historical alerts.",
+          "For Critical, confirm a response owner, site escalation and a safe recovery plan with the supervisor and maintenance lead.",
+          "Use verified downtime coverage and production impact. Treat configured financial rates as assumptions until approved.",
+          "Ask for confirmed findings, verification evidence and required recovery authorization before accepting a return-to-service plan.",
+          "Track recurrence and agreed follow-up work; do not direct a repair or replacement solely from an app reading."
+        ],
+        "Admin": [
+          "Verify machine identity, sensor/unit mapping, ingestion health and role/team routing within your authorized scope.",
+          "If readings are stale or missing, investigate the data path without reclassifying the machine as healthy. Preserve relevant timestamps and reading IDs.",
+          "Change only authorized configuration with a reason and retain the audit trail; do not silently alter thresholds to clear an alert.",
+          "Refer operating, isolation, repair and restart decisions to the responsible supervisor and authorized maintenance personnel.",
+          "Confirm that any operational SOP has real machine mapping, owner approval, manual reference and valid review dates before marking it approved."
+        ]
+      },
+      "approved_by": null,
+      "manual_reference": null,
+      "effective_date": null,
+      "review_due": null,
+      "references": [
+        {
+          "title": "OSHA hazardous-energy control overview (general reference; not a machine procedure or site approval)",
+          "url": "https://www.osha.gov/control-hazardous-energy/"
+        }
+      ]
     }
   ]
 }

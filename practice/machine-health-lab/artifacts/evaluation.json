@@ -1,0 +1,314 @@
+{
+  "purpose": "Fictional practice only; future failure proximity, not a certified machine diagnosis",
+  "selected_by": "highest validation macro-F1; test not used for selection",
+  "selected_model": "random_forest_balanced",
+  "python": "3.12.14",
+  "sklearn": "1.9.1",
+  "split_audit": {
+    "train": {
+      "input_rows": 49826,
+      "eligible_rows": 49826,
+      "excluded_rows": 0,
+      "class_counts": {
+        "Normal": 48881,
+        "Suspect": 711,
+        "Critical": 234
+      },
+      "first_utc": "2026-01-01 00:00:00+00:00",
+      "last_utc": "2026-01-09 21:50:00+00:00",
+      "sha256": "6aa7cbbad9162f2cb3250782451a370ea878e1d855cd9c3172ba08e6536c7c53"
+    },
+    "validation": {
+      "input_rows": 10673,
+      "eligible_rows": 10673,
+      "excluded_rows": 0,
+      "class_counts": {
+        "Normal": 10343,
+        "Suspect": 248,
+        "Critical": 82
+      },
+      "first_utc": "2026-01-10 00:00:00+00:00",
+      "last_utc": "2026-01-11 21:50:00+00:00",
+      "sha256": "1039c3de38867126c86a078fa194d39b4854289f799d8949f65370e47b5137f7"
+    },
+    "test": {
+      "input_rows": 16420,
+      "eligible_rows": 16420,
+      "excluded_rows": 0,
+      "class_counts": {
+        "Normal": 16290,
+        "Suspect": 94,
+        "Critical": 36
+      },
+      "first_utc": "2026-01-12 00:00:00+00:00",
+      "last_utc": "2026-01-14 21:50:00+00:00",
+      "sha256": "81ff1257d8d4e3115e2d5eaff9c5798a182f86de6e3b2a7e86e493b351c45395"
+    }
+  },
+  "validation": {
+    "majority": {
+      "rows": 10673,
+      "macro_f1": 0.32809922598654995,
+      "balanced_accuracy": 0.3333333333333333,
+      "classification_report": {
+        "Normal": {
+          "precision": 0.9690808582404198,
+          "recall": 1.0,
+          "f1-score": 0.9842976779596498,
+          "support": 10343.0
+        },
+        "Suspect": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 248.0
+        },
+        "Critical": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 82.0
+        },
+        "accuracy": 0.9690808582404198,
+        "macro avg": {
+          "precision": 0.3230269527468066,
+          "recall": 0.3333333333333333,
+          "f1-score": 0.32809922598654995,
+          "support": 10673.0
+        },
+        "weighted avg": {
+          "precision": 0.9391177098079886,
+          "recall": 0.9690808582404198,
+          "f1-score": 0.9538640385211897,
+          "support": 10673.0
+        }
+      },
+      "confusion_matrix": [
+        [
+          10343,
+          0,
+          0
+        ],
+        [
+          248,
+          0,
+          0
+        ],
+        [
+          82,
+          0,
+          0
+        ]
+      ],
+      "matrix_order": [
+        "Normal",
+        "Suspect",
+        "Critical"
+      ],
+      "average_precision": {
+        "Suspect": 0.0232362035041694,
+        "Critical": 0.00768293825541085
+      }
+    },
+    "logistic_balanced": {
+      "rows": 10673,
+      "macro_f1": 0.44614675094707174,
+      "balanced_accuracy": 0.6710022246643764,
+      "classification_report": {
+        "Normal": {
+          "precision": 0.9984954864593781,
+          "recall": 0.7699893647877791,
+          "f1-score": 0.8694797750968939,
+          "support": 10343.0
+        },
+        "Suspect": {
+          "precision": 0.06066693451185215,
+          "recall": 0.6088709677419355,
+          "f1-score": 0.1103397880891487,
+          "support": 248.0
+        },
+        "Critical": {
+          "precision": 0.25,
+          "recall": 0.6341463414634146,
+          "f1-score": 0.3586206896551724,
+          "support": 82.0
+        },
+        "accuracy": 0.7652019113651269,
+        "macro avg": {
+          "precision": 0.43638747365707675,
+          "recall": 0.6710022246643764,
+          "f1-score": 0.4461467509470716,
+          "support": 10673.0
+        },
+        "weighted avg": {
+          "precision": 0.9709532667673838,
+          "recall": 0.7652019113651268,
+          "f1-score": 0.8479153450599649,
+          "support": 10673.0
+        }
+      },
+      "confusion_matrix": [
+        [
+          7964,
+          2310,
+          69
+        ],
+        [
+          10,
+          151,
+          87
+        ],
+        [
+          2,
+          28,
+          52
+        ]
+      ],
+      "matrix_order": [
+        "Normal",
+        "Suspect",
+        "Critical"
+      ],
+      "average_precision": {
+        "Suspect": 0.054434833795537894,
+        "Critical": 0.3360399123891438
+      }
+    },
+    "random_forest_balanced": {
+      "rows": 10673,
+      "macro_f1": 0.6851318250713742,
+      "balanced_accuracy": 0.7362549935837034,
+      "classification_report": {
+        "Normal": {
+          "precision": 0.9949872223314331,
+          "recall": 0.9787295755583486,
+          "f1-score": 0.9867914412438465,
+          "support": 10343.0
+        },
+        "Suspect": {
+          "precision": 0.41273584905660377,
+          "recall": 0.7056451612903226,
+          "f1-score": 0.5208333333333334,
+          "support": 248.0
+        },
+        "Critical": {
+          "precision": 0.5733333333333334,
+          "recall": 0.524390243902439,
+          "f1-score": 0.5477707006369427,
+          "support": 82.0
+        },
+        "accuracy": 0.9688934695024829,
+        "macro avg": {
+          "precision": 0.6603521349071234,
+          "recall": 0.7362549935837034,
+          "f1-score": 0.6851318250713742,
+          "support": 10673.0
+        },
+        "weighted avg": {
+          "precision": 0.9782183701371108,
+          "recall": 0.9688934695024829,
+          "f1-score": 0.9725913745810925,
+          "support": 10673.0
+        }
+      },
+      "confusion_matrix": [
+        [
+          10123,
+          215,
+          5
+        ],
+        [
+          46,
+          175,
+          27
+        ],
+        [
+          5,
+          34,
+          43
+        ]
+      ],
+      "matrix_order": [
+        "Normal",
+        "Suspect",
+        "Critical"
+      ],
+      "average_precision": {
+        "Suspect": 0.43401870811467125,
+        "Critical": 0.5968471752754511
+      }
+    }
+  },
+  "test": {
+    "rows": 16420,
+    "macro_f1": 0.6731835158498716,
+    "balanced_accuracy": 0.7587814392504648,
+    "classification_report": {
+      "Normal": {
+        "precision": 0.9995058067704472,
+        "recall": 0.9932473910374463,
+        "f1-score": 0.9963667713529158,
+        "support": 16290.0
+      },
+      "Suspect": {
+        "precision": 0.3604060913705584,
+        "recall": 0.7553191489361702,
+        "f1-score": 0.4879725085910653,
+        "support": 94.0
+      },
+      "Critical": {
+        "precision": 0.5428571428571428,
+        "recall": 0.5277777777777778,
+        "f1-score": 0.5352112676056338,
+        "support": 36.0
+      },
+      "accuracy": 0.9908647990255786,
+      "macro avg": {
+        "precision": 0.6342563469993828,
+        "recall": 0.7587814392504648,
+        "f1-score": 0.6731835158498717,
+        "support": 16420.0
+      },
+      "weighted avg": {
+        "precision": 0.9948459574922213,
+        "recall": 0.9908647990255786,
+        "f1-score": 0.992445293957391,
+        "support": 16420.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        16180,
+        109,
+        1
+      ],
+      [
+        8,
+        71,
+        15
+      ],
+      [
+        0,
+        17,
+        19
+      ]
+    ],
+    "matrix_order": [
+      "Normal",
+      "Suspect",
+      "Critical"
+    ],
+    "average_precision": {
+      "Suspect": 0.4318959136480883,
+      "Critical": 0.5780562478669933
+    }
+  },
+  "sha256": "575b5c9f17242cc0ae2bf1baa7c7fbd57df28d5b9506a665dea979610a44fc99",
+  "automatic_alerts_enabled": false,
+  "limitations": [
+    "Synthetic data and repeated known machines; no real factory validation.",
+    "Prior project experiments already inspected this test set: this is a learning exercise, not a new blind benchmark.",
+    "Row-level evaluation does not establish event-level failure detection, alert burden or useful lead time.",
+    "predict_proba values are uncalibrated model outputs, not guaranteed failure probabilities."
+  ]
+}

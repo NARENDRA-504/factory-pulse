@@ -115,11 +115,14 @@ class TestAPIContractsAndSafety(unittest.TestCase):
         self.assertIn('"target_metric": "CycleToFailure"', self.main_py_code)
         self.assertIn("CycleToFailure is distinct from Vb flank wear", self.main_py_code)
 
-    def test_pipeline_health_audit_formula(self):
-        """TC-API-014: Pipeline health endpoint reconciles 28,920 raw empirical rows."""
+    def test_pipeline_health_uses_protected_live_diagnostics(self):
+        """Legacy audit URL delegates to live administrator diagnostics, not seed counts."""
         self.assertIn('@app.get("/api/v1/analytics/pipeline-health")', self.main_py_code)
-        self.assertIn('"total_empirical_rows": 28920', self.main_py_code)
-        self.assertIn("2,054 (D1) + 612 (D2) + 25,286 (D3) + 968 (D4) = 28,920", self.main_py_code)
+        handler=self.main_py_code.split('def get_pipeline_health(',1)[1].split('from .operational_insights',1)[0]
+        self.assertIn('require_roles(["Admin"])',handler)
+        self.assertIn('/api/v1/operations/pipeline-monitor',handler)
+        self.assertNotIn('validation_passed',handler)
+        self.assertNotIn('28920',handler)
 
 if __name__ == "__main__":
     unittest.main()

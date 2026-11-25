@@ -2,7 +2,7 @@ import React from 'react';
 import {BookOpen, Search, ShieldCheck} from 'lucide-react';
 
 /** Ranking scores express search relevance, never confidence in a diagnosis. */
-export function RetrievalDetails({retrieval, sources = []}:{retrieval?:any;sources?:any[]}) {
+export function RetrievalDetails({retrieval, sources = [], grounding}:{retrieval?:any;sources?:any[];grounding?:any}) {
  if(!retrieval?.version)return null;
  const labels:Record<string,string>={fresh_measurements:'Fresh readings available',last_known_only:'Last-known readings only',guidance_only:'Project guidance only',no_evidence:'No supporting evidence found'};
  const fresh=retrieval.evidence_status==='fresh_measurements';
@@ -14,10 +14,15 @@ export function RetrievalDetails({retrieval, sources = []}:{retrieval?:any;sourc
    <span className="inline-flex items-center gap-1"><BookOpen className="h-3 w-3"/>{retrieval.fresh_good_measurements??0} fresh GOOD readings</span>
   </div>
   {retrieval.followup_context_used&&<p className="text-slate-600">Used your previous machine question to understand this follow-up.</p>}
+  {grounding?.status&&grounding.status!=='not_applicable'&&<p className="text-slate-600">AI evidence checks: {grounding.status==='passed'?'Passed source and numeric checks':'Answer withheld; showing original evidence'}. These checks do not certify a diagnosis.</p>}
   <details><summary className="cursor-pointer text-teal-800">How this answer was grounded</summary>
    <p className="mt-2 break-words text-slate-700">Search question: {retrieval.query}</p>
-   <p className="mt-1 text-slate-600">Searched {retrieval.knowledge_chunks_searched} approved passages. {retrieval.knowledge_candidates} matched before ranking. Current readings must be within {retrieval.stale_after_seconds} seconds and pass quality checks.</p>
-   <p className="mt-1 text-slate-500">Search uses words, headings and query coverage. Relevance scores rank passages; they are not confidence percentages or proof of a diagnosis.</p>
+   {!!retrieval.query_plan?.requested_sensors?.length&&<p className="mt-1 text-slate-600">Requested channels: {retrieval.query_plan.requested_sensors.join(' · ')}</p>}
+   <p className="mt-1 text-slate-600">Searched {retrieval.knowledge_chunks_searched} curated passages. {retrieval.knowledge_candidates} matched before ranking. Current readings must be within {retrieval.stale_after_seconds} seconds and pass quality checks.</p>
+   {retrieval.stages&&<ol className="mt-2 list-decimal space-y-1 pl-4 text-slate-600">{retrieval.stages.map((stage:string)=><li key={stage}>{stage}</li>)}</ol>}
+   {retrieval.limitations&&<p className="mt-2 text-slate-600">Limits: {retrieval.limitations.join(' · ')}</p>}
+   <p className="mt-1 text-slate-500">Search: {retrieval.strategy || 'Keyword and heading search'}. Relevance scores rank passages; they are not confidence percentages or proof of a diagnosis.</p>
+   {retrieval.vector_search&&<p className="mt-1 text-slate-500">Semantic search: {retrieval.vector_search.status==='ready'?`Local embeddings (${retrieval.vector_search.dimensions} dimensions)`:'Unavailable; keyword search remains active'}.</p>}
    {sources.filter(s=>s.kind==='project_knowledge').map(s=><div className="mt-2 border-t border-slate-100 pt-2" key={s.id}>
     <p className="font-medium text-slate-700">[{s.id}] {s.section||s.title}</p>
     <p className="mt-1 text-slate-600">Matched terms: {s.matched_terms?.join(', ')||'Not available'}</p>

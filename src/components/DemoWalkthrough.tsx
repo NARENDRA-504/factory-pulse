@@ -1,0 +1,23 @@
+import React from 'react';
+import {ArrowRight,CheckCircle2,Info,PlayCircle} from 'lucide-react';
+import {AppScreen,canOpenScreen,roleOperations,supportingNavigation} from '../roleNavigation';
+import {UserProfile} from '../types';
+const journeys:Record<string,{title:string;steps:string[];screens:AppScreen[]}>={
+ Operator:{title:'Run your workstation demonstration',steps:['Confirm your assigned machine and shift.','Watch current readings and the separate sensor trends.','Report or acknowledge a concern and read its SOP.','Publish handover notes; never approve a physical repair from a chart.'],screens:['dashboard','machines','incidents','machine-changes']},
+ Supervisor:{title:'Lead the line response',steps:['Review only the machines in your assigned team.','Prioritize a sustained incident and assign a technician.','Review production, downtime and operator coverage.','Verify repair evidence before closing or handing over work.'],screens:['dashboard','incidents','maintenance','production']},
+ Maintenance:{title:'Demonstrate the repair workflow',steps:['Open your assigned work or an unassigned fault.','Review readings, incident evidence and the relevant SOP.','Record investigation and repair findings.','Explicitly resolve the ticket with verification notes; linked work orders complete.'],screens:['maintenance','incidents','machines','reports']},
+ Manager:{title:'Explain plant performance and risks',steps:['Compare output and quality within the recorded period.','Review Critical escalations and downtime exposure.','Explain configured cost estimates and missing data honestly.','Check that resolved incidents disappear from the open queue.'],screens:['dashboard','production','downtime','incidents']},
+ Admin:{title:'Prepare the local demonstration',steps:['Confirm the API, MySQL and sender readiness below.','Review machine registration, people and role assignments.','In the Simulator, select the matching machine and send a finite incident.','Review incident oversight and the activity log; STOP ALL when finished.'],screens:['inventory','users','incidents','activity']},
+};
+export function DemoWalkthrough({user,readiness,onNavigate}:{user:UserProfile;readiness:any;onNavigate?:(screen:AppScreen)=>void}){
+ const guide=journeys[user.role]||journeys.Admin;
+ const available=[...roleOperations[user.role],...supportingNavigation(user.role)];
+ const admin=['Admin','Super Admin'].includes(user.role);
+ const idle=readiness?.sender?.status==='reachable'&&readiness.sender.paused;
+ return <section aria-label="Local demonstration guide" className="rounded-xl border border-teal-200 bg-gradient-to-br from-teal-50 to-white p-5 text-slate-800"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-widest text-teal-700">Guided local demonstration</p><h2 className="mt-1 text-xl font-semibold">{guide.title}</h2></div><PlayCircle className="text-teal-700" size={30} aria-hidden="true"/></div>
+ <ol className="mt-4 grid gap-3 sm:grid-cols-2">{guide.steps.map((step,i)=><li key={step} className="flex gap-3 rounded-lg border border-teal-100 bg-white p-3 text-sm"><span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-teal-100 font-bold text-teal-800">{i+1}</span><span>{step}</span></li>)}</ol>
+ <div className="mt-4 flex flex-wrap gap-2">{onNavigate&&guide.screens.filter(s=>canOpenScreen(user.role,s)).map(s=><button key={s} onClick={()=>onNavigate(s)} className="inline-flex items-center gap-2 rounded-lg border border-teal-300 bg-white px-3 py-2 text-sm font-medium text-teal-900">{available.find(n=>n.screen===s)?.label||s}<ArrowRight size={15}/></button>)}</div>
+ <div className="mt-4 flex items-start gap-2 rounded-lg bg-white p-3 text-sm">{readiness?.mysql==='reachable'?<CheckCircle2 size={18} className="mt-0.5 shrink-0 text-teal-700"/>:<Info size={18} className="mt-0.5 shrink-0 text-amber-700"/>}<p>{admin?(readiness?.mysql==='reachable'?'MySQL is responding. ':'MySQL readiness has not been confirmed. '):`Machine data: ${readiness?.status||'Data unavailable'}. `}{admin?(idle?'The sender is paused. Stale charts are expected until you explicitly send new readings.':'Check the recorded timestamps below; a saved chart is not proof that new data is arriving.'):'Use the machine pages to review readings and your next action.'}</p></div>
+ <p className="mt-3 text-xs leading-relaxed text-slate-600">Finite incident demonstrations are time-compressed synthetic conditions. Receiver acknowledgments, automatic incident creation and human resolution are separate steps. The ML model is advisory; this page does not certify model accuracy, physical repair, Gemini availability or a Power BI refresh.</p>
+ </section>;
+}

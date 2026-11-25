@@ -1,9 +1,10 @@
 """Local conversation fallbacks, independent of operational data access."""
 import re
+from .chat_language import retrieval_text
 
 
 def private_request(question):
-    return bool(re.search(r'\b(password\w*|credential\w*|api[ -]?keys?|secrets?|payroll|salaries)\b', question, re.I))
+    return bool(re.search(r'\b(password\w*|credential\w*|api[ -]?keys?|secrets?|payroll|salaries)\b', retrieval_text(question), re.I))
 
 
 def conversation_reply(question):
